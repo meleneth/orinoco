@@ -4,4 +4,4 @@ source "https://rubygems.org"
 
 # gem "rails"
 
-gem "obs-websocket", "~> 0.1.1"
+gem "obsws", "~> 0.6.2"

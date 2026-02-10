@@ -1,20 +1,29 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    concurrent-ruby (1.3.6)
-    obs-websocket (0.1.1)
-      concurrent-ruby (~> 1.1)
+    base64 (0.3.0)
+    obsws (0.6.2)
+      waitutil (~> 0.2.1)
+      websocket-driver (~> 0.7.5)
+    waitutil (0.2.1)
+    websocket-driver (0.7.7)
+      base64
+      websocket-extensions (>= 0.1.0)
+    websocket-extensions (0.1.5)
 
 PLATFORMS
   ruby
   x86_64-linux
 
 DEPENDENCIES
-  obs-websocket (~> 0.1.1)
+  obsws (~> 0.6.2)
 
 CHECKSUMS
-  concurrent-ruby (1.3.6) sha256=6b56837e1e7e5292f9864f34b69c5a2cbc75c0cf5338f1ce9903d10fa762d5ab
-  obs-websocket (0.1.1) sha256=22bd7f9c648d7cfe8f9eb2c09fffec6ed59a5f2a615a300930cf551a1050d0fc
+  base64 (0.3.0) sha256=27337aeabad6ffae05c265c450490628ef3ebd4b67be58257393227588f5a97b
+  obsws (0.6.2) sha256=b05df41b97654a8d4ce2518005067e6a6c12db702b78e5b3e6dc2c4e1fd3a7d4
+  waitutil (0.2.1) sha256=881f3e6458d759c2c8fe4b75e8989963b70c9a15ed0a5b72d29c36933cdee5d2
+  websocket-driver (0.7.7) sha256=056d99f2cd545712cfb1291650fde7478e4f2661dc1db6a0fa3b966231a146b4
+  websocket-extensions (0.1.5) sha256=1c6ba63092cda343eb53fc657110c71c754c56484aad42578495227d717a8241
 
 BUNDLED WITH
   4.0.5
