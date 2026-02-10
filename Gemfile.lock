@@ -1,0 +1,20 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    concurrent-ruby (1.3.6)
+    obs-websocket (0.1.1)
+      concurrent-ruby (~> 1.1)
+
+PLATFORMS
+  ruby
+  x86_64-linux
+
+DEPENDENCIES
+  obs-websocket (~> 0.1.1)
+
+CHECKSUMS
+  concurrent-ruby (1.3.6) sha256=6b56837e1e7e5292f9864f34b69c5a2cbc75c0cf5338f1ce9903d10fa762d5ab
+  obs-websocket (0.1.1) sha256=22bd7f9c648d7cfe8f9eb2c09fffec6ed59a5f2a615a300930cf551a1050d0fc
+
+BUNDLED WITH
+  4.0.5
