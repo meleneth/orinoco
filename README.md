@@ -6,5 +6,5 @@ Streamer Tech
 [obsws ruby gem](https://rubygems.org/gems/obsws)
 
 
-[https://github.com/hanazuki/ruby-obs-websocket](ruby obs websocket library)
+[ruby obs websocket library](https://github.com/hanazuki/ruby-obs-websocket)
 
