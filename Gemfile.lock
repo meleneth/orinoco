@@ -1,6 +1,7 @@
 GEM
   remote: https://rubygems.org/
   specs:
+    awesome_print (1.9.2)
     base64 (0.3.0)
     obsws (0.6.2)
       waitutil (~> 0.2.1)
@@ -13,12 +14,15 @@ GEM
 
 PLATFORMS
   ruby
+  x64-mingw-ucrt
   x86_64-linux
 
 DEPENDENCIES
+  awesome_print (~> 1.9)
   obsws (~> 0.6.2)
 
 CHECKSUMS
+  awesome_print (1.9.2) sha256=e99b32b704acff16d768b3468680793ced40bfdc4537eb07e06a4be11133786e
   base64 (0.3.0) sha256=27337aeabad6ffae05c265c450490628ef3ebd4b67be58257393227588f5a97b
   obsws (0.6.2) sha256=b05df41b97654a8d4ce2518005067e6a6c12db702b78e5b3e6dc2c4e1fd3a7d4
   waitutil (0.2.1) sha256=881f3e6458d759c2c8fe4b75e8989963b70c9a15ed0a5b72d29c36933cdee5d2

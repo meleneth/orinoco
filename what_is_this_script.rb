@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
-
+require "debug"
 require "obsws"
+require "awesome_print"
 
 class Main
     def run
@@ -10,7 +11,8 @@ class Main
                 # resp = client.get_version
                 # puts resp.attrs
                 puts client.get_version.available_requests
-
+                ap client.get_version
+                binding.break
             end
     end
 end
