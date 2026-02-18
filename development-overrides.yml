@@ -1,0 +1,24 @@
+---
+services:
+  orinoco-db:
+    environment:
+    - POSTGRES_DB=${ORINOCO_DB_POSTGRES_DB}
+    - POSTGRES_PASSWORD=${ORINOCO_DB_POSTGRES_PASSWORD}
+    - POSTGRES_USER=${ORINOCO_DB_POSTGRES_USER}
+    ports:
+    - "${ORINOCO_DB_POSTGRES_PORT}:5432"
+  orinoco:
+    environment:
+    - DATABASE_URL=${ORINOCO_DB_DATABASE_URL}
+    - RAILS_ENV=development
+    - RAILS_MAX_THREADS=5
+    - RAILS_MIN_THREADS=5
+    ports:
+    - "${ORINOCO_WEB_PORT}:3000"
+    depends_on:
+      orinoco-db:
+        condition: service_healthy
+        restart: true
+  goaws:
+    ports:
+    - "${GOAWS_WEB_PORT}:4100"
