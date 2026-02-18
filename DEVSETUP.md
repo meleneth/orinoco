@@ -37,7 +37,7 @@ to do this
 
     cd orinoco
     bundle install
-    forman start -f Profile.dev
+    foreman start -f Profile.dev
 
 the environment variables are used to configure services wiring to each other.
 
