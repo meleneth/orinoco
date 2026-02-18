@@ -1,0 +1,21 @@
+---
+name: generate-production
+include:
+- path: "./compose/orinoco-db.yml"
+  project_directory: "./"
+  env_file: "./production.env"
+- path: "./compose/orinoco.yml"
+  project_directory: "./"
+  env_file: "./production.env"
+- path: "./compose/goaws.yml"
+  project_directory: "./"
+  env_file: "./production.env"
+- path: "./compose/orinoco-db-cache.yml"
+  project_directory: "./"
+  env_file: "./production.env"
+- path: "./compose/orinoco-db-cable.yml"
+  project_directory: "./"
+  env_file: "./production.env"
+- path: "./compose/orinoco-db-queue.yml"
+  project_directory: "./"
+  env_file: "./production.env"

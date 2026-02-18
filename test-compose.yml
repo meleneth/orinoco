@@ -1,0 +1,12 @@
+---
+name: generate-test
+include:
+- path: "./compose/orinoco-db.yml"
+  project_directory: "./"
+  env_file: "./test.env"
+- path: "./compose/orinoco.yml"
+  project_directory: "./"
+  env_file: "./test.env"
+- path: "./compose/goaws.yml"
+  project_directory: "./"
+  env_file: "./test.env"
