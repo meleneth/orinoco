@@ -1,0 +1,9 @@
+---
+services:
+  goaws:
+    image: admiralpiett/goaws:v0.5.4
+    ports:
+    - "${GOAWS_WEB_PORT}:4100"
+    volumes:
+    - "./goaws/data:/data"
+    - "./goaws/goaws.yaml:/etc/goaws/goaws.yaml"

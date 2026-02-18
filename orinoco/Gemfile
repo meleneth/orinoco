@@ -66,3 +66,6 @@ gem "rspec-rails", "~> 8.0", groups: [:development, :test]
 gem "opentelemetry-sdk", "~> 1.10"
 gem "opentelemetry-instrumentation-all", "~> 0.90.1"
 gem "opentelemetry-exporter-otlp", "~> 0.31.1"
+
+gem "graphql", "~> 2.5"
+gem "graphiql-rails", group: :development
