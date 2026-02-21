@@ -37,7 +37,7 @@ to do this
 
     cd orinoco
     bundle install
-    foreman start -f Profile.dev
+    foreman start -f Procfile.dev
 
 the environment variables are used to configure services wiring to each other.
 
