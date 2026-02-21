@@ -45,6 +45,9 @@ For docker, the environment variables are in test.env, development.env, and prod
 
 For foreman, the environment variables are in orinoco/.env.dev.orinoco
 
+in the orinoco directory (the rails app)
+./r_dev is a script wrapper like dc_dev - this one runs rails with the orinoco service environment variables set from .env.dev.orinoco
+
 [Docker Orinoco](http://localhost:31050/)
 
 [Foreman Orinoco](http://localhost:33230/)
