@@ -78,13 +78,13 @@ class SceneIndex
   end
 end
 
-# ------------------ Requests Pump ------------------
+# ------------------ Requests Event Loop ------------------
 
-class RequestPump
+class CommandSender
   def initialize(host:, port:, index:, queue:, logger: nil, refresh_on_miss: true, stop_on_play_error: false)
     @host = host
     @port = port
-    @index = index
+    @index = index  #### this is a SceneIndex object
     @q = queue
     @logger = logger || ->(msg) { warn msg }
 
@@ -99,24 +99,22 @@ class RequestPump
       @logger.call('[requests] connecting...')
       OBSWS::Requests::Client.new(host: @host, port: @port).run do |req|
         backoff.reset!
-        @index.refresh!(req)
+        @index.refresh!(req)  # get a fresh list of scene items
 
         loop do
           cmd = @q.pop
-          return if cmd.is_a?(Cmd::Stop)
 
           case cmd
+          when Cmd::Stop
+            return
           when Cmd::Refresh
-            safe_request('refresh') { @index.refresh!(req) }
-
+            @index.refresh!(req)
           when Cmd::Play
             play(req, cmd.name)
-
           when Cmd::Disable
             disable(req, cmd.name)
-
           else
-            raise "Unknown command object: #{cmd.inspect}"
+            raise "Unknown command object: #{cmd.inspect}"  # prints the class name
           end
         end
       end
@@ -185,16 +183,10 @@ class EventLoop
       events = OBSWS::Events::Client.new(host: @host, port: @port)
 
       @install_handlers&.call(events)
-
       backoff.reset!
 
-      # obsws 0.6.2 often works without run (internal thread),
-      # but if run exists and blocks, it's a clean "until disconnect" anchor.
-      if events.respond_to?(:run)
-        events.run
-      else
-        loop { sleep 1 }
-      end
+      loop { sleep 1 }
+
     rescue OBSWS::OBSWSConnectionError, OBSWS::OBSWSError => e
       @logger.call("[events] disconnected: #{e.class}: #{e.message}")
       backoff.snooze!('events')
@@ -212,7 +204,7 @@ class ObsBridge
     @q = Queue.new
     @index = SceneIndex.new(scene: scene, logger: @logger)
 
-    @pump = RequestPump.new(
+    @cmd_sender = CommandSender.new(
       host: host,
       port: port,
       index: @index,
@@ -224,7 +216,7 @@ class ObsBridge
   end
 
   def start!(&install_event_handlers)
-    @requests_thread = Thread.new { @pump.run }
+    @requests_thread = Thread.new { @cmd_sender.run }
     @events_thread   = Thread.new do
       EventLoop.new(host: HOST, port: PORT, logger: @logger, &install_event_handlers).run
     end
