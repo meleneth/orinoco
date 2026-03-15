@@ -68,3 +68,5 @@ gem "rspec-rails", "~> 8.0", groups: [:development, :test]
 gem "foreman", "~> 0.90.0"
 
 gem "obsws", "~> 0.6.2"
+gem "aws-sdk-sqs", "~> 1.111"
+gem "aws-sdk-sns", "~> 1.112"
