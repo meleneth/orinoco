@@ -1,3 +1,4 @@
+require "base64"
 require "cgi"
 
 class DioramaImageValue
@@ -188,6 +189,11 @@ class DioramaImageValue
       errors << "inline raster images must use base64 encoding"
     end
 
+    if raster? && encoding == "base64" && !valid_base64_data?
+      errors << "inline raster images must use base64 encoding"
+      errors << "inline raster images must contain valid base64 data"
+    end
+
     errors
   end
 
@@ -203,5 +209,14 @@ class DioramaImageValue
 
     # TODO: Run SVG sanitization and return security findings.
     []
+  end
+
+  def valid_base64_data?
+    return false if data.blank?
+
+    Base64.strict_decode64(data)
+    true
+  rescue ArgumentError
+    false
   end
 end

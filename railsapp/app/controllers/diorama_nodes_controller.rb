@@ -15,9 +15,9 @@ class DioramaNodesController < ApplicationController
 
   def update
     load_editor
-    editor.assign_attributes(node_params)
+    @editor.assign_attributes(node_params)
 
-    if editor.save
+    if @editor.save
       redirect_to diorama_node_path(@diorama, @node), notice: "#{@node.name} updated."
     else
       render :show, status: :unprocessable_entity

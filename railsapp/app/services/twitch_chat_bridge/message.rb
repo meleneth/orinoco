@@ -11,11 +11,22 @@ module TwitchChatBridge
       public_send("#{key}=",val)
     end
 
-    def initialize(tags:, twitch_emotes:, name:, txt:)
+    def initialize(tags:, twitch_emotes: nil, emotes: nil, name:, txt:)
       @tags = tags || {}
-      @twitch_emotes = twitch_emotes || []
+      @twitch_emotes = twitch_emotes || emotes || []
       @name = name
       @txt = txt
+    end
+
+    def emotes
+      twitch_emotes.map do |emote|
+        {
+          id: emote[:id] || emote["id"],
+          url: emote[:url] || emote["url"],
+          start: emote[:start] || emote["start"] || emote[:start_idx] || emote["start_idx"],
+          end: emote[:end] || emote["end"] || emote[:end_index] || emote["end_index"]
+        }
+      end
     end
 
     def display_name
@@ -26,6 +37,7 @@ module TwitchChatBridge
       {
         tags: tags,
         twitch_emotes: twitch_emotes,
+        emotes: emotes,
         name: name,
         txt: txt,
         display_name: display_name
@@ -41,7 +53,7 @@ module TwitchChatBridge
 
       new(
         tags: data.fetch(:tags, {}),
-        twitch_emotes: data.fetch(:twitch_emotes, []),
+        twitch_emotes: data.fetch(:twitch_emotes, data.fetch(:emotes, [])),
         name: data.fetch(:name),
         txt: data.fetch(:txt)
       )
