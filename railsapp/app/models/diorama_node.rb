@@ -35,4 +35,8 @@ class DioramaNode < ApplicationRecord
   def wrapper
     DioramaNodeTypes.wrap(self)
   end
+
+  def to_param
+    slug
+  end
 end

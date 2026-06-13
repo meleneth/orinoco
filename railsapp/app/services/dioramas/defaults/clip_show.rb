@@ -11,6 +11,10 @@ module Dioramas
         new.create!
       end
 
+      def self.find_or_create!
+        Diorama.find_by(slug: DIORAMA_ATTRIBUTES[:slug]) || create!
+      end
+
       def create!
         ActiveRecord::Base.transaction do
           diorama = Diorama.create!(DIORAMA_ATTRIBUTES)

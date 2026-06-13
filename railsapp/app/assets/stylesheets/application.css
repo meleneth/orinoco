@@ -8,3 +8,22 @@
  *
  * Consider organizing styles into separate files for maintainability.
  */
+
+.diorama-node-editor-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .diorama-node-editor-grid {
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 5fr) minmax(0, 1.5fr);
+  }
+}
+
+.diorama-node-editor-panel {
+  min-width: 0;
+}
+
+.diorama-node-editor-main {
+  min-width: 0;
+}

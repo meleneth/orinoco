@@ -1,0 +1,69 @@
+<% content_for :title, "Dioramas" %>
+
+<div class="mx-auto w-full max-w-6xl py-8">
+  <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <h1 class="text-3xl font-semibold tracking-tight">Dioramas</h1>
+      <p class="mt-2 max-w-2xl text-sm text-slate-600 dark:text-slate-400">
+        User-editable no-code affordance graphs. Open a diorama to inspect its nodes, then edit the current node through a typed form.
+      </p>
+    </div>
+
+    <% if @default_clip_show.nil? %>
+      <%= button_to "Create default Clip Show",
+        bootstrap_default_dioramas_path,
+        method: :post,
+        class: "inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-500" %>
+    <% end %>
+  </div>
+
+  <% if notice.present? %>
+    <p class="mb-4 rounded-md bg-green-50 px-3 py-2 text-sm font-medium text-green-700 dark:bg-green-950 dark:text-green-300"><%= notice %></p>
+  <% end %>
+
+  <% if @dioramas.empty? %>
+    <div class="rounded-lg border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+      No dioramas yet.
+    </div>
+  <% else %>
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <% @dioramas.each do |diorama| %>
+        <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-50">
+                <%= link_to diorama.name, diorama_path(diorama), class: "hover:underline" %>
+              </h2>
+              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400"><%= diorama.slug %></p>
+            </div>
+
+            <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+              <%= diorama.visibility %>
+            </span>
+          </div>
+
+          <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <dt class="text-slate-500 dark:text-slate-400">Version</dt>
+              <dd class="font-medium text-slate-900 dark:text-slate-100"><%= diorama.version %></dd>
+            </div>
+            <div>
+              <dt class="text-slate-500 dark:text-slate-400">Nodes</dt>
+              <dd class="font-medium text-slate-900 dark:text-slate-100"><%= diorama.nodes.size %></dd>
+            </div>
+          </dl>
+
+          <% if diorama.description.present? %>
+            <p class="mt-4 line-clamp-3 text-sm text-slate-600 dark:text-slate-300"><%= diorama.description %></p>
+          <% end %>
+
+          <div class="mt-5">
+            <%= link_to "Open diorama",
+              diorama_path(diorama),
+              class: "inline-flex items-center rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white" %>
+          </div>
+        </article>
+      <% end %>
+    </div>
+  <% end %>
+</div>

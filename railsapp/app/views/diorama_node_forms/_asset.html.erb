@@ -1,0 +1,87 @@
+<%= render partial: "diorama_node_forms/common_fields", locals: { form: form, editor: editor } %>
+<% image_value = editor.image_value %>
+
+<div class="space-y-2">
+  <%= label_tag "diorama_node_form_asset_type", "Asset type", class: "block text-sm font-medium text-slate-700 dark:text-slate-300" %>
+  <%= select_tag "diorama_node_form[asset_type]",
+    options_for_select([["Image", "image"]], editor.asset_type),
+    include_blank: "Select an asset type",
+    id: "diorama_node_form_asset_type",
+    class: "block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" %>
+</div>
+
+<div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
+  Inline raster images should stay small. SVG data belongs in the textarea below as XML text.
+</div>
+
+<div class="grid gap-4 md:grid-cols-2">
+  <div class="space-y-2">
+    <%= label_tag "diorama_node_form_image_storage", "Image storage", class: "block text-sm font-medium text-slate-700 dark:text-slate-300" %>
+    <%= select_tag "diorama_node_form[image_storage]",
+      options_for_select(DioramaImageValue::SUPPORTED_STORAGE.map { |option| [option, option] }, image_value.storage),
+      include_blank: "Select storage",
+      id: "diorama_node_form_image_storage",
+      class: "block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" %>
+  </div>
+
+  <div class="space-y-2">
+    <%= label_tag "diorama_node_form_image_media_type", "Image media type", class: "block text-sm font-medium text-slate-700 dark:text-slate-300" %>
+    <%= select_tag "diorama_node_form[image_media_type]",
+      options_for_select(DioramaImageValue::SUPPORTED_MEDIA_TYPES.map { |option| [option, option] }, image_value.media_type),
+      include_blank: "Select media type",
+      id: "diorama_node_form_image_media_type",
+      class: "block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" %>
+  </div>
+</div>
+
+<div class="grid gap-4 md:grid-cols-2">
+  <div class="space-y-2">
+    <%= label_tag "diorama_node_form_image_encoding", "Image encoding", class: "block text-sm font-medium text-slate-700 dark:text-slate-300" %>
+    <%= text_field_tag "diorama_node_form[image_encoding]", editor.image_encoding, id: "diorama_node_form_image_encoding", class: "block w-full rounded-md border border-slate-300 bg-white px-3 py-2 font-mono text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" %>
+  </div>
+
+  <div class="space-y-2">
+    <%= label_tag "diorama_node_form_image_asset_ref", "Image asset ref", class: "block text-sm font-medium text-slate-700 dark:text-slate-300" %>
+    <%= text_field_tag "diorama_node_form[image_asset_ref]", editor.image_asset_ref, id: "diorama_node_form_image_asset_ref", class: "block w-full rounded-md border border-slate-300 bg-white px-3 py-2 font-mono text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" %>
+  </div>
+</div>
+
+<div class="space-y-2">
+  <%= label_tag "diorama_node_form_image_data", "Image data", class: "block text-sm font-medium text-slate-700 dark:text-slate-300" %>
+  <%= text_area_tag "diorama_node_form[image_data]", editor.image_data, id: "diorama_node_form_image_data", rows: 6, class: "block w-full rounded-md border border-slate-300 bg-white px-3 py-2 font-mono text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" %>
+</div>
+
+<div class="grid gap-4 md:grid-cols-2">
+  <div class="space-y-2">
+    <%= label_tag "diorama_node_form_image_sha256", "Image sha256", class: "block text-sm font-medium text-slate-700 dark:text-slate-300" %>
+    <%= text_field_tag "diorama_node_form[image_sha256]", editor.image_sha256, id: "diorama_node_form_image_sha256", class: "block w-full rounded-md border border-slate-300 bg-white px-3 py-2 font-mono text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" %>
+  </div>
+
+  <div class="space-y-2">
+    <%= label_tag "diorama_node_form_image_byte_size", "Image byte size", class: "block text-sm font-medium text-slate-700 dark:text-slate-300" %>
+    <%= number_field_tag "diorama_node_form[image_byte_size]", editor.image_byte_size, id: "diorama_node_form_image_byte_size", class: "block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" %>
+  </div>
+</div>
+
+<div class="grid gap-4 md:grid-cols-2">
+  <div class="space-y-2">
+    <%= label_tag "diorama_node_form_image_width", "Image width", class: "block text-sm font-medium text-slate-700 dark:text-slate-300" %>
+    <%= number_field_tag "diorama_node_form[image_width]", editor.image_width, id: "diorama_node_form_image_width", class: "block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" %>
+  </div>
+
+  <div class="space-y-2">
+    <%= label_tag "diorama_node_form_image_height", "Image height", class: "block text-sm font-medium text-slate-700 dark:text-slate-300" %>
+    <%= number_field_tag "diorama_node_form[image_height]", editor.image_height, id: "diorama_node_form_image_height", class: "block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" %>
+  </div>
+</div>
+
+<% if editor.inline_svg_preview? %>
+  <div class="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-950">
+    <p class="text-sm font-medium text-slate-700 dark:text-slate-300">Inline preview</p>
+    <div class="mt-3 max-w-full overflow-auto rounded-md border border-slate-200 bg-white p-3 dark:border-slate-800">
+      <%= image_tag image_value.data_url, alt: editor.name, class: "max-h-64 max-w-full" %>
+    </div>
+  </div>
+<% end %>
+
+<%= render partial: "diorama_node_forms/advanced_data", locals: { editor: editor } %>

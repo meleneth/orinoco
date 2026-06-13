@@ -6,4 +6,8 @@ class Diorama < ApplicationRecord
 
   validates :slug, :name, :version, :visibility, presence: true
   validates :slug, uniqueness: true, format: { with: SLUG_FORMAT }
+
+  def to_param
+    slug
+  end
 end

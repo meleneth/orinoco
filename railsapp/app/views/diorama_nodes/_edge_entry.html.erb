@@ -1,0 +1,21 @@
+<% linked_node = entry[:node] %>
+<% edge = entry[:edge] %>
+
+<article class="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950">
+  <div class="flex items-start justify-between gap-2">
+    <div class="min-w-0">
+      <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400"><%= edge[:kind] %></p>
+      <h3 class="mt-1 truncate text-sm font-medium text-slate-900 dark:text-slate-100">
+        <%= link_to linked_node[:name], diorama_node_path(diorama, linked_node[:slug]), class: "hover:underline" %>
+      </h3>
+      <p class="mt-1 truncate font-mono text-xs text-slate-500 dark:text-slate-400"><%= linked_node[:slug] %></p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400"><%= linked_node[:kind] %></p>
+    </div>
+
+    <% if linked_node[:validation_state].present? %>
+      <span class="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+        Validated
+      </span>
+    <% end %>
+  </div>
+</article>

@@ -1,0 +1,12 @@
+<%= render partial: "diorama_node_forms/common_fields", locals: { form: form, editor: editor } %>
+
+<div class="space-y-2">
+  <%= label_tag "diorama_node_form_event", "Event", class: "block text-sm font-medium text-slate-700 dark:text-slate-300" %>
+  <%= select_tag "diorama_node_form[event]",
+    options_for_select(editor.event_options.map { |option| [option, option] }, editor.event),
+    include_blank: "Select an event",
+    id: "diorama_node_form_event",
+    class: "block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" %>
+</div>
+
+<%= render partial: "diorama_node_forms/advanced_data", locals: { editor: editor } %>

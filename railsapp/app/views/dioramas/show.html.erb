@@ -1,0 +1,64 @@
+<% content_for :title, @diorama.name %>
+
+<div class="mx-auto w-full max-w-7xl py-8">
+  <div class="mb-6 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+    <div>
+      <p class="text-sm font-medium uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Diorama</p>
+      <h1 class="mt-2 text-3xl font-semibold tracking-tight text-slate-950 dark:text-slate-50"><%= @diorama.name %></h1>
+      <p class="mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-400"><%= @diorama.description.presence || "Graph-backed affordance configuration." %></p>
+    </div>
+
+    <div class="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div class="grid grid-cols-2 gap-x-6 gap-y-2">
+        <div>
+          <div class="text-slate-500 dark:text-slate-400">Slug</div>
+          <div class="font-medium text-slate-900 dark:text-slate-100"><%= @diorama.slug %></div>
+        </div>
+        <div>
+          <div class="text-slate-500 dark:text-slate-400">Version</div>
+          <div class="font-medium text-slate-900 dark:text-slate-100"><%= @diorama.version %></div>
+        </div>
+        <div>
+          <div class="text-slate-500 dark:text-slate-400">Visibility</div>
+          <div class="font-medium text-slate-900 dark:text-slate-100"><%= @diorama.visibility %></div>
+        </div>
+        <div>
+          <div class="text-slate-500 dark:text-slate-400">Nodes</div>
+          <div class="font-medium text-slate-900 dark:text-slate-100"><%= @diorama.nodes.size %></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <% if @root_nodes.any? %>
+    <section class="mb-6">
+      <div class="mb-3 flex items-center justify-between">
+        <h2 class="text-lg font-semibold text-slate-950 dark:text-slate-50">Root affordance nodes</h2>
+        <p class="text-sm text-slate-500 dark:text-slate-400"><%= pluralize(@root_nodes.size, "node") %></p>
+      </div>
+
+      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <% @root_nodes.each do |node| %>
+          <%= render "node_card", diorama: @diorama, node: node %>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+
+  <section class="space-y-6">
+    <% @nodes_by_kind.each do |kind, nodes| %>
+      <div>
+        <div class="mb-3 flex items-center justify-between">
+          <h2 class="text-lg font-semibold capitalize text-slate-950 dark:text-slate-50"><%= kind %></h2>
+          <p class="text-sm text-slate-500 dark:text-slate-400"><%= pluralize(nodes.size, "node") %></p>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <% nodes.each do |node| %>
+            <%= render "node_card", diorama: @diorama, node: node %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </section>
+</div>

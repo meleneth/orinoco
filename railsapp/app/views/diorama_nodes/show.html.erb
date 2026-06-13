@@ -1,0 +1,90 @@
+<% content_for :title, "#{@diorama.name} - #{@node.name}" %>
+
+<div class="mx-auto w-full max-w-7xl py-8">
+  <div class="mb-6 flex flex-col gap-2">
+    <div class="flex items-center gap-3">
+      <%= link_to @diorama.name, diorama_path(@diorama), class: "text-sm font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100" %>
+      <span class="text-slate-400">/</span>
+      <span class="text-sm text-slate-500 dark:text-slate-400">Node editor</span>
+    </div>
+    <h1 class="text-3xl font-semibold tracking-tight text-slate-950 dark:text-slate-50"><%= @node.name %></h1>
+    <p class="max-w-3xl text-sm text-slate-600 dark:text-slate-400"><%= @node.description.presence || "Edit this node through a typed form. Graph adjacency stays visible on both sides." %></p>
+  </div>
+
+  <% if notice.present? %>
+    <p class="mb-4 rounded-md bg-green-50 px-3 py-2 text-sm font-medium text-green-700 dark:bg-green-950 dark:text-green-300"><%= notice %></p>
+  <% end %>
+
+  <div class="diorama-node-editor-grid">
+    <aside class="diorama-node-editor-panel">
+      <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <h2 class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Incoming</h2>
+        <div class="mt-4 space-y-3">
+          <% if @neighborhood[:incoming].empty? %>
+            <p class="text-sm text-slate-500 dark:text-slate-400">No incoming links.</p>
+          <% else %>
+            <% @neighborhood[:incoming].each do |entry| %>
+              <%= render "edge_entry", diorama: @diorama, entry: entry, direction: :incoming %>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    </aside>
+
+    <main class="diorama-node-editor-main">
+      <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-800 dark:bg-blue-950 dark:text-blue-200"><%= @node.kind %></span>
+          <span class="font-mono text-sm text-slate-500 dark:text-slate-400"><%= @node.slug %></span>
+        </div>
+
+        <% if @editor.validation_state.present? %>
+          <div class="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
+            <div class="font-medium">Validation state</div>
+            <pre class="mt-2 overflow-x-auto whitespace-pre-wrap font-mono text-xs"><%= JSON.pretty_generate(@editor.validation_state) %></pre>
+          </div>
+        <% end %>
+
+        <% if @editor.errors.any? %>
+          <div class="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
+            <div class="font-semibold"><%= pluralize(@editor.errors.count, "error") %> prevented saving:</div>
+            <ul class="mt-2 list-disc space-y-1 pl-5">
+              <% @editor.errors.full_messages.each do |message| %>
+                <li><%= message %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+
+        <%= form_with model: @editor,
+          scope: :diorama_node_form,
+          url: diorama_node_path(@diorama, @node),
+          method: :patch,
+          class: "mt-5 space-y-6" do |form| %>
+          <%= render partial: @editor.partial_name, locals: { form: form, editor: @editor } %>
+
+          <div class="flex items-center gap-3">
+            <%= form.submit "Save node",
+              class: "inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-500" %>
+            <%= link_to "Cancel", diorama_path(@diorama), class: "text-sm font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100" %>
+          </div>
+        <% end %>
+      </div>
+    </main>
+
+    <aside class="diorama-node-editor-panel">
+      <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <h2 class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Outgoing</h2>
+        <div class="mt-4 space-y-3">
+          <% if @neighborhood[:outgoing].empty? %>
+            <p class="text-sm text-slate-500 dark:text-slate-400">No outgoing links.</p>
+          <% else %>
+            <% @neighborhood[:outgoing].each do |entry| %>
+              <%= render "edge_entry", diorama: @diorama, entry: entry, direction: :outgoing %>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>

@@ -1,4 +1,16 @@
 Rails.application.routes.draw do
+  resources :dioramas,
+            only: [ :index, :show ],
+            format: false,
+            constraints: { id: /[^\/]+/ } do
+    post :bootstrap_default, on: :collection
+    resources :nodes,
+              controller: "diorama_nodes",
+              only: [ :show, :edit, :update ],
+              format: false,
+              constraints: { id: /[^\/]+/, diorama_id: /[^\/]+/ }
+  end
+
   resources :twitch_configs
   get  "chat/index"
   get  "basic_setup/index"

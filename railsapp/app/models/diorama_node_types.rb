@@ -44,16 +44,17 @@ module DioramaNodeTypes
   class Asset < Base
     def image_value
       return nil unless data["asset_type"] == "image"
-      return nil unless data["image_value"].is_a?(Hash)
+      image = data["image"] || data["image_value"]
+      return nil unless image.is_a?(Hash)
 
-      DioramaImageValue.new(data["image_value"])
+      DioramaImageValue.new(image)
     end
 
     def validate_data
       image = image_value
       return [] unless image
 
-      image.validation_errors.map { |error| "image_value #{error}" }
+      image.validation_errors.map { |error| "image #{error}" }
     end
   end
 

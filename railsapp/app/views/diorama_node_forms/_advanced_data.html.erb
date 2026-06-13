@@ -1,0 +1,14 @@
+<% if editor.raw_data_editable? %>
+  <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950">
+    <p class="text-sm font-medium text-slate-700 dark:text-slate-300">Current data</p>
+    <pre class="mt-2 overflow-x-auto whitespace-pre-wrap font-mono text-xs text-slate-600 dark:text-slate-400"><%= editor.pretty_data %></pre>
+  </div>
+<% else %>
+  <details class="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950">
+    <summary class="cursor-pointer text-sm font-medium text-slate-700 dark:text-slate-300">Advanced JSON</summary>
+    <div class="mt-3">
+      <p class="text-sm text-slate-500 dark:text-slate-400">Read-only for now. Typed controls are the primary editor surface.</p>
+      <pre class="mt-3 overflow-x-auto whitespace-pre-wrap font-mono text-xs text-slate-600 dark:text-slate-400"><%= editor.pretty_data %></pre>
+    </div>
+  </details>
+<% end %>
