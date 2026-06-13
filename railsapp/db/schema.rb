@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_15_053702) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_13_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -21,6 +21,51 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_15_053702) do
     t.string "name", null: false
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_affordance_configs_on_name", unique: true
+  end
+
+  create_table "diorama_edges", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.jsonb "data", default: {}, null: false
+    t.uuid "diorama_id", null: false
+    t.uuid "from_node_id", null: false
+    t.string "kind", null: false
+    t.uuid "to_node_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["diorama_id", "from_node_id", "to_node_id", "kind"], name: "idx_diorama_edges_unique_diorama_from_to_kind", unique: true
+    t.index ["diorama_id", "from_node_id"], name: "index_diorama_edges_on_diorama_id_and_from_node_id"
+    t.index ["diorama_id", "kind"], name: "index_diorama_edges_on_diorama_id_and_kind"
+    t.index ["diorama_id", "to_node_id"], name: "index_diorama_edges_on_diorama_id_and_to_node_id"
+    t.index ["diorama_id"], name: "index_diorama_edges_on_diorama_id"
+    t.index ["from_node_id"], name: "index_diorama_edges_on_from_node_id"
+    t.index ["to_node_id"], name: "index_diorama_edges_on_to_node_id"
+  end
+
+  create_table "diorama_nodes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.jsonb "data", default: {}, null: false
+    t.text "description"
+    t.uuid "diorama_id", null: false
+    t.string "kind", null: false
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.datetime "updated_at", null: false
+    t.jsonb "validation_state", default: {}, null: false
+    t.index ["data"], name: "index_diorama_nodes_on_data", using: :gin
+    t.index ["diorama_id", "kind"], name: "index_diorama_nodes_on_diorama_id_and_kind"
+    t.index ["diorama_id", "slug"], name: "index_diorama_nodes_on_diorama_id_and_slug", unique: true
+    t.index ["diorama_id"], name: "index_diorama_nodes_on_diorama_id"
+  end
+
+  create_table "dioramas", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.jsonb "metadata", default: {}, null: false
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.datetime "updated_at", null: false
+    t.string "version", default: "0.1.0", null: false
+    t.string "visibility", default: "private", null: false
+    t.index ["slug"], name: "index_dioramas_on_slug", unique: true
   end
 
   create_table "obs_configs", force: :cascade do |t|
@@ -35,4 +80,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_15_053702) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
+
+  add_foreign_key "diorama_edges", "diorama_nodes", column: "from_node_id", on_delete: :cascade
+  add_foreign_key "diorama_edges", "diorama_nodes", column: "to_node_id", on_delete: :cascade
+  add_foreign_key "diorama_edges", "dioramas", on_delete: :cascade
+  add_foreign_key "diorama_nodes", "dioramas", on_delete: :cascade
 end
