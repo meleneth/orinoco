@@ -109,7 +109,7 @@ module ObsBridge
     end
 
     def close
-      true
+      @events.close
     end
 
     private
