@@ -193,5 +193,216 @@ RSpec.describe DioramaNodeForms do
         "encoding" => "utf8"
       )
     end
+
+    it "accepts valid overlay text box config" do
+      node = DioramaNode.create!(
+        diorama: diorama,
+        slug: "asset.overlay.node",
+        kind: "asset",
+        name: "Overlay Asset"
+      )
+
+      form = described_class.new(node)
+      form.assign_attributes(
+        name: "Updated Overlay Asset",
+        asset_type: "overlay_text_box",
+        renderer_key: "text_box",
+        element_key: "clip_countdown",
+        style_preset: "obs_panel",
+        content_template: "Next clip in {{timers.clip_countdown.remaining_label}}",
+        timer_key: "clip_countdown",
+        duration_ms: "30000",
+        mode: "countdown",
+        starts_on: "clip_show.started",
+        stops_on: "clip_show.ended",
+        tick_rate_ms: "250"
+      )
+
+      expect(form).to be_valid
+      expect(form.save).to eq(true)
+      expect(node.reload.data).to eq(
+        "asset_type" => "overlay_text_box",
+        "renderer_key" => "text_box",
+        "element_key" => "clip_countdown",
+        "style_preset" => "obs_panel",
+        "content_template" => "Next clip in {{timers.clip_countdown.remaining_label}}",
+        "timer" => {
+          "timer_key" => "clip_countdown",
+          "duration_ms" => 30000,
+          "mode" => "countdown",
+          "starts_on" => "clip_show.started",
+          "stops_on" => "clip_show.ended",
+          "tick_rate_ms" => 250
+        }
+      )
+    end
+
+    it "rejects an unknown renderer key" do
+      node = DioramaNode.create!(
+        diorama: diorama,
+        slug: "asset.invalid.renderer",
+        kind: "asset",
+        name: "Overlay Asset"
+      )
+
+      form = described_class.new(node)
+      form.assign_attributes(
+        name: "Updated Overlay Asset",
+        asset_type: "overlay_text_box",
+        renderer_key: "Kernel",
+        element_key: "clip_countdown",
+        style_preset: "obs_panel",
+        content_template: "Next clip in {{timers.clip_countdown.remaining_label}}"
+      )
+
+      expect(form).not_to be_valid
+      expect(form.errors.full_messages.join(" ")).to include("renderer_key is invalid")
+    end
+  end
+
+  describe DioramaNodeForms::Placement do
+    it "accepts valid fixed overlay position config" do
+      node = DioramaNode.create!(
+        diorama: diorama,
+        slug: "placement.node",
+        kind: "placement",
+        name: "Placement Node"
+      )
+
+      form = described_class.new(node)
+      form.assign_attributes(
+        name: "Updated Placement",
+        placement_type: "fixed_overlay_position",
+        anchor: "bottom_right",
+        x: "24",
+        y: "24",
+        unit: "px",
+        width: "320",
+        height: "80",
+        size_unit: "px"
+      )
+
+      expect(form).to be_valid
+      expect(form.save).to eq(true)
+      expect(node.reload.data).to eq(
+        "placement_type" => "fixed_overlay_position",
+        "anchor" => "bottom_right",
+        "position" => {
+          "x" => 24,
+          "y" => 24,
+          "unit" => "px"
+        },
+        "size" => {
+          "width" => 320,
+          "height" => 80,
+          "size_unit" => "px"
+        }
+      )
+    end
+
+    it "rejects invalid anchor and unit values" do
+      node = DioramaNode.create!(
+        diorama: diorama,
+        slug: "placement.invalid.node",
+        kind: "placement",
+        name: "Placement Node"
+      )
+
+      form = described_class.new(node)
+      form.assign_attributes(
+        name: "Updated Placement",
+        placement_type: "fixed_overlay_position",
+        anchor: "north",
+        x: "24",
+        y: "24",
+        unit: "em",
+        width: "320",
+        height: "80",
+        size_unit: "px"
+      )
+
+      expect(form).not_to be_valid
+      expect(form.errors.full_messages.join(" ")).to include("anchor is invalid")
+      expect(form.errors.full_messages.join(" ")).to include("unit is invalid")
+    end
+  end
+
+  describe DioramaNodeForms::Binding do
+    it "accepts valid safe text template config" do
+      node = DioramaNode.create!(
+        diorama: diorama,
+        slug: "binding.node",
+        kind: "binding",
+        name: "Binding Node"
+      )
+
+      form = described_class.new(node)
+      form.assign_attributes(
+        name: "Updated Binding",
+        binding_type: "safe_text_template",
+        template: "Next clip in {{timers.clip_countdown.remaining_label}}",
+        sample_context_json: JSON.pretty_generate(
+          "timers" => {
+            "clip_countdown" => {
+              "remaining_label" => "00:30"
+            }
+          }
+        )
+      )
+
+      expect(form).to be_valid
+      expect(form.save).to eq(true)
+      expect(node.reload.data).to eq(
+        "binding_type" => "safe_text_template",
+        "template" => "Next clip in {{timers.clip_countdown.remaining_label}}",
+        "sample_context" => {
+          "timers" => {
+            "clip_countdown" => {
+              "remaining_label" => "00:30"
+            }
+          }
+        }
+      )
+    end
+
+    it "rejects invalid placeholders" do
+      node = DioramaNode.create!(
+        diorama: diorama,
+        slug: "binding.invalid.node",
+        kind: "binding",
+        name: "Binding Node"
+      )
+
+      form = described_class.new(node)
+      form.assign_attributes(
+        name: "Updated Binding",
+        binding_type: "safe_text_template",
+        template: "{{foo()}}",
+        sample_context_json: "{}"
+      )
+
+      expect(form).not_to be_valid
+      expect(form.errors.full_messages.join(" ")).to include("invalid placeholder")
+    end
+
+    it "rejects invalid sample context JSON" do
+      node = DioramaNode.create!(
+        diorama: diorama,
+        slug: "binding.invalid.json",
+        kind: "binding",
+        name: "Binding Node"
+      )
+
+      form = described_class.new(node)
+      form.assign_attributes(
+        name: "Updated Binding",
+        binding_type: "safe_text_template",
+        template: "Hello {{viewer.name}}",
+        sample_context_json: "{not json"
+      )
+
+      expect(form).not_to be_valid
+      expect(form.errors.full_messages.join(" ")).to include("Sample context json must be valid JSON")
+    end
   end
 end

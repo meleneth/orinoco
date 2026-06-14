@@ -31,7 +31,7 @@ RSpec.describe Dioramas::EdgeKinds do
     end
 
     it "omits unrelated buckets for other node kinds" do
-      expect(described_class.creatable_outgoing_edge_kinds_for("effect")).to eq([])
+      expect(described_class.creatable_outgoing_edge_kinds_for("effect")).to eq([ "provides" ])
     end
   end
 

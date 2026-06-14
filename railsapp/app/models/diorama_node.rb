@@ -10,6 +10,7 @@ class DioramaNode < ApplicationRecord
     asset
     placement
     binding
+    fallback
     capability
     test_event
     runtime_trace

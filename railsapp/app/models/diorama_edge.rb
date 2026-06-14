@@ -6,6 +6,8 @@ class DioramaEdge < ApplicationRecord
     selects
     guards
     binds
+    provides
+    places
     requires
     previews
     traces

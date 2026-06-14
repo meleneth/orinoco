@@ -81,6 +81,61 @@ module Dioramas
                 "enabled" => false
               }
             }
+          ),
+          "asset.clip_countdown_text_box" => diorama.nodes.create!(
+            slug: "asset.clip_countdown_text_box",
+            kind: "asset",
+            name: "Clip Countdown Text Box",
+            data: {
+              "asset_type" => "overlay_text_box",
+              "renderer_key" => "text_box",
+              "element_key" => "clip_countdown",
+              "style_preset" => "obs_panel",
+              "content_template" => "Next clip in {{timers.clip_countdown.remaining_label}}",
+              "timer" => {
+                "timer_key" => "clip_countdown",
+                "duration_ms" => 30_000,
+                "mode" => "countdown",
+                "starts_on" => "clip_show.started",
+                "stops_on" => "clip_show.ended",
+                "tick_rate_ms" => 250
+              }
+            }
+          ),
+          "placement.clip_countdown_bottom_right" => diorama.nodes.create!(
+            slug: "placement.clip_countdown_bottom_right",
+            kind: "placement",
+            name: "Clip Countdown Bottom Right",
+            data: {
+              "placement_type" => "fixed_overlay_position",
+              "anchor" => "bottom_right",
+              "position" => {
+                "x" => 24,
+                "y" => 24,
+                "unit" => "px"
+              },
+              "size" => {
+                "width" => 320,
+                "height" => 80,
+                "size_unit" => "px"
+              }
+            }
+          ),
+          "binding.clip_countdown_template" => diorama.nodes.create!(
+            slug: "binding.clip_countdown_template",
+            kind: "binding",
+            name: "Clip Countdown Template",
+            data: {
+              "binding_type" => "safe_text_template",
+              "template" => "Next clip in {{timers.clip_countdown.remaining_label}}",
+              "sample_context" => {
+                "timers" => {
+                  "clip_countdown" => {
+                    "remaining_label" => "00:30"
+                  }
+                }
+              }
+            }
           )
         }
       end
@@ -124,6 +179,30 @@ module Dioramas
           from_slug: "rule.hide_clip_when_playback_ends",
           to_slug: "effect.disable_scene_item",
           kind: "executes"
+        )
+
+        create_edge!(
+          diorama: diorama,
+          nodes: nodes,
+          from_slug: "effect.disable_scene_item",
+          to_slug: "asset.clip_countdown_text_box",
+          kind: "provides"
+        )
+
+        create_edge!(
+          diorama: diorama,
+          nodes: nodes,
+          from_slug: "asset.clip_countdown_text_box",
+          to_slug: "placement.clip_countdown_bottom_right",
+          kind: "places"
+        )
+
+        create_edge!(
+          diorama: diorama,
+          nodes: nodes,
+          from_slug: "asset.clip_countdown_text_box",
+          to_slug: "binding.clip_countdown_template",
+          kind: "binds"
         )
       end
 

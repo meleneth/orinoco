@@ -53,6 +53,22 @@ RSpec.describe "Dioramas", type: :request do
       expect(response.body).to include("rule.hide_clip_when_playback_ends")
     end
 
+    it "shows overlay child add links from effect and asset nodes" do
+      effect_node = diorama.nodes.find_by!(slug: "effect.disable_scene_item")
+      asset_node = diorama.nodes.find_by!(slug: "asset.clip_countdown_text_box")
+
+      get diorama_node_path(diorama, effect_node)
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include("Add asset")
+
+      get diorama_node_path(diorama, asset_node)
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include("Add placement")
+      expect(response.body).to include("Add binding")
+    end
+
     it "allows editing the trigger event" do
       node = diorama.nodes.find_by!(slug: "trigger.obs_media_input_playback_ended")
 
@@ -94,10 +110,120 @@ RSpec.describe "Dioramas", type: :request do
       )
     end
 
+    it "allows editing the overlay text box asset" do
+      node = diorama.nodes.find_by!(slug: "asset.clip_countdown_text_box")
+
+      patch diorama_node_path(diorama, node), params: {
+        diorama_node_form: {
+          name: node.name,
+          description: node.description,
+          asset_type: "overlay_text_box",
+          renderer_key: "text_box",
+          element_key: "clip_countdown",
+          style_preset: "obs_panel",
+          content_template: "Next clip in {{timers.clip_countdown.remaining_label}}",
+          timer_key: "clip_countdown",
+          duration_ms: "30000",
+          mode: "countdown",
+          starts_on: "clip_show.started",
+          stops_on: "clip_show.ended",
+          tick_rate_ms: "250"
+        }
+      }
+
+      expect(response).to redirect_to(diorama_node_path(diorama, node))
+
+      expect(node.reload.data).to eq(
+        "asset_type" => "overlay_text_box",
+        "renderer_key" => "text_box",
+        "element_key" => "clip_countdown",
+        "style_preset" => "obs_panel",
+        "content_template" => "Next clip in {{timers.clip_countdown.remaining_label}}",
+        "timer" => {
+          "timer_key" => "clip_countdown",
+          "duration_ms" => 30000,
+          "mode" => "countdown",
+          "starts_on" => "clip_show.started",
+          "stops_on" => "clip_show.ended",
+          "tick_rate_ms" => 250
+        }
+      )
+    end
+
+    it "allows editing the placement config" do
+      node = diorama.nodes.find_by!(slug: "placement.clip_countdown_bottom_right")
+
+      patch diorama_node_path(diorama, node), params: {
+        diorama_node_form: {
+          name: node.name,
+          description: node.description,
+          placement_type: "fixed_overlay_position",
+          anchor: "bottom_right",
+          x: "24",
+          y: "24",
+          unit: "px",
+          width: "320",
+          height: "80",
+          size_unit: "px"
+        }
+      }
+
+      expect(response).to redirect_to(diorama_node_path(diorama, node))
+
+      expect(node.reload.data).to eq(
+        "placement_type" => "fixed_overlay_position",
+        "anchor" => "bottom_right",
+        "position" => {
+          "x" => 24,
+          "y" => 24,
+          "unit" => "px"
+        },
+        "size" => {
+          "width" => 320,
+          "height" => 80,
+          "size_unit" => "px"
+        }
+      )
+    end
+
+    it "allows editing the binding template" do
+      node = diorama.nodes.find_by!(slug: "binding.clip_countdown_template")
+
+      patch diorama_node_path(diorama, node), params: {
+        diorama_node_form: {
+          name: node.name,
+          description: node.description,
+          binding_type: "safe_text_template",
+          template: "Next clip in {{timers.clip_countdown.remaining_label}}",
+          sample_context_json: JSON.pretty_generate(
+            "timers" => {
+              "clip_countdown" => {
+                "remaining_label" => "00:30"
+              }
+            }
+          )
+        }
+      }
+
+      expect(response).to redirect_to(diorama_node_path(diorama, node))
+
+      expect(node.reload.data).to eq(
+        "binding_type" => "safe_text_template",
+        "template" => "Next clip in {{timers.clip_countdown.remaining_label}}",
+        "sample_context" => {
+          "timers" => {
+            "clip_countdown" => {
+              "remaining_label" => "00:30"
+            }
+          }
+        }
+      )
+    end
+
     it "rejects invalid JSON in fallback editor paths" do
       fallback = diorama.nodes.create!(
-        slug: "binding.fallback",
-        kind: "binding",
+        slug: "fallback.raw_json",
+        kind: "fallback",
         name: "Fallback Binding",
         data: { "ok" => true }
       )

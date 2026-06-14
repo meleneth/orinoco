@@ -13,7 +13,9 @@ module Dioramas
 
     RELEVANT_OUTGOING_EDGE_KINDS_BY_NODE_KIND = {
       "affordance" => [ "contains" ],
-      "rule" => [ "uses", "selects", "guards", "executes" ]
+      "rule" => [ "uses", "selects", "guards", "executes" ],
+      "effect" => [ "provides" ],
+      "asset" => [ "places", "binds" ]
     }.freeze
 
     def self.child_kind_for(edge_kind, parent_kind: nil)

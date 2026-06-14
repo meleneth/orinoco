@@ -1,0 +1,69 @@
+<%= render partial: "diorama_node_forms/common_fields", locals: { form: form, editor: editor } %>
+
+<div class="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-200">
+  Fixed overlay placement uses validated anchor, position, and size controls only.
+</div>
+
+<div class="space-y-2">
+  <%= label_tag "diorama_node_form_placement_type", "Placement type", class: "block text-sm font-medium text-slate-700 dark:text-slate-300" %>
+  <%= select_tag "diorama_node_form[placement_type]",
+    options_for_select([["Fixed overlay position", "fixed_overlay_position"]], editor.placement_type.presence || "fixed_overlay_position"),
+    include_blank: false,
+    id: "diorama_node_form_placement_type",
+    class: "block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" %>
+</div>
+
+<div class="grid gap-4 md:grid-cols-2">
+  <div class="space-y-2">
+    <%= label_tag "diorama_node_form_anchor", "Anchor", class: "block text-sm font-medium text-slate-700 dark:text-slate-300" %>
+    <%= select_tag "diorama_node_form[anchor]",
+      options_for_select(Overlay::Position::ANCHORS.map { |option| [option.humanize, option] }, editor.anchor),
+      include_blank: "Select an anchor",
+      id: "diorama_node_form_anchor",
+      class: "block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" %>
+  </div>
+
+  <div class="space-y-2">
+    <%= label_tag "diorama_node_form_unit", "Unit", class: "block text-sm font-medium text-slate-700 dark:text-slate-300" %>
+    <%= select_tag "diorama_node_form[unit]",
+      options_for_select(Overlay::Position::UNITS.map { |option| [option.upcase, option] }, editor.unit.presence || "px"),
+      include_blank: false,
+      id: "diorama_node_form_unit",
+      class: "block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" %>
+  </div>
+</div>
+
+<div class="grid gap-4 md:grid-cols-2">
+  <div class="space-y-2">
+    <%= label_tag "diorama_node_form_x", "X", class: "block text-sm font-medium text-slate-700 dark:text-slate-300" %>
+    <%= number_field_tag "diorama_node_form[x]", editor.x, id: "diorama_node_form_x", class: "block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" %>
+  </div>
+
+  <div class="space-y-2">
+    <%= label_tag "diorama_node_form_y", "Y", class: "block text-sm font-medium text-slate-700 dark:text-slate-300" %>
+    <%= number_field_tag "diorama_node_form[y]", editor.y, id: "diorama_node_form_y", class: "block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" %>
+  </div>
+</div>
+
+<div class="grid gap-4 md:grid-cols-2">
+  <div class="space-y-2">
+    <%= label_tag "diorama_node_form_width", "Width", class: "block text-sm font-medium text-slate-700 dark:text-slate-300" %>
+    <%= number_field_tag "diorama_node_form[width]", editor.width, id: "diorama_node_form_width", class: "block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" %>
+  </div>
+
+  <div class="space-y-2">
+    <%= label_tag "diorama_node_form_height", "Height", class: "block text-sm font-medium text-slate-700 dark:text-slate-300" %>
+    <%= number_field_tag "diorama_node_form[height]", editor.height, id: "diorama_node_form_height", class: "block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" %>
+  </div>
+</div>
+
+<div class="space-y-2">
+  <%= label_tag "diorama_node_form_size_unit", "Size unit", class: "block text-sm font-medium text-slate-700 dark:text-slate-300" %>
+  <%= select_tag "diorama_node_form[size_unit]",
+    options_for_select(Overlay::Size::UNITS.map { |option| [option.humanize, option] }, editor.size_unit.presence || "auto"),
+    include_blank: false,
+    id: "diorama_node_form_size_unit",
+    class: "block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" %>
+</div>
+
+<%= render partial: "diorama_node_forms/advanced_data", locals: { editor: editor } %>
