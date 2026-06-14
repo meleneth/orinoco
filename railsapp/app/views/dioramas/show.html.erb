@@ -44,21 +44,4 @@
       </div>
     </section>
   <% end %>
-
-  <section class="space-y-6">
-    <% @nodes_by_kind.each do |kind, nodes| %>
-      <div>
-        <div class="mb-3 flex items-center justify-between">
-          <h2 class="text-lg font-semibold capitalize text-slate-950 dark:text-slate-50"><%= kind %></h2>
-          <p class="text-sm text-slate-500 dark:text-slate-400"><%= pluralize(nodes.size, "node") %></p>
-        </div>
-
-        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <% nodes.each do |node| %>
-            <%= render "node_card", diorama: @diorama, node: node %>
-          <% end %>
-        </div>
-      </div>
-    <% end %>
-  </section>
 </div>

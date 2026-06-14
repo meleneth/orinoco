@@ -6,8 +6,7 @@ class DioramasController < ApplicationController
 
   def show
     @diorama = Diorama.includes(:nodes, :edges).find_by!(slug: params[:id])
-    @root_nodes = @diorama.nodes.where(kind: "affordance").order(:slug)
-    @nodes_by_kind = grouped_nodes
+    @root_nodes = @diorama.nodes.where(kind: "affordance").includes(:outgoing_edges).order(:slug)
   end
 
   def bootstrap_default
@@ -16,17 +15,4 @@ class DioramasController < ApplicationController
   end
 
   private
-
-  def grouped_nodes
-    ordered = DioramaNode::KINDS.index_with { [] }
-
-    @diorama.nodes.each do |node|
-      next if node.kind == "affordance"
-
-      ordered[node.kind] ||= []
-      ordered[node.kind] << node
-    end
-
-    ordered.transform_values { |nodes| nodes.sort_by(&:slug) }.reject { |_kind, nodes| nodes.empty? }
-  end
 end

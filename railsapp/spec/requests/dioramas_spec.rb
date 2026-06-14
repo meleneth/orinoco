@@ -7,6 +7,10 @@ RSpec.describe "Dioramas", type: :request do
     Dioramas::Defaults::ClipShow.find_or_create!
   end
 
+  around do |example|
+    suppress_output { example.run }
+  end
+
   describe "GET /dioramas" do
     it "returns success and lists dioramas" do
       get dioramas_path
@@ -21,16 +25,17 @@ RSpec.describe "Dioramas", type: :request do
   end
 
   describe "GET /dioramas/:id" do
-    it "opens the default Clip Show diorama and groups nodes" do
+    it "opens the default Clip Show diorama and shows only root affordance nodes" do
       get diorama_path(diorama)
 
       expect(response).to have_http_status(:success)
       expect(response.body).to include("Root affordance nodes")
       expect(response.body).to include("affordance.clip_show")
-      expect(response.body).to include("trigger.obs_media_input_playback_ended")
-      expect(response.body).to include("selector.placements_for_input_uuid")
-      expect(response.body).to include("condition.scene_enabled_for_clip_show")
-      expect(response.body).to include("effect.disable_scene_item")
+      expect(response.body).to include("1 child")
+      expect(response.body).not_to include("trigger.obs_media_input_playback_ended")
+      expect(response.body).not_to include("selector.placements_for_input_uuid")
+      expect(response.body).not_to include("condition.scene_enabled_for_clip_show")
+      expect(response.body).not_to include("effect.disable_scene_item")
     end
   end
 
@@ -105,7 +110,7 @@ RSpec.describe "Dioramas", type: :request do
         }
       }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response.body).to include("must be valid JSON")
     end
 

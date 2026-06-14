@@ -11,8 +11,8 @@ module Dioramas
     def call
       {
         current: serialize_node(node),
-        incoming: incoming_entries,
-        outgoing: outgoing_entries
+        incoming: grouped_entries(node.incoming_edges.includes(:from_node), :from_node),
+        outgoing: grouped_entries(node.outgoing_edges.includes(:to_node), :to_node)
       }
     end
 
@@ -20,22 +20,17 @@ module Dioramas
 
     attr_reader :node
 
-    def incoming_entries
-      node.incoming_edges.includes(:from_node).map do |edge|
-        {
-          edge: serialize_edge(edge),
-          node: serialize_node(edge.from_node)
-        }
+    def grouped_entries(edges, linked_association)
+      edges.group_by(&:kind).sort_by { |kind, _edges| kind }.to_h do |kind, grouped_edges|
+        [ kind, grouped_edges.map { |edge| serialize_entry(edge, linked_association) } ]
       end
     end
 
-    def outgoing_entries
-      node.outgoing_edges.includes(:to_node).map do |edge|
-        {
-          edge: serialize_edge(edge),
-          node: serialize_node(edge.to_node)
-        }
-      end
+    def serialize_entry(edge, linked_association)
+      {
+        edge: serialize_edge(edge),
+        node: serialize_node(edge.public_send(linked_association))
+      }
     end
 
     def serialize_node(target)

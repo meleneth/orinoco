@@ -6,7 +6,7 @@ Rails.application.routes.draw do
     post :bootstrap_default, on: :collection
     resources :nodes,
               controller: "diorama_nodes",
-              only: [ :show, :edit, :update ],
+              only: [ :new, :create, :show, :edit, :update ],
               format: false,
               constraints: { id: /[^\/]+/, diorama_id: /[^\/]+/ }
   end

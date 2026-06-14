@@ -86,4 +86,22 @@ RSpec.describe DioramaNode, type: :model do
 
     expect(other_node).to be_valid
   end
+
+  it "generates a deterministic slug suffix when the base slug already exists" do
+    described_class.create!(
+      diorama: diorama,
+      slug: "effect.disable_scene_item",
+      kind: "effect",
+      name: "Disable Scene Item"
+    )
+
+    node = described_class.new(
+      diorama: diorama,
+      kind: "effect",
+      name: "Disable Scene Item"
+    )
+
+    expect(node).to be_valid
+    expect(node.slug).to eq("effect.disable_scene_item_2")
+  end
 end

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "spec_helper"
+require_relative "../../support/suppress_output"
 
 RSpec.describe ObsBridge::ControlApplier do
   let(:state) do
@@ -65,18 +66,20 @@ RSpec.describe ObsBridge::ControlApplier do
   end
 
   it "ignores commands for other bridges" do
-    result = applier.apply(
-      ObsBridge::ControlMessage::Ignored.new(
-        bridge_id: "main",
-        actual_bridge_id: "other",
-        command_id: "abc"
+    suppress_output do
+      result = applier.apply(
+        ObsBridge::ControlMessage::Ignored.new(
+          bridge_id: "main",
+          actual_bridge_id: "other",
+          command_id: "abc"
+        )
       )
-    )
 
-    expect(result).to eq(:ignored)
-    expect(state).not_to have_received(:enable!)
-    expect(state).not_to have_received(:disable!)
-    expect(state).not_to have_received(:capture_all_for)
-    expect(signal_queue).to be_empty
+      expect(result).to eq(:ignored)
+      expect(state).not_to have_received(:enable!)
+      expect(state).not_to have_received(:disable!)
+      expect(state).not_to have_received(:capture_all_for)
+      expect(signal_queue).to be_empty
+    end
   end
 end

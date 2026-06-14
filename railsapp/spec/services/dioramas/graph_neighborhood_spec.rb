@@ -54,7 +54,7 @@ RSpec.describe Dioramas::GraphNeighborhood do
         name: "Rule"
       )
 
-      expect(result[:incoming]).to include(
+      expect(result[:incoming]["uses"]).to include(
         {
           edge: include(
             id: incoming_edge.id,
@@ -70,7 +70,7 @@ RSpec.describe Dioramas::GraphNeighborhood do
         }
       )
 
-      expect(result[:outgoing]).to include(
+      expect(result[:outgoing]["executes"]).to include(
         {
           edge: include(
             id: outgoing_edge.id,

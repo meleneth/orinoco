@@ -1,0 +1,80 @@
+<% content_for :title, "#{@diorama.name} - Add #{@child_kind}" %>
+
+<div class="mx-auto w-full max-w-7xl py-8">
+  <div class="mb-6 flex flex-col gap-2">
+    <div class="flex items-center gap-3">
+      <%= link_to @diorama.name, diorama_path(@diorama), class: "text-sm font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100" %>
+      <span class="text-slate-400">/</span>
+      <%= link_to @parent_node.name, edit_diorama_node_path(@diorama, @parent_node), class: "text-sm font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100" %>
+      <span class="text-slate-400">/</span>
+      <span class="text-sm text-slate-500 dark:text-slate-400">Add child node</span>
+    </div>
+    <h1 class="text-3xl font-semibold tracking-tight text-slate-950 dark:text-slate-50">Add <%= @child_kind %></h1>
+    <p class="max-w-3xl text-sm text-slate-600 dark:text-slate-400">
+      Adding <%= @child_kind %> connected from <%= @parent_node.name %> via <%= @edge_kind %>.
+    </p>
+  </div>
+
+  <div class="diorama-node-editor-grid">
+    <aside class="diorama-node-editor-panel">
+      <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <h2 class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Parent</h2>
+        <div class="mt-4">
+          <%= render "edge_entry",
+            diorama: @diorama,
+            entry: {
+              edge: { kind: @edge_kind },
+              node: {
+                name: @parent_node.name,
+                slug: @parent_node.slug,
+                kind: @parent_node.kind,
+                validation_state: @parent_node.validation_state
+              }
+            },
+            direction: :incoming %>
+        </div>
+      </div>
+    </aside>
+
+    <main class="diorama-node-editor-main">
+      <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-800 dark:bg-blue-950 dark:text-blue-200"><%= @child_kind %></span>
+          <span class="font-mono text-sm text-slate-500 dark:text-slate-400">new node</span>
+        </div>
+
+        <% if @editor.errors.any? %>
+          <div class="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
+            <div class="font-semibold"><%= pluralize(@editor.errors.count, "error") %> prevented saving:</div>
+            <ul class="mt-2 list-disc space-y-1 pl-5">
+              <% @editor.errors.full_messages.each do |message| %>
+                <li><%= message %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+
+        <%= form_with model: @editor,
+          scope: :diorama_node_form,
+          url: diorama_nodes_path(@diorama, parent_node_slug: @parent_node.slug, edge_kind: @edge_kind, kind: @child_kind),
+          method: :post,
+          class: "mt-5 space-y-6" do |form| %>
+          <%= render partial: @editor.partial_name, locals: { form: form, editor: @editor } %>
+
+          <div class="flex items-center gap-3">
+            <%= form.submit "Create node",
+              class: "inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-500" %>
+            <%= link_to "Cancel", edit_diorama_node_path(@diorama, @parent_node), class: "text-sm font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100" %>
+          </div>
+        <% end %>
+      </div>
+    </main>
+
+    <aside class="diorama-node-editor-panel">
+      <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <h2 class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Outgoing</h2>
+        <p class="mt-4 text-sm text-slate-500 dark:text-slate-400">No outgoing links yet. Create the child node first.</p>
+      </div>
+    </aside>
+  </div>
+</div>

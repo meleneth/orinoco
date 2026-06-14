@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "spec_helper"
+require_relative "../../support/suppress_output"
 
 RSpec.describe ObsBridge::Supervisor do
   let(:state) do
@@ -94,24 +95,28 @@ RSpec.describe ObsBridge::Supervisor do
   it "starts the runtime on boot when enabled" do
     allow(state).to receive(:desired_enabled?).and_return(true)
 
-    thread = run_in_thread
+    suppress_output do
+      thread = run_in_thread
 
-    eventually { expect(runtime).to have_received(:start!).once }
+      eventually { expect(runtime).to have_received(:start!).once }
 
-    supervisor.stop!
-    thread.join
+      supervisor.stop!
+      thread.join
+    end
   end
 
   it "starts the runtime on reconcile after enable" do
-    thread = run_in_thread
-    wait_until { supervisor.running? }
+    suppress_output do
+      thread = run_in_thread
+      wait_until { supervisor.running? }
 
-    allow(state).to receive(:desired_enabled?).and_return(true)
-    signal_queue << ObsBridge::Cmd.reconcile
+      allow(state).to receive(:desired_enabled?).and_return(true)
+      signal_queue << ObsBridge::Cmd.reconcile
 
-    eventually { expect(runtime).to have_received(:start!).once }
+      eventually { expect(runtime).to have_received(:start!).once }
 
-    supervisor.stop!
-    thread.join
+      supervisor.stop!
+      thread.join
+    end
   end
 end
