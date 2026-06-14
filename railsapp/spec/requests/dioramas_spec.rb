@@ -54,10 +54,19 @@ RSpec.describe "Dioramas", type: :request do
         "name" => "Clip Show Affordance"
       )
       expect(payload["affordances"].first).not_to have_key("id")
-      expect(payload["edges"].first).to include(
-        "kind" => "contains",
-        "from" => "$.affordances[0]",
-        "to" => "$.rules[0]"
+      expect(payload["edges"]).to include(
+        include(
+          "kind" => "contains",
+          "from" => "$.affordances[0]",
+          "to" => "$.rules[0]"
+        )
+      )
+      expect(payload["edges"]).to include(
+        include(
+          "kind" => "executes",
+          "from" => "$.rules[0]",
+          "to" => "$.effects[0]"
+        )
       )
       expect(payload).not_to have_key("id")
       expect(payload).not_to have_key("diorama_id")
