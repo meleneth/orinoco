@@ -4,6 +4,8 @@ Rails.application.routes.draw do
             format: false,
             constraints: { id: /[^\/]+/ } do
     post :bootstrap_default, on: :collection
+    post :import, on: :collection
+    get :export, on: :member
     resources :nodes,
               controller: "diorama_nodes",
               only: [ :new, :create, :show, :edit, :update ],

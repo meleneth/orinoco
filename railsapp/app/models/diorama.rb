@@ -10,4 +10,21 @@ class Diorama < ApplicationRecord
   def to_param
     slug
   end
+
+  def self.suggested_slug(name)
+    base = slug_segment(name.presence || "diorama")
+    slug = base
+    suffix = 2
+
+    while exists?(slug: slug)
+      slug = "#{base}_#{suffix}"
+      suffix += 1
+    end
+
+    slug
+  end
+
+  def self.slug_segment(value)
+    value.to_s.parameterize(separator: "_").presence || "diorama"
+  end
 end
