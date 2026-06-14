@@ -3,38 +3,121 @@
 require "rails_helper"
 
 RSpec.describe Dioramas::JsonExporter do
-  let!(:diorama) do
-    Dioramas::Defaults::ClipShow.find_or_create!
-  end
+  it "exports a deterministic unified graph with file-local node refs" do
+    diorama = Diorama.create!(
+      slug: "orinoco.graph",
+      name: "Graph",
+      version: "0.1.0",
+      visibility: "private"
+    )
 
-  it "exports dioramas as a path-referenced JSON tree" do
+    effect = diorama.nodes.create!(
+      slug: "effect.shared",
+      kind: "effect",
+      name: "Shared Effect"
+    )
+    affordance = diorama.nodes.create!(
+      slug: "affordance.root",
+      kind: "affordance",
+      name: "Root"
+    )
+    rule = diorama.nodes.create!(
+      slug: "rule.one",
+      kind: "rule",
+      name: "Rule One"
+    )
+    trigger = diorama.nodes.create!(
+      slug: "trigger.one",
+      kind: "trigger",
+      name: "Trigger One"
+    )
+
+    diorama.edges.create!(kind: "contains", from_node: affordance, to_node: rule)
+    diorama.edges.create!(kind: "uses", from_node: rule, to_node: trigger)
+    diorama.edges.create!(kind: "executes", from_node: rule, to_node: effect)
+    diorama.edges.create!(kind: "guards", from_node: rule, to_node: effect)
+
     payload = described_class.new(diorama).as_json
 
-    expect(payload["type"]).to eq("diorama")
-    expect(payload["name"]).to eq("Default Clip Show")
-    expect(payload["affordances"].first).to include(
-      "slug" => "affordance.clip_show",
-      "name" => "Clip Show Affordance"
-    )
-    expect(payload["affordances"].first).not_to have_key("id")
-    expect(payload["rules"].first).to include("slug" => "rule.hide_clip_when_playback_ends")
-    expect(payload["edges"]).to include(
-      include(
-        "kind" => "contains",
-        "from" => "$.affordances[0]",
-        "to" => "$.rules[0]"
-      )
+    expect(payload).to eq(
+      "type" => "diorama",
+      "slug" => "orinoco.graph",
+      "name" => "Graph",
+      "version" => "0.1.0",
+      "visibility" => "private",
+      "nodes" => [
+        {
+          "kind" => "affordance",
+          "slug" => "affordance.root",
+          "name" => "Root",
+          "data" => {}
+        },
+        {
+          "kind" => "rule",
+          "slug" => "rule.one",
+          "name" => "Rule One",
+          "data" => {}
+        },
+        {
+          "kind" => "trigger",
+          "slug" => "trigger.one",
+          "name" => "Trigger One",
+          "data" => {}
+        },
+        {
+          "kind" => "effect",
+          "slug" => "effect.shared",
+          "name" => "Shared Effect",
+          "data" => {}
+        }
+      ],
+      "edges" => [
+        {
+          "kind" => "contains",
+          "from" => "$.nodes[0]",
+          "to" => "$.nodes[1]"
+        },
+        {
+          "kind" => "uses",
+          "from" => "$.nodes[1]",
+          "to" => "$.nodes[2]"
+        },
+        {
+          "kind" => "executes",
+          "from" => "$.nodes[1]",
+          "to" => "$.nodes[3]"
+        },
+        {
+          "kind" => "guards",
+          "from" => "$.nodes[1]",
+          "to" => "$.nodes[3]"
+        }
+      ]
     )
   end
 
-  it "does not leak database identifiers" do
+  it "keeps node export order stable regardless of insertion order" do
+    diorama = Diorama.create!(
+      slug: "orinooc.shuffle",
+      name: "Shuffle",
+      version: "0.1.0",
+      visibility: "private"
+    )
+
+    diorama.nodes.create!(slug: "effect.one", kind: "effect", name: "Effect One")
+    diorama.nodes.create!(slug: "rule.one", kind: "rule", name: "Rule One")
+    diorama.nodes.create!(slug: "affordance.one", kind: "affordance", name: "Affordance One")
+    diorama.nodes.create!(slug: "trigger.one", kind: "trigger", name: "Trigger One")
+
     payload = described_class.new(diorama).as_json
 
-    expect(payload.keys).not_to include("id", "diorama_id")
-    %w[affordances rules triggers selectors conditions effects assets placements bindings fallbacks capabilities test_events runtime_traces].each do |array_key|
-      Array(payload[array_key]).each do |node|
-        expect(node.keys).not_to include("id", "diorama_id", "from_node_id", "to_node_id")
-      end
-    end
+    expect(payload["nodes"].map { |node| [ node["kind"], node["slug"] ] }).to eq(
+      [
+        [ "affordance", "affordance.one" ],
+        [ "rule", "rule.one" ],
+        [ "trigger", "trigger.one" ],
+        [ "effect", "effect.one" ]
+      ]
+    )
   end
 end

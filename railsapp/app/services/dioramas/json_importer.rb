@@ -38,13 +38,7 @@ module Dioramas
 
     def validate_payload!(payload)
       raise ImportError, "import payload must be a diorama" unless payload["type"] == "diorama"
-
-      Dioramas::JsonFormat.array_keys.each do |array_key|
-        value = payload[array_key]
-        next if value.nil?
-        raise ImportError, "#{array_key} must be an array" unless value.is_a?(Array)
-      end
-
+      raise ImportError, "nodes must be an array" unless payload["nodes"].is_a?(Array)
       raise ImportError, "edges must be an array" if payload["edges"].present? && !payload["edges"].is_a?(Array)
     end
 
@@ -64,18 +58,15 @@ module Dioramas
     def create_nodes!(diorama, payload)
       node_lookup = {}
 
-      Dioramas::JsonFormat.array_keys.each do |array_key|
-        kind = Dioramas::JsonFormat.kind_for(array_key)
-        Array(payload[array_key]).each_with_index do |node_payload, index|
-          node = diorama.nodes.create!(
-            slug: node_payload.fetch("slug"),
-            kind: kind,
-            name: node_payload.fetch("name"),
-            description: node_payload["description"],
-            data: deep_dup(node_payload["data"] || {})
-          )
-          node_lookup[Dioramas::JsonFormat.path_for(array_key, index)] = node
-        end
+      Array(payload["nodes"]).each_with_index do |node_payload, index|
+        node = diorama.nodes.create!(
+          slug: node_payload.fetch("slug"),
+          kind: node_payload.fetch("kind"),
+          name: node_payload.fetch("name"),
+          description: node_payload["description"],
+          data: deep_dup(node_payload["data"] || {})
+        )
+        node_lookup[Dioramas::JsonFormat.path_for(index)] = node
       end
 
       node_lookup

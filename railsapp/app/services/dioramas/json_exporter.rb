@@ -13,7 +13,7 @@ module Dioramas
     end
 
     def as_json
-      base_payload.merge(node_payloads).merge("edges" => edge_payloads)
+      base_payload.merge("nodes" => node_payloads, "edges" => edge_payloads)
     end
 
     def to_json(*args)
@@ -34,21 +34,14 @@ module Dioramas
     end
 
     def node_payloads
-      Dioramas::JsonFormat.array_keys.each_with_object({}) do |array_key, payload|
-        payload[array_key] = nodes_for(array_key)
-      end
-    end
-
-    def nodes_for(array_key)
-      kind = Dioramas::JsonFormat.kind_for(array_key)
-
-      diorama.nodes.where(kind: kind).order(:slug).map do |node|
+      ordered_nodes.map do |node|
         serialize_node(node)
       end
     end
 
     def serialize_node(node)
       {
+        "kind" => node.kind,
         "slug" => node.slug,
         "name" => node.name,
         "description" => node.description,
@@ -59,7 +52,9 @@ module Dioramas
     def edge_payloads
       edge_paths = build_edge_paths
 
-      diorama.edges.includes(:from_node, :to_node).order(:id).map do |edge|
+      diorama.edges.includes(:from_node, :to_node).sort_by do |edge|
+        [ edge_paths.fetch(edge.from_node_id), edge_paths.fetch(edge.to_node_id), edge.kind.to_s ]
+      end.map do |edge|
         {
           "kind" => edge.kind,
           "from" => edge_paths.fetch(edge.from_node_id),
@@ -71,14 +66,15 @@ module Dioramas
     def build_edge_paths
       paths = {}
 
-      Dioramas::JsonFormat.array_keys.each do |array_key|
-        kind = Dioramas::JsonFormat.kind_for(array_key)
-        diorama.nodes.where(kind: kind).order(:slug).each_with_index do |node, index|
-          paths[node.id] = Dioramas::JsonFormat.path_for(array_key, index)
-        end
+      ordered_nodes.each_with_index do |node, index|
+        paths[node.id] = Dioramas::JsonFormat.path_for(index)
       end
 
       paths
+    end
+
+    def ordered_nodes
+      @ordered_nodes ||= diorama.nodes.sort_by { |node| Dioramas::JsonFormat.order_key_for(node) }
     end
   end
 end

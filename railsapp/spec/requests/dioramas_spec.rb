@@ -49,27 +49,28 @@ RSpec.describe "Dioramas", type: :request do
       expect(response).to have_http_status(:success)
       expect(response.media_type).to eq("application/json")
       expect(payload["type"]).to eq("diorama")
-      expect(payload["affordances"].first).to include(
+      expect(payload["nodes"].first).to include(
+        "kind" => "affordance",
         "slug" => "affordance.clip_show",
         "name" => "Clip Show Affordance"
       )
-      expect(payload["affordances"].first).not_to have_key("id")
+      expect(payload["nodes"]).not_to be_empty
       expect(payload["edges"]).to include(
         include(
           "kind" => "contains",
-          "from" => "$.affordances[0]",
-          "to" => "$.rules[0]"
+          "from" => "$.nodes[0]",
+          "to" => "$.nodes[1]"
         )
       )
       expect(payload["edges"]).to include(
         include(
           "kind" => "executes",
-          "from" => "$.rules[0]",
-          "to" => "$.effects[0]"
+          "from" => "$.nodes[1]",
+          "to" => "$.nodes[5]"
         )
       )
-      expect(payload).not_to have_key("id")
-      expect(payload).not_to have_key("diorama_id")
+      expect(payload.keys).to include("nodes", "edges")
+      expect(payload.keys).not_to include("id", "diorama_id", "affordances", "rules", "triggers")
     end
   end
 
@@ -337,6 +338,31 @@ RSpec.describe "Dioramas", type: :request do
       expect(imported.slug).not_to eq(diorama.slug)
       expect(imported.nodes.count).to eq(diorama.nodes.count)
       expect(imported.edges.count).to eq(diorama.edges.count)
+    end
+
+    it "imports a diorama under a renamed duplicate name" do
+      json = Dioramas::JsonExporter.new(diorama).to_json
+      imported_name = "#{diorama.name} Copy"
+
+      Tempfile.create(["diorama-export", ".json"]) do |file|
+        file.write(json)
+        file.flush
+        file.close
+
+        uploaded_file = Rack::Test::UploadedFile.new(file.path, "application/json")
+
+        post import_dioramas_path, params: {
+          diorama_import: {
+            file: uploaded_file,
+            name: imported_name
+          }
+        }
+      end
+
+      imported = Diorama.find_by!(name: imported_name)
+
+      expect(response).to redirect_to(diorama_path(imported))
+      expect(imported.slug).not_to eq(diorama.slug)
     end
   end
 end
