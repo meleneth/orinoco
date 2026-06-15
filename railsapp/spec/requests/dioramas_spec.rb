@@ -41,7 +41,7 @@ RSpec.describe "Dioramas", type: :request do
   end
 
   describe "GET /dioramas/:id/export" do
-    it "downloads a JSON export with path-based edge references" do
+    it "downloads a schema_version 1 JSON export with path-based edge references" do
       get export_diorama_path(diorama)
 
       payload = JSON.parse(response.body)
@@ -49,28 +49,38 @@ RSpec.describe "Dioramas", type: :request do
       expect(response).to have_http_status(:success)
       expect(response.media_type).to eq("application/json")
       expect(payload["type"]).to eq("diorama")
+      expect(payload["schema_version"]).to eq("1")
       expect(payload["nodes"].first).to include(
         "kind" => "affordance",
         "slug" => "affordance.clip_show",
-        "name" => "Clip Show Affordance"
+        "name" => "Clip Show Affordance",
+        "data" => {}
       )
-      expect(payload["nodes"]).not_to be_empty
+      expect(payload["nodes"].detect { |node| node["kind"] == "selector" }).to include(
+        "data" => {
+          "selector" => "obs.placements_for_input_uuid",
+          "args" => { "input_uuid" => "{{ event.inputUuid }}" }
+        }
+      )
+      expect(payload["nodes"].detect { |node| node["kind"] == "selector" }).not_to have_key("description")
       expect(payload["edges"]).to include(
         include(
           "kind" => "contains",
           "from" => "$.nodes[0]",
-          "to" => "$.nodes[1]"
+          "to" => "$.nodes[1]",
+          "data" => {}
         )
       )
       expect(payload["edges"]).to include(
         include(
           "kind" => "executes",
           "from" => "$.nodes[1]",
-          "to" => "$.nodes[5]"
+          "to" => "$.nodes[5]",
+          "data" => {}
         )
       )
-      expect(payload.keys).to include("nodes", "edges")
-      expect(payload.keys).not_to include("id", "diorama_id", "affordances", "rules", "triggers")
+      expect(payload.keys).to include("nodes", "edges", "schema_version")
+      expect(payload.keys).not_to include("id", "diorama_id", "affordances", "rules", "triggers", "selectors", "conditions", "effects", "assets", "placements", "bindings", "fallbacks", "capabilities", "test_events", "runtime_traces")
     end
   end
 

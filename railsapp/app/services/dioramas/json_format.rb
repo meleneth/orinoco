@@ -7,13 +7,20 @@ module Dioramas
       "$.nodes[#{index}]"
     end
 
-    def self.parse_path(path)
+    def self.parse_node_ref(path)
       match = NODE_PATH_REGEX.match(path.to_s)
       return nil unless match
 
+      match[:index].to_i
+    end
+
+    def self.parse_path(path)
+      index = parse_node_ref(path)
+      return nil if index.nil?
+
       {
-        "array_key" => match[:array_key],
-        "index" => match[:index].to_i
+        "array_key" => "nodes",
+        "index" => index
       }
     end
 
