@@ -2,11 +2,15 @@
 <div id="chat_message_<%= SecureRandom.hex(8) %>"
   data-controller="ephemeral"
   data-ephemeral-delay-value="5000"
+
+
   class="
+    animate-message 
     bg-blue text-white
     text-left gap-2
     max-w-sm"
-  style="font-size: 25px; line-height: 1.4;"
+  style="font-size: 25px;
+    line-height: 1.4;"
   >
 
   <span class="font-bold" style="color: <%= @message[:tags][:color]%>">
