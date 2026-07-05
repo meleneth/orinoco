@@ -12,6 +12,31 @@ class ChatMessageComponent < ApplicationComponent
   def initialize(message:)
     @message = message
 
+    #parse twitch emotes
+    #QTODO: need to parse twitch emotes FIRST
+    #       but these checks need to go away or be replaced
+    if (message[:twitch_emotes])
+      if (message[:twitch_emotes][0])
+        parts = []
+        last_idx = message[:txt].length
+        message[:twitch_emotes].reverse_each do |emote|
+          url       = emote[:url]
+          start_idx = emote[:start_idx]
+          end_index = emote[:end_index]
+
+          last_half = message[:txt].slice(end_index+1...last_idx)
+
+          parts.unshift(last_half)
+          parts.unshift("<img src='#{url}' style='display: inline;'>".html_safe)
+          last_idx = start_idx
+        end
+
+        parts.unshift(message[:txt].slice(0...last_idx))
+        @message[:txt] = safe_join(parts)
+      end
+    end
+
+
     #parse 7tv emotes
     #QTODO: some emotes are "zero-width", which I guess means they can stack on top of each other
     #       no clue how to do this yet, or even how to detect if they are supposed to be able to
@@ -43,35 +68,6 @@ class ChatMessageComponent < ApplicationComponent
       url_id = ERB::Util.url_encode(id)
       @message[:txt].gsub!(/\b#{Regexp.escape(name)}\b/, "<img src='https://cdn.7tv.app/emote/#{url_id}/2x.webp' style='display: inline;'>".html_safe)
     end
-
-    #parse twitch emotes
-    #QTODO: need to parse twitch emotes FIRST
-    #       but these checks need to go away or be replaced
-    if (!message[:twitch_emotes])
-      return
-    end
-    if (!message[:twitch_emotes][0])
-      return
-    end
-
-    parts = []
-    last_idx = message[:txt].length
-    message[:twitch_emotes].reverse_each do |emote|
-      url       = emote[:url]
-      start_idx = emote[:start_idx]
-      end_index = emote[:end_index]
-
-      last_half = message[:txt].slice(end_index+1...last_idx)
-
-      parts.unshift(last_half)
-      parts.unshift("<img src='#{url}' style='display: inline;'>".html_safe)
-      last_idx = start_idx
-    end
-
-    parts.unshift(message[:txt].slice(0...last_idx))
-    @message[:txt] = safe_join(parts)
-
-
 
   end
 end
