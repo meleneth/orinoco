@@ -1,3 +1,4 @@
+#TODO: delete this? what is this being used for?
 # frozen_string_literal: true
 require 'faye/websocket'
 require 'eventmachine'
@@ -74,6 +75,9 @@ module TwitchIRC
 
       param, new_rest = rest.split(" ", 2)
       params << param
+      #QTODO: I think this is what clears the html
+      #      out of the message?
+      #      need to add more filter parsing here?
       rest = new_rest.to_s.sub(/\A +/, "")
     end
 

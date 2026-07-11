@@ -1,4 +1,6 @@
 # frozen_string_literal: true
+require "faye/websocket"
+# require "net/http"
 
 module TwitchChatBridge
   class IrcMessageParser
@@ -90,6 +92,8 @@ module TwitchChatBridge
       tag_val.split("/", -1).each do |emote|
         emote_id, raw_positions = emote.split(":", 2)
         next if emote_id.blank? || raw_positions.blank?
+
+        emote_id = ERB::Util.url_encode(emote_id)
 
         cdn_url = "https://static-cdn.jtvnw.net/emoticons/v2/"
         out_url = "#{cdn_url}#{emote_id}/default/dark/2.0"
