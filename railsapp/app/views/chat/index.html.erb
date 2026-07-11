@@ -7,7 +7,13 @@
   data-controller="chat-layout"
 >
   <header
-    class="absolute inset-x-0 top-0 z-20 px-4 py-4 bg-slate-950/70 backdrop-blur"
+    class="absolute 
+    top-0
+    z-20
+    px-4
+    py-4
+    bg-slate-950/70
+    backdrop-blur"
     data-chat-layout-target="header"
   >
     <div class="mx-auto flex w-full max-w-6xl flex-col gap-4">
@@ -51,7 +57,21 @@
 
     <div
       id="chat_feed"
-      class="mx-auto flex h-full w-full max-w-6xl flex-col gap-3 overflow-y-auto pr-1"
+      class="
+      <%# mx-auto %>
+      <%# mt-auto %>
+      <%# flex %>
+      flex-col
+      h-full
+      <%# h-screen %>
+      <%# justify-end %>
+      <%# w-full %>
+      <%# max-w-6xl %>
+      gap-5
+      overflow-y-auto
+      <%# pr-1 %>
+      "
+      <%# style="margin-top: 250px" %>
       data-controller="autoscroll"
     >
       <%= render ChatMessageComponent.with_collection(@messages.compact) %>
