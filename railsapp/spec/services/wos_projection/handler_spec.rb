@@ -22,6 +22,7 @@ RSpec.describe WosProjection::Handler do
 
   let(:redis) { WosProjectionSpecRedis.new }
   let(:broadcaster) { class_double(Turbo::StreamsChannel).as_stubbed_const }
+  let(:accepted_word_learner) { instance_double(Wos::AcceptedWordLearner, call: nil) }
   let(:event) do
     Orinoco::Pipeline::Event.build(
       "wos.board.recognized",
@@ -29,7 +30,8 @@ RSpec.describe WosProjection::Handler do
         "screenshot" => { "sourceName" => "Display Capture" },
         "recognition" => {
           "ruleset" => { "mode" => "base", "hidden_letters" => 0, "fake_letters" => 0 },
-          "letters" => [ { "char" => "W" }, { "char" => "O" }, { "char" => "S" } ]
+          "letters" => [ { "char" => "W" }, { "char" => "O" }, { "char" => "S" } ],
+          "solved_words" => [ { "state" => "solved", "correct_word" => "WOW" } ]
         }
       },
       occurred_at: "2026-07-13T08:00:00Z"
@@ -41,10 +43,14 @@ RSpec.describe WosProjection::Handler do
   end
 
   it "persists latest WOS state and updates the WOS overlay layer" do
-    state = described_class.new(redis: redis, broadcaster: broadcaster).call(event)
+    state = described_class.new(redis: redis, broadcaster: broadcaster, accepted_word_learner: accepted_word_learner).call(event)
 
     expect(JSON.parse(redis.values.fetch(Wos::OverlayStateStore::KEY))).to eq(state)
     expect(state).to include("recognized_at" => "2026-07-13T08:00:00Z")
+    expect(accepted_word_learner).to have_received(:call).with(
+      recognition: state.fetch("recognition"),
+      observed_at: "2026-07-13T08:00:00Z"
+    )
     expect(broadcaster).to have_received(:broadcast_update_to).with(
       "overlay:default",
       target: "overlay_layer_wos_brain",

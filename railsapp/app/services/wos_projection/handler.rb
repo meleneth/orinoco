@@ -1,20 +1,33 @@
 # frozen_string_literal: true
 
+require_relative "../wos/accepted_word_learner"
+
 module WosProjection
   class Handler
-    def initialize(redis:, broadcaster: Turbo::StreamsChannel)
+    def initialize(redis:, broadcaster: Turbo::StreamsChannel, accepted_word_learner: Wos::AcceptedWordLearner.new)
       @store = Wos::OverlayStateStore.new(redis: redis)
       @broadcaster = broadcaster
+      @accepted_word_learner = accepted_word_learner
     end
 
     def call(event)
       state = state_for(event)
       @store.write!(state)
+      learn_accepted_words(state)
       broadcast_state(state)
       state
     end
 
     private
+
+    attr_reader :accepted_word_learner
+
+    def learn_accepted_words(state)
+      accepted_word_learner.call(
+        recognition: state.fetch("recognition", {}),
+        observed_at: state["recognized_at"]
+      )
+    end
 
     def state_for(event)
       event.payload.merge(

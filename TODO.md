@@ -18,7 +18,7 @@ Next cleanup:
 
 - [x] Split blank-bank evidence from user-facing remaining-word rows so `solved_words` stops exposing internal strip lengths like `12/12/13/12`.
 - Continue adding fixtures for missed board letters, solved words, and player labels.
-- Persist newly accepted WOS words into `official_wos_words` when solved-word OCR or Twitch guess correlation confirms them.
+- [x] Persist newly accepted WOS words into `official_wos_words` when solved-word OCR confirms them; Twitch guess correlation still needs to feed this path.
 - Correlate Twitch chat guesses with WOS accepted words once higher levels stop showing the solved list.
 - Improve solved-word/player OCR beyond the current high-confidence TSV token heuristics.
 - Feed WOS recognition/projection errors into the affordance status UI.
