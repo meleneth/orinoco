@@ -23,6 +23,7 @@ RSpec.describe WosProjection::Handler do
   let(:redis) { WosProjectionSpecRedis.new }
   let(:broadcaster) { class_double(Turbo::StreamsChannel).as_stubbed_const }
   let(:accepted_word_learner) { instance_double(Wos::AcceptedWordLearner, call: nil) }
+  let(:accepted_guess_matcher) { instance_double(Wos::AcceptedGuessMatcher, call: []) }
   let(:status_store) do
     instance_double(
       Wos::StatusStore,
@@ -35,6 +36,7 @@ RSpec.describe WosProjection::Handler do
       redis: redis,
       broadcaster: broadcaster,
       accepted_word_learner: accepted_word_learner,
+      accepted_guess_matcher: accepted_guess_matcher,
       status_store: status_store
     )
   end
@@ -62,6 +64,7 @@ RSpec.describe WosProjection::Handler do
 
     expect(JSON.parse(redis.values.fetch(Wos::OverlayStateStore::KEY))).to eq(state)
     expect(state).to include("recognized_at" => "2026-07-13T08:00:00Z")
+    expect(accepted_guess_matcher).to have_received(:call).with(previous_state: {}, current_state: state)
     expect(accepted_word_learner).to have_received(:call).with(
       recognition: state.fetch("recognition"),
       observed_at: "2026-07-13T08:00:00Z"
@@ -74,6 +77,33 @@ RSpec.describe WosProjection::Handler do
     )
     expect(status_store).to have_received(:projection_succeeded!)
     expect(status_store).not_to have_received(:projection_failed!)
+  end
+
+  it "adds matched Twitch guesses to projection state and learns them with a Twitch source" do
+    redis.set(
+      Wos::OverlayStateStore::KEY,
+      JSON.generate("recognized_at" => "2026-07-13T07:59:58Z", "recognition" => { "remaining_words" => [] })
+    )
+    accepted_guess = {
+      "state" => "solved",
+      "correct_word" => "THANK",
+      "player" => "MEL",
+      "source" => Wos::AcceptedGuessMatcher::SOURCE
+    }
+    allow(accepted_guess_matcher).to receive(:call).and_return([accepted_guess])
+
+    state = handler.call(event)
+
+    expect(state.dig("recognition", "solved_words")).to include(accepted_guess)
+    expect(accepted_guess_matcher).to have_received(:call).with(
+      previous_state: { "recognized_at" => "2026-07-13T07:59:58Z", "recognition" => { "remaining_words" => [] } },
+      current_state: hash_including("recognized_at" => "2026-07-13T08:00:00Z")
+    )
+    expect(accepted_word_learner).to have_received(:call).with(
+      recognition: { "solved_words" => [accepted_guess] },
+      observed_at: "2026-07-13T08:00:00Z",
+      source: Wos::AcceptedGuessMatcher::SOURCE
+    )
   end
 
   it "records projection failures and re-raises so the queue message is retried" do

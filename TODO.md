@@ -13,6 +13,7 @@ Current state:
 - Remaining-word counts are screen-derived from blank banks, not dictionary-derived. The current 6-letter layout reports `12 x 4` and `5 x 5` from the screen.
 - Solved-word OCR now detects accepted word/player pairs on known fixtures, including `THANK` by `MEL` and `MUTE` by `MEL`.
 - Twitch chat projection records pending WOS guesses against the latest board when the message is a plausible single-word guess.
+- WOS projection matches pending Twitch guesses against structured remaining-word count drops and learns matched words as accepted `twitch_chat` words.
 - `official_wos_words` exists as the learned canonical accepted-word table. It is not the source for remaining screen counts; it should be populated from accepted guesses we observe.
 
 Next cleanup:
@@ -21,7 +22,8 @@ Next cleanup:
 - Continue adding fixtures for missed board letters, solved words, and player labels.
 - [x] Persist newly accepted WOS words into `official_wos_words` when solved-word OCR confirms them; Twitch guess correlation still needs to feed this path.
 - [x] Record pending Twitch chat guesses against the latest WOS board for later acceptance correlation.
-- Correlate pending Twitch guesses with WOS accepted words once higher levels stop showing the solved list.
+- [x] Correlate pending Twitch guesses with structured remaining-word count drops and learn accepted matches.
+- Extend Twitch guess correlation for higher levels that hide solved lists or add lock/fake-letter states.
 - Improve solved-word/player OCR beyond the current high-confidence TSV token heuristics.
 - [x] Feed WOS recognition/projection errors into the affordance status UI.
 ## Overlay layers for WOSBrain
