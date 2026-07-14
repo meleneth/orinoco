@@ -13,8 +13,18 @@ RSpec.describe InteractionDemo::ObsSetup do
       [
         {
           "sourceName" => InteractionDemo::ObsSetup::WEB_SOURCE_NAME,
+          "sourceUuid" => "web-source-uuid",
           "sceneItemId" => 42
         }
+      ]
+    end
+
+    def placements_for_input_uuid(input_uuid)
+      return [] unless input_uuid == "web-source-uuid"
+
+      [
+        { "sceneName" => InteractionDemo::ObsSetup::SCENE_NAME, "sceneItemId" => 42 },
+        { "sceneName" => "[Scene]DesktopHacking", "sceneItemId" => 8 }
       ]
     end
   end
@@ -40,5 +50,16 @@ RSpec.describe InteractionDemo::ObsSetup do
     input_settings_request = published_requests.find { |request| request.fetch("requestType") == "SetInputSettings" }
     expect(input_settings_request.dig("requestData", "inputName")).to eq(InteractionDemo::ObsSetup::WEB_SOURCE_NAME)
     expect(input_settings_request.dig("requestData", "inputSettings", "url")).to eq("http://localhost:33230/overlay")
+
+    transform_requests = published_requests.select { |request| request.fetch("requestType") == "SetSceneItemTransform" }
+    expect(transform_requests.map { |request| request.dig("requestData", "sceneName") }).to eq([
+      InteractionDemo::ObsSetup::SCENE_NAME,
+      "[Scene]DesktopHacking"
+    ])
+    expect(transform_requests.map { |request| request.dig("requestData", "sceneItemId") }).to eq([42, 8])
+    expect(transform_requests).to all(satisfy do |request|
+      request.dig("requestData", "sceneItemTransform", "boundsWidth") == 1920 &&
+        request.dig("requestData", "sceneItemTransform", "boundsHeight") == 1080
+    end)
   end
 end

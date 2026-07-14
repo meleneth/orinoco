@@ -22,6 +22,8 @@ module WosProjection
     def call(event)
       previous_state = @store.read
       state = state_for(event)
+      return previous_state unless active_board?(state)
+
       accepted_guesses = @accepted_guess_matcher.call(previous_state: previous_state, current_state: state)
       append_accepted_guesses!(state, accepted_guesses)
       @store.write!(state)
@@ -37,6 +39,10 @@ module WosProjection
     private
 
     attr_reader :accepted_word_learner
+
+    def active_board?(state)
+      Array(state.dig("recognition", "letters")).any? { |tile| tile["char"].to_s.match?(/[A-Z]/i) }
+    end
 
     def append_accepted_guesses!(state, accepted_guesses)
       return if accepted_guesses.empty?

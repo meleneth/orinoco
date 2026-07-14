@@ -106,6 +106,37 @@ RSpec.describe WosProjection::Handler do
     )
   end
 
+
+  it "keeps the last valid board when a no-board frame is recognized" do
+    previous_state = {
+      "recognized_at" => "2026-07-13T07:59:58Z",
+      "recognition" => {
+        "letters" => [ { "char" => "T" }, { "char" => "H" }, { "char" => "A" }, { "char" => "N" }, { "char" => "K" } ],
+        "remaining_words" => [ { "length" => 5, "remaining" => 5 } ]
+      }
+    }
+    redis.set(Wos::OverlayStateStore::KEY, JSON.generate(previous_state))
+    empty_event = Orinoco::Pipeline::Event.build(
+      "wos.board.recognized",
+      {
+        "recognition" => {
+          "letters" => [],
+          "remaining_words" => [],
+          "warnings" => ["letter board segmentation found no visible tiles"]
+        }
+      },
+      occurred_at: "2026-07-13T08:00:05Z"
+    )
+
+    state = handler.call(empty_event)
+
+    expect(state).to eq(previous_state)
+    expect(JSON.parse(redis.values.fetch(Wos::OverlayStateStore::KEY))).to eq(previous_state)
+    expect(accepted_guess_matcher).not_to have_received(:call)
+    expect(accepted_word_learner).not_to have_received(:call)
+    expect(broadcaster).not_to have_received(:broadcast_update_to)
+    expect(status_store).not_to have_received(:projection_succeeded!)
+  end
   it "records projection failures and re-raises so the queue message is retried" do
     allow(broadcaster).to receive(:broadcast_update_to).and_raise(RuntimeError, "broadcast exploded")
 

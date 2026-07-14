@@ -31,7 +31,7 @@ module InteractionDemo
       create_web_source_unless_present!
       configure_web_source!
       refresh_inventory!
-      fit_web_source_to_scene!
+      fit_web_source_to_scene_items!
       refresh_inventory!
     end
 
@@ -76,34 +76,18 @@ module InteractionDemo
       )
     end
 
-    def fit_web_source_to_scene!
-      scene_item_id = web_source_scene_item_id
-      return if scene_item_id.nil?
-
-      command_publisher.publish!(
-        "requestType" => "SetSceneItemTransform",
-        "requestData" => {
-          "sceneName" => SCENE_NAME,
-          "sceneItemId" => scene_item_id,
-          "sceneItemTransform" => {
-            "positionX" => 0,
-            "positionY" => 0,
-            "rotation" => 0,
-            "scaleX" => 1,
-            "scaleY" => 1,
-            "boundsType" => "OBS_BOUNDS_STRETCH",
-            "boundsAlignment" => 0,
-            "boundsWidth" => WEB_WIDTH,
-            "boundsHeight" => WEB_HEIGHT,
-            "cropLeft" => 0,
-            "cropRight" => 0,
-            "cropTop" => 0,
-            "cropBottom" => 0
+    def fit_web_source_to_scene_items!
+      web_source_placements.each do |placement|
+        command_publisher.publish!(
+          "requestType" => "SetSceneItemTransform",
+          "requestData" => {
+            "sceneName" => placement.fetch("sceneName"),
+            "sceneItemId" => placement.fetch("sceneItemId"),
+            "sceneItemTransform" => web_source_transform
           }
-        }
-      )
+        )
+      end
     end
-
     def refresh_inventory!
       control_publisher.refresh!
       sleeper.call(1.0)
@@ -121,10 +105,34 @@ module InteractionDemo
       end
     end
 
-    def web_source_scene_item_id
-      inventory_reader.scene_items(SCENE_NAME).find do |item|
+    def web_source_placements
+      source_item = inventory_reader.scene_items(SCENE_NAME).find do |item|
         item["sourceName"] == WEB_SOURCE_NAME
-      end&.fetch("sceneItemId", nil)
+      end
+      return [] unless source_item
+
+      placements = inventory_reader.placements_for_input_uuid(source_item.fetch("sourceUuid", nil))
+      return placements if placements.any?
+
+      [source_item.merge("sceneName" => SCENE_NAME)]
+    end
+
+    def web_source_transform
+      {
+        "positionX" => 0,
+        "positionY" => 0,
+        "rotation" => 0,
+        "scaleX" => 1,
+        "scaleY" => 1,
+        "boundsType" => "OBS_BOUNDS_STRETCH",
+        "boundsAlignment" => 0,
+        "boundsWidth" => WEB_WIDTH,
+        "boundsHeight" => WEB_HEIGHT,
+        "cropLeft" => 0,
+        "cropRight" => 0,
+        "cropTop" => 0,
+        "cropBottom" => 0
+      }
     end
 
     def input_settings
