@@ -23,6 +23,21 @@ RSpec.describe WosProjection::Handler do
   let(:redis) { WosProjectionSpecRedis.new }
   let(:broadcaster) { class_double(Turbo::StreamsChannel).as_stubbed_const }
   let(:accepted_word_learner) { instance_double(Wos::AcceptedWordLearner, call: nil) }
+  let(:status_store) do
+    instance_double(
+      Wos::StatusStore,
+      projection_succeeded!: nil,
+      projection_failed!: nil
+    )
+  end
+  let(:handler) do
+    described_class.new(
+      redis: redis,
+      broadcaster: broadcaster,
+      accepted_word_learner: accepted_word_learner,
+      status_store: status_store
+    )
+  end
   let(:event) do
     Orinoco::Pipeline::Event.build(
       "wos.board.recognized",
@@ -42,8 +57,8 @@ RSpec.describe WosProjection::Handler do
     allow(broadcaster).to receive(:broadcast_update_to)
   end
 
-  it "persists latest WOS state and updates the WOS overlay layer" do
-    state = described_class.new(redis: redis, broadcaster: broadcaster, accepted_word_learner: accepted_word_learner).call(event)
+  it "persists latest WOS state, updates the WOS overlay layer, and records projection success" do
+    state = handler.call(event)
 
     expect(JSON.parse(redis.values.fetch(Wos::OverlayStateStore::KEY))).to eq(state)
     expect(state).to include("recognized_at" => "2026-07-13T08:00:00Z")
@@ -57,5 +72,17 @@ RSpec.describe WosProjection::Handler do
       layout: false,
       renderable: a_kind_of(WosOverlayLayerComponent)
     )
+    expect(status_store).to have_received(:projection_succeeded!)
+    expect(status_store).not_to have_received(:projection_failed!)
+  end
+
+  it "records projection failures and re-raises so the queue message is retried" do
+    allow(broadcaster).to receive(:broadcast_update_to).and_raise(RuntimeError, "broadcast exploded")
+
+    expect { handler.call(event) }.to raise_error(RuntimeError, "broadcast exploded")
+    expect(status_store).to have_received(:projection_failed!).with(
+      "WOSBrain projection failed: RuntimeError: broadcast exploded"
+    )
+    expect(status_store).not_to have_received(:projection_succeeded!)
   end
 end

@@ -52,11 +52,15 @@ RSpec.describe WosBrainProjectionWorker do
     Rails.application.config.x.scoreboard.redis_url = "redis://localhost:6379/0"
   end
 
-  it "projects recognized WOS board events into Redis and deletes the message" do
+  it "projects recognized WOS board events into Redis, updates status, and deletes the message" do
     described_class.new.run_once
 
     projected = JSON.parse(redis.values.fetch(Wos::OverlayStateStore::KEY))
     expect(projected.dig("recognition", "letters").map { |tile| tile["char"] }.join).to eq("WOS")
+    expect(JSON.parse(redis.values.fetch(Wos::StatusStore::KEY))).to include(
+      "state" => "projected",
+      "last_error" => ""
+    )
     expect(sqs.delete_calls).to eq([
       {
         queue_url: "http://goaws:31040/000000000000/#{Orinoco::Messaging::Names::WOS_BOARD_RECOGNIZED_QUEUE}",
@@ -64,6 +68,18 @@ RSpec.describe WosBrainProjectionWorker do
       }
     ])
     expect(Turbo::StreamsChannel).to have_received(:broadcast_update_to)
+  end
+
+  it "records projection failures and leaves the message for retry" do
+    allow(Turbo::StreamsChannel).to receive(:broadcast_update_to).and_raise(RuntimeError, "broadcast exploded")
+
+    described_class.new.run_once
+
+    expect(JSON.parse(redis.values.fetch(Wos::StatusStore::KEY))).to include(
+      "state" => "projection_error",
+      "last_error" => "WOSBrain projection failed: RuntimeError: broadcast exploded"
+    )
+    expect(sqs.delete_calls).to be_empty
   end
 
   def event_body

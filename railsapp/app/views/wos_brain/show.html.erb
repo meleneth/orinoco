@@ -28,6 +28,8 @@
         <dd class="text-right font-mono text-slate-900 dark:text-slate-100"><%= @status["last_capture_requested_at"].presence || "never" %></dd>
         <dt class="text-slate-500 dark:text-slate-400">Last recognized</dt>
         <dd class="text-right font-mono text-slate-900 dark:text-slate-100"><%= @status["last_recognized_at"].presence || "never" %></dd>
+        <dt class="text-slate-500 dark:text-slate-400">Last projected</dt>
+        <dd class="text-right font-mono text-slate-900 dark:text-slate-100"><%= @status["last_projected_at"].presence || "never" %></dd>
         <dt class="text-slate-500 dark:text-slate-400">Request id</dt>
         <dd class="text-right font-mono text-slate-900 dark:text-slate-100"><%= @status["last_request_id"].presence || "none" %></dd>
       </dl>

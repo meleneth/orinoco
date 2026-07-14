@@ -2,6 +2,7 @@
 
 require_relative "../services/orinoco/pipeline"
 require_relative "../services/wos_projection/handler"
+require_relative "../services/wos/status_store"
 
 class WosBrainProjectionWorker
   def run
@@ -24,7 +25,7 @@ class WosBrainProjectionWorker
   end
 
   def definition
-    handler = WosProjection::Handler.new(redis: redis)
+    handler = WosProjection::Handler.new(redis: redis, status_store: status_store)
 
     @definition ||= Orinoco::Pipeline.processor(:wos_brain_projection) do
       consume Orinoco::Messaging::Names::WOS_BOARD_RECOGNIZED_QUEUE
@@ -41,6 +42,10 @@ class WosBrainProjectionWorker
 
   def sns
     @sns ||= Aws::SNS::Client.new(**config.event_pipeline.aws_client_options)
+  end
+
+  def status_store
+    @status_store ||= Wos::StatusStore.new(redis: redis)
   end
 
   def redis

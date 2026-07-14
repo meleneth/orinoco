@@ -21,7 +21,7 @@ Next cleanup:
 - [x] Persist newly accepted WOS words into `official_wos_words` when solved-word OCR confirms them; Twitch guess correlation still needs to feed this path.
 - Correlate Twitch chat guesses with WOS accepted words once higher levels stop showing the solved list.
 - Improve solved-word/player OCR beyond the current high-confidence TSV token heuristics.
-- Feed WOS recognition/projection errors into the affordance status UI.
+- [x] Feed WOS recognition/projection errors into the affordance status UI.
 ## Overlay layers for WOSBrain
 
 Goal: make the system-created OBS browser source point at a canonical Orinoco overlay, then target named layers from downstream projections instead of manipulating arbitrary DOM elements.
@@ -43,7 +43,7 @@ Implementation checklist:
 - [x] Add dev worker entrypoints for WOSBrain processing/projection.
 - [x] Add operational WOSBrain status screen showing selected source, capture cadence state, latest board, and recognition errors.
 - [x] Add WOSBrain screenshot request worker that publishes OBS screenshot commands only when the affordance is enabled and a source is configured.
-- [ ] Feed WOS recognition/projection errors into bridge/affordance status so failures are visible without checking logs.
+- [x] Feed WOS recognition/projection errors into bridge/affordance status so failures are visible without checking logs.
 - [ ] Promote layer definitions into user-editable config or diorama graph once the first layer proves out.
 
 Acceptance checks:

@@ -22,6 +22,7 @@ RSpec.describe "WOSBrain", type: :request do
         "last_request_id" => "req-1",
         "last_capture_requested_at" => "2026-07-13T08:00:00.000000Z",
         "last_recognized_at" => "2026-07-13T08:00:02.000000Z",
+        "last_projected_at" => "2026-07-13T08:00:03.000000Z",
         "last_error" => ""
       ),
       Wos::OverlayStateStore::KEY => JSON.generate(
@@ -58,6 +59,7 @@ RSpec.describe "WOSBrain", type: :request do
     expect(response.body).to include("WOSBrain")
     expect(response.body).to include("Display Capture")
     expect(response.body).to include("recognized")
+    expect(response.body).to include("2026-07-13T08:00:03.000000Z")
     expect(response.body).to include("req-1")
     expect(response.body).to include("WOS")
     expect(response.body).to include("Open /overlay")

@@ -54,6 +54,22 @@ module Wos
       )
     end
 
+    def projection_succeeded!
+      update!(
+        "state" => "projected",
+        "last_projected_at" => now,
+        "last_error" => ""
+      )
+    end
+
+    def projection_failed!(message)
+      update!(
+        "state" => "projection_error",
+        "last_projection_failed_at" => now,
+        "last_error" => message.to_s
+      )
+    end
+
     def failed!(message)
       update!("state" => "error", "last_error" => message.to_s)
     end
@@ -67,6 +83,8 @@ module Wos
         "last_request_id" => "",
         "last_capture_requested_at" => "",
         "last_recognized_at" => "",
+        "last_projected_at" => "",
+        "last_projection_failed_at" => "",
         "last_error" => "",
         "updated_at" => ""
       }

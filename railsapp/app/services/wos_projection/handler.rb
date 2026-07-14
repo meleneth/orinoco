@@ -4,10 +4,16 @@ require_relative "../wos/accepted_word_learner"
 
 module WosProjection
   class Handler
-    def initialize(redis:, broadcaster: Turbo::StreamsChannel, accepted_word_learner: Wos::AcceptedWordLearner.new)
+    def initialize(
+      redis:,
+      broadcaster: Turbo::StreamsChannel,
+      accepted_word_learner: Wos::AcceptedWordLearner.new,
+      status_store: nil
+    )
       @store = Wos::OverlayStateStore.new(redis: redis)
       @broadcaster = broadcaster
       @accepted_word_learner = accepted_word_learner
+      @status_store = status_store
     end
 
     def call(event)
@@ -15,7 +21,11 @@ module WosProjection
       @store.write!(state)
       learn_accepted_words(state)
       broadcast_state(state)
+      @status_store&.projection_succeeded!
       state
+    rescue StandardError => e
+      @status_store&.projection_failed!("WOSBrain projection failed: #{e.class}: #{e.message}")
+      raise
     end
 
     private
