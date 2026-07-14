@@ -29,15 +29,42 @@ services:
     command: ["bundle", "exec", "rails", "runner", "ObsBridgeWorker.new.run"]
     environment: *railsapp_environment
     depends_on: *railsapp_depends_on
-  twitch-chat-worker:
+  twitch-bridge-worker:
     image: orinoco/railsapp
-    command: ["bundle", "exec", "rails", "runner", "app/services/twitch_chat_bridge/twitch_chat_passive.rb"]
+    command: ["bundle", "exec", "rails", "runner", "TwitchBridgeWorker.new.run"]
     environment: *railsapp_environment
     depends_on: *railsapp_depends_on
-  twitch-chat-processor:
+  seven-tv-bridge-worker:
+    image: orinoco/railsapp
+    command: ["bundle", "exec", "rails", "runner", "SevenTvBridgeWorker.new.run"]
+    environment: *railsapp_environment
+    depends_on: *railsapp_depends_on
+  twitch-chat-projection-worker:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     image: orinoco/railsapp
-    command: ["bundle", "exec", "rails", "runner", "TwitchChatBridge::TwitchChatMessageProcessor.new.run"]
+    command: ["bundle", "exec", "rails", "runner", "TwitchChatProjectionWorker.new.run"]
+    environment: *railsapp_environment
+    depends_on: *railsapp_depends_on
+  clip-show-processor-worker:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    image: orinoco/railsapp
+    command: ["bundle", "exec", "rails", "runner", "ClipShowProcessorWorker.new.run"]
+    environment: *railsapp_environment
+    depends_on: *railsapp_depends_on
+  wos-brain-capture-worker:
+    image: orinoco/railsapp
+    command: ["bundle", "exec", "rails", "runner", "WosBrainCaptureWorker.new.run"]
+    environment: *railsapp_environment
+    depends_on: *railsapp_depends_on
+  wos-brain-processor-worker:
+    image: orinoco/railsapp
+    command: ["bundle", "exec", "rails", "runner", "WosBrainProcessorWorker.new.run"]
+    environment: *railsapp_environment
+    depends_on: *railsapp_depends_on
+  wos-brain-projection-worker:
+    image: orinoco/railsapp
+    command: ["bundle", "exec", "rails", "runner", "WosBrainProjectionWorker.new.run"]
     environment: *railsapp_environment
     depends_on: *railsapp_depends_on

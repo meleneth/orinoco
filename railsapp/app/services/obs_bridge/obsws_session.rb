@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "thread"
+require "active_support/core_ext/string/inflections"
 
 module ObsBridge
   class ObswsSession
@@ -84,6 +85,8 @@ module ObsBridge
           request_data.fetch("sceneItemId"),
           request_data.fetch("sceneItemTransform")
         )
+      when "GetSourceScreenshot"
+        get_source_screenshot(request_data)
       else
         raise ArgumentError, "unsupported OBS request type #{request_type.inspect}"
       end
@@ -164,6 +167,40 @@ module ObsBridge
       end
     end
 
+    def get_source_screenshot(request_data)
+      active_scene_name = current_program_scene_name
+      source_name = first_present(request_data["sourceName"], request_data["sceneName"], active_scene_name)
+      image_format = request_data.fetch("imageFormat", "png")
+      image_width = request_data.fetch("imageWidth", 1280)
+      image_height = request_data.fetch("imageHeight", 720)
+      image_compression_quality = request_data.fetch("imageCompressionQuality", -1)
+      response = @req.get_source_screenshot(
+        source_name,
+        image_format,
+        image_width,
+        image_height,
+        image_compression_quality
+      )
+
+      {
+        "imageData" => fetch_value(response, :imageData, "imageData", :image_data, "image_data"),
+        "imageFormat" => image_format,
+        "sourceName" => source_name,
+        "activeSceneName" => active_scene_name,
+        "imageWidth" => image_width,
+        "imageHeight" => image_height,
+        "imageCompressionQuality" => image_compression_quality
+      }.compact
+    end
+
+    def first_present(*values)
+      values.find { |value| value.respond_to?(:empty?) ? !value.empty? : !value.nil? }
+    end
+
+    def current_program_scene_name
+      response = @req.get_current_program_scene
+      fetch_value(response, :currentProgramSceneName, "currentProgramSceneName", :current_program_scene_name, "current_program_scene_name")
+    end
     def fetch_value(object, *keys)
       keys.each do |key|
         if object.respond_to?(:key?) && object.key?(key)

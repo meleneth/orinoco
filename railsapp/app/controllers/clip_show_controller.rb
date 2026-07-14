@@ -1,15 +1,10 @@
 # frozen_string_literal: true
 
 require "json"
+require_relative "../services/orinoco/pipeline"
 
 class ClipShowController < ApplicationController
   layout :resolve_layout
-
-  # def index
-  #  @scenes = Hash.new
-  #  @clips = SceneIndex.new(scene: "Clips")
-  #  @clips.load_from_inventory!(inventory_reader)
-  # end
 
   def play
     index_to_play = params[:id]
@@ -34,8 +29,8 @@ class ClipShowController < ApplicationController
     )
 
     respond_to do |format|
-        format.turbo_stream { render turbo_stream: [] }
-        format.html { redirect_to clip_show_path }
+      format.turbo_stream { render turbo_stream: [] }
+      format.html { redirect_to clip_show_path }
     end
   end
 
@@ -66,7 +61,13 @@ class ClipShowController < ApplicationController
     @obs_request_emitter ||= lambda do |request|
       sns.publish(
         topic_arn: topology.topic_arn(Orinoco::Messaging::Names::OBS_COMMAND_TOPIC),
-        message: JSON.generate(request)
+        message: JSON.generate(
+          Orinoco::Pipeline::Event.build(
+            "obs.command.requested",
+            { "request" => request },
+            source: "clip_show"
+          ).to_h
+        )
       )
     end
   end

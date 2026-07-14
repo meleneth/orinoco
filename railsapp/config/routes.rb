@@ -16,9 +16,12 @@ Rails.application.routes.draw do
   resources :twitch_configs
   get  "chat/index"
   get  "basic_setup/index"
+  post "basic_setup" => "basic_setup#save", as: :basic_setup
   post "clip_show/play"
   get  "clip_show/get_scenes"
   get  "clip_show" => "clip_show#get_scenes", as: :clip_show
+  get  "overlay" => "overlay#show", as: :overlay
+  get  "wos_brain" => "wos_brain#show", as: :wos_brain
   get  "interaction_demo" => "interaction_demo#show", as: :interaction_demo
   post "interaction_demo/starfall" => "interaction_demo#starfall", as: :interaction_demo_starfall
   post "interaction_demo/sunburst" => "interaction_demo#sunburst", as: :interaction_demo_sunburst
@@ -27,6 +30,9 @@ Rails.application.routes.draw do
   resource :obs_config, only: [ :show, :edit, :update, :create ]
 
   namespace :admin do
+    get "event_pipeline" => "event_pipeline#index", as: :event_pipeline
+    get "event_pipeline/:id" => "event_pipeline#show", as: :event_pipeline_queue, constraints: { id: /[^\/]+/ }
+
     resources :obs_bridges, only: [ :show ], param: :id do
       post :start, on: :member
       post :stop, on: :member

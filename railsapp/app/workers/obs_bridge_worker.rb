@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "json"
+require_relative "../services/orinoco/pipeline"
 
 class ObsBridgeWorker
   def run
@@ -20,19 +21,13 @@ class ObsBridgeWorker
   end
 
   def build_runtime
-    host = ObsBridge::AffordanceHost.new
-
-    affordances.each do |affordance|
-      puts "[obs_bridge_worker] Installing affordance #{affordance.name}"
-      affordance.install_into(host)
-    end
-
     ObsBridge::Runtime.new(
       state: state,
       inventory_store: inventory_store,
       session_runner: build_session_runner,
-      affordance_host: host,
-      affordance_context: build_affordance_context
+      event_publisher: obs_event_publisher,
+      result_publisher: obs_result_publisher,
+      event_types: ["media_input_playback_ended"]
     )
   end
 
@@ -41,20 +36,6 @@ class ObsBridgeWorker
       host: obs_host,
       port: obs_port
     )
-  end
-
-  def build_affordance_context
-    ObsBridge::AffordanceContext.new(
-      inventory: inventory_reader,
-      config: affordance_config_reader,
-      emit_request: obs_request_emitter
-    )
-  end
-
-  def affordances
-    [
-      ClipShowAffordance
-    ]
   end
 
   def control_consumer
@@ -97,35 +78,37 @@ class ObsBridgeWorker
     )
   end
 
-  def inventory_reader
-    @inventory_reader ||= ObsBridge::InventoryReader.new(
-      redis: redis,
-      bridge_id: bridge_id
-    )
-  end
-
-  def affordance_config_reader
-    @affordance_config_reader ||= Object.new.tap do |reader|
-      def reader.enabled_for_scene?(name:, scene_name:)
-        record = AffordanceConfig.find_by(name: name.to_s)
-        return false unless record
-
-        config = (record.config || {}).deep_stringify_keys
-        enabled = ActiveModel::Type::Boolean.new.cast(config["enabled"])
-        scenes = Array(config["scenes"]).map(&:to_s)
-
-        enabled && scenes.include?(scene_name.to_s)
-      end
+  def obs_event_publisher
+    @obs_event_publisher ||= lambda do |type, payload|
+      pipeline_publisher.publish(type, payload, source: "obs.websocket")
     end
   end
 
-  def obs_request_emitter
-    @obs_request_emitter ||= lambda do |request|
-      sns.publish(
-        topic_arn: topology.topic_arn(Orinoco::Messaging::Names::OBS_COMMAND_TOPIC),
-        message: JSON.generate(request)
+  def obs_result_publisher
+    @obs_result_publisher ||= lambda do |type, payload, topic:, correlation:|
+      screenshot_result_publisher.publish(
+        type,
+        payload,
+        topic: topic,
+        source: "obs.websocket",
+        correlation: correlation
       )
     end
+  end
+
+  def screenshot_result_publisher
+    @screenshot_result_publisher ||= Orinoco::Pipeline::Publisher.new(
+      sns: sns,
+      topology: topology,
+      default_topic: Orinoco::Messaging::Names::OBS_SCREENSHOT_RESULT_TOPIC
+    )
+  end
+  def pipeline_publisher
+    @pipeline_publisher ||= Orinoco::Pipeline::Publisher.new(
+      sns: sns,
+      topology: topology,
+      default_topic: Orinoco::Messaging::Names::OBS_EVENTS_TOPIC
+    )
   end
 
   def sqs
@@ -137,14 +120,16 @@ class ObsBridgeWorker
   end
 
   def obs_host
-    config = ObsConfig.first
-    return config.host if config
+    obs_config = ObsConfig.first
+    return obs_config.host if obs_config
+
     config.obs_bridge.obs_host
   end
 
   def obs_port
-    config = ObsConfig.first
-    return config.port if config
+    obs_config = ObsConfig.first
+    return obs_config.port if obs_config
+
     config.obs_bridge.obs_port
   end
 

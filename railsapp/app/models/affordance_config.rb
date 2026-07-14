@@ -26,9 +26,21 @@ class AffordanceConfig < ApplicationRecord
         "enabled" => false,
         "scenes" => []
       }
+    when "wos_brain"
+      {
+        "enabled" => false,
+        "scenes" => [],
+        "ruleset_mode" => "auto",
+        "manual_ruleset" => "base",
+        "screenshot_source_name" => ""
+      }
     else
       {}
     end
+  end
+
+  def enabled
+    enabled?
   end
 
   def enabled?
@@ -59,10 +71,36 @@ class AffordanceConfig < ApplicationRecord
     enabled? && scenes.include?(scene_name.to_s)
   end
 
+  def ruleset_mode
+    config["ruleset_mode"].to_s
+  end
+
+  def manual_ruleset
+    config["manual_ruleset"].to_s
+  end
+
+  def screenshot_source_name
+    config["screenshot_source_name"].to_s
+  end
+
+  def screenshot_source_name=(value)
+    self.config = config.merge("screenshot_source_name" => value.to_s.strip)
+  end
+
   private
 
   def normalize_name
     self.name = name.to_s.strip
+  end
+
+  def normalize_ruleset_mode(value)
+    value.to_s == "manual" ? "manual" : "auto"
+  end
+
+  def normalize_manual_ruleset(value)
+    allowed = %w[base hidden_letter fake_letter hidden_and_fake chat_correlation]
+    normalized = value.to_s
+    allowed.include?(normalized) ? normalized : "base"
   end
 
   def normalize_config
@@ -72,6 +110,14 @@ class AffordanceConfig < ApplicationRecord
     when "clip_show"
       self.enabled = false if config["enabled"].nil?
       self.scenes = config["scenes"]
+    when "wos_brain"
+      self.enabled = false if config["enabled"].nil?
+      self.scenes = config["scenes"]
+      self.config = config.merge(
+        "ruleset_mode" => normalize_ruleset_mode(config["ruleset_mode"]),
+        "manual_ruleset" => normalize_manual_ruleset(config["manual_ruleset"]),
+        "screenshot_source_name" => config["screenshot_source_name"].to_s.strip
+      )
     end
   end
 end

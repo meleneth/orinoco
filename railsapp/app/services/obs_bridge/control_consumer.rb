@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "../orinoco/pipeline"
+
 module ObsBridge
   class ControlConsumer
     def initialize(
@@ -48,21 +50,28 @@ module ObsBridge
       @logger.call("[obs-bridge/control] message: #{message.class}: #{message.body}")
 
       payload = @message_unwrapper.unwrap(message)
-      control_message = @message_parser.parse(payload, expected_bridge_id: @bridge_id)
+      control_payload = normalize_control_payload(payload)
+      control_message = @message_parser.parse(control_payload, expected_bridge_id: @bridge_id)
       result = @applier.apply(control_message)
 
       delete_message(message)
       result
     rescue AwsMessage::InvalidPayload, ControlMessage::Invalid => e
-      @logger.call("[obs-bridge/control] dropping invalid message: #{e.class}: #{e.message}")
-      delete_message(message)
-      :dropped
+      @logger.call("[obs-bridge/control] invalid message left for retry: #{e.class}: #{e.message}")
+      :failed
     rescue StandardError => e
       @logger.call("[obs-bridge/control] processing failed: #{e.class}: #{e.message}")
       :failed
     end
 
     private
+
+    def normalize_control_payload(payload)
+      return payload unless payload.is_a?(Hash) && payload.key?("type") && payload.key?("payload")
+
+      event = Orinoco::Pipeline::Event.from_hash(payload)
+      event.payload.merge("type" => event.type)
+    end
 
     def delete_message(message)
       @sqs.delete_message(

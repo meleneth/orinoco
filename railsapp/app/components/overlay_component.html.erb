@@ -1,0 +1,11 @@
+<% stream_names.each do |stream_name| %>
+  <%= helpers.turbo_stream_from stream_name %>
+<% end %>
+
+<div class="fixed inset-0 overflow-hidden bg-transparent" data-overlay-root="default">
+  <% layers.each do |layer| %>
+    <div class="pointer-events-none absolute inset-0" id="<%= layer.target %>" data-overlay-layer="<%= layer.key %>">
+      <%= render_layer(layer) %>
+    </div>
+  <% end %>
+</div>

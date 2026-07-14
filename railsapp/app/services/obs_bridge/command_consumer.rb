@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "json"
+require_relative "../orinoco/pipeline"
 
 module ObsBridge
   class CommandConsumer
@@ -20,14 +21,17 @@ module ObsBridge
       @max_number_of_messages = max_number_of_messages
     end
 
-    def run(stop:)
+    def run(stop:, dispatch: nil)
       until stop.call
         receive_messages.each do |message|
           @logger.call("[obs-bridge/command-consumer] message: #{message.class}: #{message.body}")
 
           request = decode_message_body(message.body)
-          @signal_queue << request
-          delete_message(message)
+          if dispatch_command(request, dispatch)
+            delete_message(message)
+          else
+            @logger.call("[obs-bridge/command-consumer] runtime unavailable; leaving message on queue")
+          end
         rescue StandardError => e
           @logger.call("[obs-bridge/command-consumer] failed to process message: #{e.class}: #{e.message}")
         end
@@ -35,6 +39,13 @@ module ObsBridge
     end
 
     private
+
+    def dispatch_command(request, dispatch)
+      return dispatch.call(request) if dispatch
+
+      @signal_queue << request
+      true
+    end
 
     def receive_messages
       response = @sqs.receive_message(
@@ -54,18 +65,32 @@ module ObsBridge
     end
 
     def decode_message_body(body)
-      parsed = JSON.parse(body)
+      parsed = Orinoco::Messaging::AwsMessage.unwrap_body(body)
 
-      parsed =
-        if parsed.is_a?(Hash) && parsed.key?("Message")
-          JSON.parse(parsed.fetch("Message"))
+      command =
+        if parsed.is_a?(Hash) && parsed.key?("type")
+          event = Orinoco::Pipeline::Event.from_hash(parsed)
+          raise ArgumentError, "expected obs.command.requested event" unless event.type == "obs.command.requested"
+
+          build_command_from_event(event)
         else
           parsed
         end
 
-      raise ArgumentError, "expected OBS request hash" unless parsed.is_a?(Hash)
+      request = command.is_a?(Hash) && command.key?("request") ? command.fetch("request") : command
+      raise ArgumentError, "expected OBS request hash" unless request.is_a?(Hash)
 
-      parsed
+      command
+    end
+
+    def build_command_from_event(event)
+      payload = event.payload
+      command = {
+        "request" => payload.fetch("request"),
+        "correlation" => event.correlation.merge(payload.fetch("correlation", {}))
+      }
+      command["reply_topic"] = payload["reply_topic"] || payload["replyTopic"] if payload["reply_topic"] || payload["replyTopic"]
+      command
     end
   end
 end

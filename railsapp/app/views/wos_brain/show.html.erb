@@ -1,0 +1,57 @@
+<div class="mx-auto max-w-5xl py-6">
+  <div class="mb-6">
+    <h1 class="text-2xl font-semibold text-slate-950 dark:text-slate-50">WOSBrain</h1>
+    <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">Screenshot capture, recognition, and overlay projection status.</p>
+  </div>
+
+  <div class="grid gap-4 md:grid-cols-2">
+    <section class="rounded-md border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <h2 class="text-base font-semibold text-slate-900 dark:text-slate-100">Configuration</h2>
+      <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
+        <dt class="text-slate-500 dark:text-slate-400">Enabled</dt>
+        <dd class="text-right font-mono text-slate-900 dark:text-slate-100"><%= @config.enabled? %></dd>
+        <dt class="text-slate-500 dark:text-slate-400">Screenshot source</dt>
+        <dd class="text-right font-mono text-slate-900 dark:text-slate-100"><%= @config.screenshot_source_name.presence || "not set" %></dd>
+        <dt class="text-slate-500 dark:text-slate-400">Ruleset mode</dt>
+        <dd class="text-right font-mono text-slate-900 dark:text-slate-100"><%= @config.ruleset_mode %></dd>
+        <dt class="text-slate-500 dark:text-slate-400">Manual ruleset</dt>
+        <dd class="text-right font-mono text-slate-900 dark:text-slate-100"><%= @config.manual_ruleset %></dd>
+      </dl>
+    </section>
+
+    <section class="rounded-md border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <h2 class="text-base font-semibold text-slate-900 dark:text-slate-100">Runtime</h2>
+      <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
+        <dt class="text-slate-500 dark:text-slate-400">State</dt>
+        <dd class="text-right font-mono text-slate-900 dark:text-slate-100"><%= @status["state"] %></dd>
+        <dt class="text-slate-500 dark:text-slate-400">Last request</dt>
+        <dd class="text-right font-mono text-slate-900 dark:text-slate-100"><%= @status["last_capture_requested_at"].presence || "never" %></dd>
+        <dt class="text-slate-500 dark:text-slate-400">Last recognized</dt>
+        <dd class="text-right font-mono text-slate-900 dark:text-slate-100"><%= @status["last_recognized_at"].presence || "never" %></dd>
+        <dt class="text-slate-500 dark:text-slate-400">Request id</dt>
+        <dd class="text-right font-mono text-slate-900 dark:text-slate-100"><%= @status["last_request_id"].presence || "none" %></dd>
+      </dl>
+      <% if @status["last_error"].present? %>
+        <div class="mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">
+          <%= @status["last_error"] %>
+        </div>
+      <% end %>
+    </section>
+  </div>
+
+  <section class="mt-4 rounded-md border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+    <h2 class="text-base font-semibold text-slate-900 dark:text-slate-100">Latest Projection</h2>
+    <% recognition = @overlay_state.fetch("recognition", {}) %>
+    <% letters = Array(recognition["letters"]).filter_map { |tile| tile["char"] }.join %>
+    <dl class="mt-4 grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
+      <dt class="text-slate-500 dark:text-slate-400">Letters</dt>
+      <dd class="font-mono text-slate-900 dark:text-slate-100"><%= letters.presence || "none" %></dd>
+      <dt class="text-slate-500 dark:text-slate-400">Ruleset</dt>
+      <dd class="font-mono text-slate-900 dark:text-slate-100"><%= recognition.dig("ruleset", "mode") || "unknown" %></dd>
+      <dt class="text-slate-500 dark:text-slate-400">Updated</dt>
+      <dd class="font-mono text-slate-900 dark:text-slate-100"><%= @overlay_state["recognized_at"].presence || "never" %></dd>
+      <dt class="text-slate-500 dark:text-slate-400">Overlay</dt>
+      <dd><%= link_to "Open /overlay", overlay_path, target: "_blank", rel: "noopener", class: "text-blue-600 hover:text-blue-700 dark:text-blue-400" %></dd>
+    </dl>
+  </section>
+</div>

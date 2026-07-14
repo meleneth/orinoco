@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require "spec_helper"
+require "obs_bridge/supervisor"
+require "obs_bridge/cmd"
 require_relative "../../support/suppress_output"
 
 RSpec.describe ObsBridge::Supervisor do
@@ -28,7 +30,7 @@ RSpec.describe ObsBridge::Supervisor do
 
   let(:signal_queue) { Queue.new }
 
-  let(:command_consumer) { instance_double(ObsBridge::CommandConsumer, run: nil) }
+  let(:command_consumer) { instance_double(ObsBridge::CommandConsumer) }
   let(:runtime) { instance_double(ObsBridge::Runtime, refresh_inventory!: nil) }
 
   let(:runtime_factory) do
@@ -70,6 +72,10 @@ RSpec.describe ObsBridge::Supervisor do
 
   before do
     allow(control_consumer).to receive(:run) do |stop:|
+      sleep 0.01 until stop.call
+    end
+
+    allow(command_consumer).to receive(:run) do |stop:, dispatch:|
       sleep 0.01 until stop.call
     end
 

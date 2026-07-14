@@ -129,7 +129,7 @@ module InteractionDemo
 
     def input_settings
       {
-        "url" => "#{external_base_url}/interaction_demo?no_layout=1",
+        "url" => "#{external_base_url}/overlay",
         "width" => WEB_WIDTH,
         "height" => WEB_HEIGHT,
         "shutdown" => false,

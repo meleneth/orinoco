@@ -7,45 +7,11 @@
   data-controller="chat-layout"
 >
   <header
-    class="absolute 
-    top-0
-    z-20
-    px-4
-    py-4
-    bg-slate-950/70
-    backdrop-blur"
+    class="absolute top-0 z-20 px-4 py-4 bg-slate-950/70 backdrop-blur"
     data-chat-layout-target="header"
   >
-    <div class="mx-auto flex w-full max-w-6xl flex-col gap-4">
-      <div>
-        <h1 class="text-3xl font-bold text-slate-50">Twitch Chat</h1>
-        <p class="mt-1 text-sm text-slate-400">Connect a channel and watch incoming chat messages flow through the pipeline.</p>
-      </div>
-
-      <div class="flex flex-col gap-3">
-        <% @twitch_configs.each do |cfg| %>
-          <%= form_with model: cfg, class: "flex flex-col gap-3 rounded-lg border border-slate-800 bg-slate-900/70 p-4 md:flex-row md:items-end" do |chat| %>
-            <div class="flex-1">
-              <%= chat.label :channel_name, "Channel", class: "mb-2 block text-sm font-medium text-slate-200" %>
-              <%= chat.text_field :channel_name,
-                class: cx(
-                  "block w-full rounded-md border px-3 py-2 shadow-sm",
-                  "border-slate-700 bg-slate-950 text-slate-100",
-                  "placeholder:text-slate-500",
-                  "focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                ) %>
-            </div>
-
-            <%= chat.submit "Connect",
-              class: cx(
-                "inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium shadow-sm",
-                "bg-blue-600 text-white hover:bg-blue-700",
-                "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
-                "focus:ring-offset-slate-900"
-              ) %>
-          <% end %>
-        <% end %>
-      </div>
+    <div class="mx-auto w-full max-w-6xl">
+      <h1 class="text-3xl font-bold text-slate-50">Twitch Chat</h1>
     </div>
   </header>
 
@@ -57,21 +23,7 @@
 
     <div
       id="chat_feed"
-      class="
-      <%# mx-auto %>
-      <%# mt-auto %>
-      <%# flex %>
-      flex-col
-      h-full
-      <%# h-screen %>
-      <%# justify-end %>
-      <%# w-full %>
-      <%# max-w-6xl %>
-      gap-5
-      overflow-y-auto
-      <%# pr-1 %>
-      "
-      <%# style="margin-top: 250px" %>
+      class="flex-col h-full gap-5 overflow-y-auto"
       data-controller="autoscroll"
     >
       <%= render ChatMessageComponent.with_collection(@messages.compact) %>

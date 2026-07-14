@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_13_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_13_123000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -73,6 +73,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_13_000001) do
     t.string "host"
     t.integer "port"
     t.datetime "updated_at", null: false
+  end
+
+  create_table "official_wos_words", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "length", null: false
+    t.jsonb "metadata", default: {}, null: false
+    t.string "source"
+    t.datetime "updated_at", null: false
+    t.string "word", null: false
+    t.index ["length"], name: "index_official_wos_words_on_length"
+    t.index ["word"], name: "index_official_wos_words_on_word", unique: true
   end
 
   create_table "twitch_configs", force: :cascade do |t|

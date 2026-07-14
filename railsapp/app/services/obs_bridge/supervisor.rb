@@ -73,7 +73,10 @@ module ObsBridge
     def start_command_thread!
       @command_thread = Thread.new do
         with_failure("command consumer", stop_supervisor: true) do
-          @command_consumer.run(stop: -> { stop_requested? })
+          @command_consumer.run(
+            stop: -> { stop_requested? },
+            dispatch: ->(request) { enqueue_obs_request!(request) }
+          )
         end
       end
     end

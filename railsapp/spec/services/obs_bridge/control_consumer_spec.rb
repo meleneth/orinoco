@@ -1,6 +1,11 @@
 # frozen_string_literal: true
 
 require "spec_helper"
+require "aws-sdk-sqs"
+require "obs_bridge/aws_message"
+require "obs_bridge/control_message"
+require "obs_bridge/control_applier"
+require "obs_bridge/control_consumer"
 
 RSpec.describe ObsBridge::ControlConsumer do
   let(:queue_url) { "http://goaws:31040/000000000000/obs_bridge_control" }
@@ -67,7 +72,7 @@ RSpec.describe ObsBridge::ControlConsumer do
     )
   end
 
-  it "drops invalid payloads and deletes the message" do
+  it "leaves invalid payloads undeleted" do
     messages.replace([ message ])
 
     allow(message_unwrapper).to receive(:unwrap).with(message)
@@ -75,14 +80,11 @@ RSpec.describe ObsBridge::ControlConsumer do
 
     consumer.run_once
 
-    expect(sqs).to have_received(:delete_message).with(
-      queue_url: queue_url,
-      receipt_handle: "rh-1"
-    )
+    expect(sqs).not_to have_received(:delete_message)
     expect(applier).not_to have_received(:apply)
   end
 
-  it "drops invalid control messages and deletes the message" do
+  it "leaves invalid control messages undeleted" do
     payload = { "type" => "obs.bridge.spaghetti", "bridge_id" => "main" }
     messages.replace([ message ])
 
@@ -92,10 +94,7 @@ RSpec.describe ObsBridge::ControlConsumer do
 
     consumer.run_once
 
-    expect(sqs).to have_received(:delete_message).with(
-      queue_url: queue_url,
-      receipt_handle: "rh-1"
-    )
+    expect(sqs).not_to have_received(:delete_message)
     expect(applier).not_to have_received(:apply)
   end
 

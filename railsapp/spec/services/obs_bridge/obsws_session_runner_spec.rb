@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require "spec_helper"
+require "obs_bridge/obsws_session"
+require "obs_bridge/obsws_session_runner"
 
 RSpec.describe ObsBridge::ObswsSessionRunner do
   class FakeRequestsClient
@@ -29,6 +31,16 @@ RSpec.describe ObsBridge::ObswsSessionRunner do
     end
   end
 
+  class FailingRequestsClient
+    def initialize(host:, port:)
+      @host = host
+      @port = port
+    end
+
+    def run
+      raise SocketError, "getaddrinfo: name or service not known"
+    end
+  end
   class FakeEventsClient
     class << self
       attr_reader :instances
@@ -83,5 +95,20 @@ RSpec.describe ObsBridge::ObswsSessionRunner do
     expect(FakeRequestsClient.instances.first.closed).to be(true)
     expect(FakeEventsClient.instances.size).to eq(1)
     expect(FakeEventsClient.instances.first.closed).to be(true)
+  end
+  it "includes host and port in connection failures" do
+    runner = described_class.new(
+      host: "missing-obs-host",
+      port: 4455,
+      requests_client_class: FailingRequestsClient,
+      events_client_class: FakeEventsClient
+    )
+
+    expect do
+      runner.run(event_types: []) { |_session| }
+    end.to raise_error(
+      ObsBridge::ObswsSessionRunner::ConnectionError,
+      /missing-obs-host:4455: SocketError: getaddrinfo/
+    )
   end
 end

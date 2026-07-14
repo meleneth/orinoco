@@ -1,5 +1,96 @@
 # Now
 
+## WOSBrain recognition groundwork
+
+Current state:
+
+- WOSBrain capture/processor/projection workers run in the dev compose stack.
+- Basic setup can enable/disable WOSBrain and choose the OBS screenshot source.
+- `/overlay` has a `wos_brain` layer with side-by-side board/status and word output panels.
+- Screenshot fixtures live in `railsapp/spec/fixtures/files/wos`.
+- Repo-local skill `.codex/skills/screenshot-a-new-fixture` captures the current OBS/WOS frame, saves it under `railsapp/tmp`, promotes it into fixtures, and prints recognizer output.
+- Board letter recognition is covered by fixture specs, including recent OCR fixes for `I` and `O` cases.
+- Remaining-word counts are screen-derived from blank banks, not dictionary-derived. The current 6-letter layout reports `12 x 4` and `5 x 5` from the screen.
+- Solved-word OCR now detects accepted word/player pairs on known fixtures, including `THANK` by `MEL` and `MUTE` by `MEL`.
+- `official_wos_words` exists as the learned canonical accepted-word table. It is not the source for remaining screen counts; it should be populated from accepted guesses we observe.
+
+Next cleanup:
+
+- Split blank-bank evidence from user-facing remaining-word rows so `solved_words` stops exposing internal strip lengths like `12/12/13/12`.
+- Continue adding fixtures for missed board letters, solved words, and player labels.
+- Persist newly accepted WOS words into `official_wos_words` when solved-word OCR or Twitch guess correlation confirms them.
+- Correlate Twitch chat guesses with WOS accepted words once higher levels stop showing the solved list.
+- Improve solved-word/player OCR beyond the current high-confidence TSV token heuristics.
+- Feed WOS recognition/projection errors into the affordance status UI.
+## Overlay layers for WOSBrain
+
+Goal: make the system-created OBS browser source point at a canonical Orinoco overlay, then target named layers from downstream projections instead of manipulating arbitrary DOM elements.
+
+Decisions from planning:
+
+- Use `/overlay` as the canonical transparent browser-source URL.
+- Retarget the existing `OrinocoWebView` source in the `Orinoco` OBS scene to `/overlay` instead of creating a second browser source.
+- Keep v1 layer definitions code-defined, with `wos_brain` as the first named layer.
+- Treat layer updates as projection work: processors write latest state to Redis and broadcast Hotwire updates into stable layer targets.
+- Render first WOSBrain layer as recognized state: current letters, ruleset, last update, and status/error, not the full game helper yet.
+
+Implementation checklist:
+
+- [x] Add canonical overlay route and transparent layer host.
+- [x] Add code-defined overlay layer registry with `wos_brain` target.
+- [x] Retarget existing OBS browser-source setup to `/overlay`.
+- [x] Add WOSBrain recognized-state Redis projection and Turbo layer broadcast.
+- [x] Add dev worker entrypoints for WOSBrain processing/projection.
+- [x] Add operational WOSBrain status screen showing selected source, capture cadence state, latest board, and recognition errors.
+- [x] Add WOSBrain screenshot request worker that publishes OBS screenshot commands only when the affordance is enabled and a source is configured.
+- [ ] Feed WOS recognition/projection errors into bridge/affordance status so failures are visible without checking logs.
+- [ ] Promote layer definitions into user-editable config or diorama graph once the first layer proves out.
+
+Acceptance checks:
+
+- `/overlay` renders with transparent layout and stable `overlay_layer_wos_brain` target.
+- A `wos.board.recognized` event updates Redis and replaces only the WOSBrain layer.
+- Reloading `/overlay` shows the latest persisted WOSBrain state.
+- The existing OBS setup path updates `OrinocoWebView` to the canonical overlay URL.
+## Bridge cleanup epic
+
+Goal: make OBS, Twitch, and pure SQS processors resemble each other where they should, while keeping their responsibilities cleanly separated.
+
+Bridge rule of thumb:
+
+- Bridges talk to external APIs and the event pipeline.
+- Bridges publish normalized external facts as events.
+- Bridges consume bridge control messages for lifecycle and bridge-local state.
+- Bridges consume domain command messages only when they need to perform external API work.
+- Bridges do not decide what events mean for product behavior.
+- Processing event responses happens on the other side of the event pipeline.
+
+Current cleanup targets:
+
+- Extract shared SNS/SQS message helpers out of `ObsBridge`, starting with `ObsBridge::AwsMessage` into an `Orinoco::Messaging` namespace.
+- Give Twitch chat a real bridge worker/runtime shape, closer to OBS where appropriate:
+  - consume `orinoco.twitch.bridge.control`
+  - connect/disconnect from Twitch chat based on desired bridge state
+  - publish Twitch chat events to `orinoco.twitch.message.topic`
+  - keep Redis writes, UI broadcasts, and emote enrichment out of the bridge
+- Re-home the Twitch chat message processor out of `TwitchChatBridge`; it is a downstream projection/renderer processor, not a bridge.
+- Split 7TV emote discovery/enrichment out of `twitch_chat_passive.rb` into a downstream processor or scheduled projection.
+- Make OBS less brainy:
+  - publish OBS websocket events into the event pipeline
+  - move `ClipShowAffordance` out of the OBS bridge runtime
+  - have ClipShow consume OBS events from SQS and publish OBS commands back to `orinoco.obs.command`
+- Keep OBS bridge responsible for OBS websocket lifecycle, command execution, inventory/status publication, and bridge control only.
+
+Questions before implementation:
+
+- What should the canonical namespace be for pure SQS processors: `app/processors`, `app/services/*_projection`, `app/services/affordances`, or something else?
+- Should pure processors be long-lived Rails workers with `run` methods, or should we introduce a small shared worker framework for polling, shutdown, logging, and message deletion?
+- Should bridge control message parsing become shared and domain-parametric, or stay domain-specific with shared polling/unwrapping only?
+- Which OBS events should be published first for ClipShow parity: only media playback ended, or all subscribed OBS events?
+- What should the canonical event envelope look like across OBS and Twitch events: `type`, `source`, `occurred_at`, `payload`, `correlation`, etc.?
+- Should Redis projections be considered acceptable downstream processors, or should every projection also emit an event after writing state?
+- Where should 7TV emote refresh live: manual command, periodic worker, Twitch bridge side-channel event, or projection boot step?
+
 ## SQS Bridge (Mel)
 The OBS bridge sucks, it's like a million files.  Figure out what the right shape is supposed to be, and make sure you update the OBS bridge to use it as well
 
@@ -32,6 +123,17 @@ These will be important from the obs-bridge for the hotwire technique
 [services/obs_bridge/status_broadcaster.rb](https://github.com/meleneth/orinoco/blob/158aebcbffdcd3546675be23ffa3dc0c62c76c9f/railsapp/app/services/obs_bridge/status_broadcaster.rb#L11)
 
 # Soon
+
+## WOSBrain affordance follow-through
+Build the next layer of the collaborative Words On Stream helper on top of the working screenshot primitive and recognizer corpus.
+
+Near-term work:
+
+- Learn canonical accepted WOS words by persisting confirmed solved words into `official_wos_words`.
+- Use Twitch chat guesses as the incoming guess stream and correlate accepted guesses when the game hides solved words.
+- Improve solved-word OCR for multiple players, noisy labels, and higher-level board layouts.
+- Add explicit ruleset detection for hidden letters, fake letters, and hidden-and-fake rounds.
+- Keep expanding the screenshot fixture corpus with `$screenshot-a-new-fixture` whenever recognition misses.
 
 ## Make Event Capturing Work
 The bridge has something for 'capture the next 15 minutes', but it doesn't work.  We need to store events in redis for debugging purposes when it is enabled

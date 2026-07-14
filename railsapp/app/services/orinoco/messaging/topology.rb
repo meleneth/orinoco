@@ -79,6 +79,10 @@ module Orinoco
         @queue_refs_by_name.fetch(name)
       end
 
+      def queue_refs
+        @queue_refs_by_name.values.sort_by(&:name)
+      end
+
       private
 
       attr_reader :sns_client, :sqs_client, :logger

@@ -43,7 +43,7 @@ services:
     volumes:
       - ./railsapp:/rails
       - bundle:/usr/local/bundle
-  twitch-chat-worker:
+  twitch-bridge-worker:
     environment:
       - DATABASE_URL=${ORINOCO_DB_DATABASE_URL}
       - RAILS_ENV=development
@@ -58,7 +58,22 @@ services:
     volumes:
       - ./railsapp:/rails
       - bundle:/usr/local/bundle
-  twitch-chat-processor:
+  seven-tv-bridge-worker:
+    environment:
+      - DATABASE_URL=${ORINOCO_DB_DATABASE_URL}
+      - RAILS_ENV=development
+      - RAILS_MAX_THREADS=5
+      - RAILS_MIN_THREADS=5
+      - SCOREBOARD_REDIS_URL=${SCOREBOARD_REDIS_URL}
+      - EVENT_PIPELINE_GOAWS_URL=${EVENT_PIPELINE_GOAWS_URL}
+    depends_on:
+      orinoco-db:
+        condition: service_healthy
+        restart: true
+    volumes:
+      - ./railsapp:/rails
+      - bundle:/usr/local/bundle
+  twitch-chat-projection-worker:
     environment:
       - DATABASE_URL=${ORINOCO_DB_DATABASE_URL}
       - RAILS_ENV=development
@@ -74,5 +89,65 @@ services:
       - ./railsapp:/rails
       - bundle:/usr/local/bundle
 
+  clip-show-processor-worker:
+    environment:
+      - DATABASE_URL=${ORINOCO_DB_DATABASE_URL}
+      - RAILS_ENV=development
+      - RAILS_MAX_THREADS=5
+      - RAILS_MIN_THREADS=5
+      - SCOREBOARD_REDIS_URL=${SCOREBOARD_REDIS_URL}
+      - EVENT_PIPELINE_GOAWS_URL=${EVENT_PIPELINE_GOAWS_URL}
+    depends_on:
+      orinoco-db:
+        condition: service_healthy
+        restart: true
+    volumes:
+      - ./railsapp:/rails
+      - bundle:/usr/local/bundle
+  wos-brain-capture-worker:
+    environment:
+      - DATABASE_URL=${ORINOCO_DB_DATABASE_URL}
+      - RAILS_ENV=development
+      - RAILS_MAX_THREADS=5
+      - RAILS_MIN_THREADS=5
+      - SCOREBOARD_REDIS_URL=${SCOREBOARD_REDIS_URL}
+      - EVENT_PIPELINE_GOAWS_URL=${EVENT_PIPELINE_GOAWS_URL}
+    depends_on:
+      orinoco-db:
+        condition: service_healthy
+        restart: true
+    volumes:
+      - ./railsapp:/rails
+      - bundle:/usr/local/bundle
+  wos-brain-processor-worker:
+    environment:
+      - DATABASE_URL=${ORINOCO_DB_DATABASE_URL}
+      - RAILS_ENV=development
+      - RAILS_MAX_THREADS=5
+      - RAILS_MIN_THREADS=5
+      - SCOREBOARD_REDIS_URL=${SCOREBOARD_REDIS_URL}
+      - EVENT_PIPELINE_GOAWS_URL=${EVENT_PIPELINE_GOAWS_URL}
+    depends_on:
+      orinoco-db:
+        condition: service_healthy
+        restart: true
+    volumes:
+      - ./railsapp:/rails
+      - bundle:/usr/local/bundle
+  wos-brain-projection-worker:
+    environment:
+      - DATABASE_URL=${ORINOCO_DB_DATABASE_URL}
+      - RAILS_ENV=development
+      - RAILS_MAX_THREADS=5
+      - RAILS_MIN_THREADS=5
+      - SCOREBOARD_REDIS_URL=${SCOREBOARD_REDIS_URL}
+      - EVENT_PIPELINE_GOAWS_URL=${EVENT_PIPELINE_GOAWS_URL}
+    depends_on:
+      orinoco-db:
+        condition: service_healthy
+        restart: true
+    volumes:
+      - ./railsapp:/rails
+      - bundle:/usr/local/bundle
 volumes:
   bundle:

@@ -35,6 +35,22 @@ class ObsBridge::StatusWriter
     set_desired_state("disabled")
   end
 
+  def set_last_error!(message)
+    write_snapshot(
+      "bridge_id" => @keys.bridge_id || "obs_bridge",
+      "last_error" => message.to_s,
+      "updated_at" => timestamp
+    )
+  end
+
+  def clear_last_error!
+    write_snapshot(
+      "bridge_id" => @keys.bridge_id || "obs_bridge",
+      "last_error" => "",
+      "updated_at" => timestamp
+    )
+  end
+
   private
 
   def broadcast_status_panel!

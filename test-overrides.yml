@@ -26,3 +26,17 @@ services:
   goaws:
     ports:
     - "${GOAWS_WEB_PORT}:4100"
+  obs-bridge-worker:
+    profiles: ["workers"]
+  twitch-bridge-worker:
+    profiles: ["workers"]
+  twitch-chat-projection-worker:
+    profiles: ["workers"]
+  clip-show-processor-worker:
+    profiles: ["workers"]
+  wos-brain-capture-worker:
+    profiles: ["workers"]
+  wos-brain-processor-worker:
+    profiles: ["workers"]
+  wos-brain-projection-worker:
+    profiles: ["workers"]

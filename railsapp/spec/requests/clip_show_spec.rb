@@ -22,7 +22,8 @@ RSpec.describe "ClipShows", type: :request do
     )
   end
 
-  let(:sns_client) { instance_double(Aws::SNS::Client, publish: nil) }
+  let(:sns_client) { instance_double(Aws::SNS::Client) }
+  let(:published_messages) { [] }
   let(:aws_client_options) { { region: "us-east-1" } }
 
   let(:topology) do
@@ -67,6 +68,9 @@ RSpec.describe "ClipShows", type: :request do
       .to receive(:new)
       .and_return(scene_index)
 
+    allow(sns_client)
+      .to receive(:publish) { |kwargs| published_messages << kwargs }
+
     allow(Aws::SNS::Client)
       .to receive(:new)
       .with(**aws_client_options)
@@ -102,29 +106,34 @@ RSpec.describe "ClipShows", type: :request do
            }
 
       expect(response).to have_http_status(:success)
+      payloads = published_messages.map { |message| JSON.parse(message.fetch(:message)) }
 
-      expect(sns_client).to have_received(:publish).with(
-        topic_arn: obs_command_topic_arn,
-        message: JSON.generate(
+      expect(published_messages.map { |message| message.fetch(:topic_arn) }).to all(eq(obs_command_topic_arn))
+      expect(payloads.map { |payload| payload.fetch("type") }).to eq([
+        "obs.command.requested",
+        "obs.command.requested"
+      ])
+      expect(payloads.map { |payload| payload.fetch("source") }).to eq([
+        "clip_show",
+        "clip_show"
+      ])
+      expect(payloads.map { |payload| payload.dig("payload", "request") }).to eq([
+        {
           "requestType" => "SetSceneItemEnabled",
           "requestData" => {
             "sceneName" => "Clips",
             "sceneItemId" => 123,
             "sceneItemEnabled" => true
           }
-        )
-      )
-
-      expect(sns_client).to have_received(:publish).with(
-        topic_arn: obs_command_topic_arn,
-        message: JSON.generate(
+        },
+        {
           "requestType" => "SetInputAudioMonitorType",
           "requestData" => {
             "inputName" => "fight",
             "monitorType" => "OBS_MONITORING_TYPE_MONITOR_ONLY"
           }
-        )
-      )
+        }
+      ])
     end
   end
 end

@@ -5,7 +5,7 @@
 
 
   class="
-    animate-message 
+    animate-message
     bg-blue text-white
     text-left gap-2
     max-w-sm"
@@ -13,11 +13,11 @@
     line-height: 1.4;"
   >
 
-  <span class="font-bold" style="color: <%= @message[:tags][:color]%>">
-    <%= @message[:name] %>:
+  <span class="font-bold" style="color: <%= name_color %>">
+    <%= display_name %>:
   </span>
   <span class="text-white">
-    <%= @message[:txt].html_safe %>
+    <%= rendered_text %>
   </span>
 
 

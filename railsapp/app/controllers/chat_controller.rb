@@ -1,10 +1,9 @@
 class ChatController < ApplicationController
   def index
-    @twitch_configs = TwitchConfig.all
-    @messages = redis.lrange("twitch:chat:history",0,-1)
-    @messages = @messages.map { |raw|
+    @messages = redis.lrange("twitch:chat:history", 0, -1)
+    @messages = @messages.map do |raw|
       TwitchChatBridge::Message.from_json(raw)
-    }
+    end
   end
 
   def redis

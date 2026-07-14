@@ -1,3 +1,6 @@
 orinoco: foreman run --env .env.dev.orinoco bundle exec rails server -p 33230 -b 0.0.0.0 -P tmp/pids/server.foreman.development.pid
 css: bin/rails tailwindcss:watch
 obsbridge: foreman run --env .env.dev.orinoco bin/rails runner "ObsBridgeWorker.new.run"
+wosbrain: foreman run --env .env.dev.orinoco bin/rails runner "WosBrainProcessorWorker.new.run"
+wosprojection: foreman run --env .env.dev.orinoco bin/rails runner "WosBrainProjectionWorker.new.run"
+woscapture: foreman run --env .env.dev.orinoco bin/rails runner "WosBrainCaptureWorker.new.run"

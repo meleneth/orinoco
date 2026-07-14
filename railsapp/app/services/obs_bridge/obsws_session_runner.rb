@@ -4,6 +4,16 @@ require "obsws"
 
 module ObsBridge
   class ObswsSessionRunner
+    class ConnectionError < StandardError
+      attr_reader :host, :port
+
+      def initialize(host:, port:, cause:)
+        @host = host
+        @port = port
+        super("failed to connect to OBS websocket at #{host}:#{port}: #{cause.class}: #{cause.message}")
+      end
+    end
+
     def initialize(
       host:,
       port:,
@@ -17,15 +27,31 @@ module ObsBridge
     end
 
     def run(event_types: [])
-      @requests_client_class.new(host: @host, port: @port).run do |req|
+      yielded_from_client = false
+      req = connected_requests_client
+
+      req.run do |requests|
+        yielded_from_client = true
         events = @events_client_class.new(host: @host, port: @port)
-        session = ObswsSession.new(req: req, events: events)
+        session = ObswsSession.new(req: requests, events: events)
 
         session.subscribe!(event_types)
         yield session
       ensure
         session&.close
       end
+    rescue StandardError => e
+      raise if yielded_from_client || e.is_a?(ConnectionError)
+
+      raise ConnectionError.new(host: @host, port: @port, cause: e)
+    end
+
+    private
+
+    def connected_requests_client
+      @requests_client_class.new(host: @host, port: @port)
+    rescue StandardError => e
+      raise ConnectionError.new(host: @host, port: @port, cause: e)
     end
   end
 end

@@ -1,0 +1,41 @@
+<% content_for :title, "Event Pipeline" %>
+
+<section class="mx-auto max-w-6xl py-8">
+  <div class="mb-6">
+    <h1 class="text-2xl font-semibold text-slate-950 dark:text-slate-50">Event Pipeline</h1>
+    <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">Queue depth and message spy for the configured SNS/SQS pipeline.</p>
+  </div>
+
+  <% if @error %>
+    <div class="mb-6 border border-red-800 bg-red-950/40 p-4 text-sm text-red-100">
+      <%= @error.class %>: <%= @error.message %>
+    </div>
+  <% end %>
+
+  <div class="overflow-hidden border border-slate-800 bg-slate-950">
+    <table class="min-w-full divide-y divide-slate-800 text-sm">
+      <thead class="bg-slate-900 text-left text-xs uppercase tracking-wide text-slate-400">
+        <tr>
+          <th class="px-4 py-3">Queue</th>
+          <th class="px-4 py-3 text-right">Visible</th>
+          <th class="px-4 py-3 text-right">In flight</th>
+          <th class="px-4 py-3 text-right">Delayed</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-900">
+        <% @queues.each do |queue| %>
+          <tr>
+            <td class="px-4 py-3 font-mono text-slate-100"><%= queue.name %></td>
+            <td class="px-4 py-3 text-right text-slate-200"><%= queue.visible %></td>
+            <td class="px-4 py-3 text-right text-slate-200"><%= queue.in_flight %></td>
+            <td class="px-4 py-3 text-right text-slate-200"><%= queue.delayed %></td>
+            <td class="px-4 py-3 text-right">
+              <%= link_to "Spy", admin_event_pipeline_queue_path(queue.name), class: "rounded bg-slate-800 px-3 py-2 text-xs font-medium text-slate-100 hover:bg-slate-700" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</section>

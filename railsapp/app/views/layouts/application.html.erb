@@ -47,7 +47,15 @@
           class: "rounded px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 hover:text-white" %>
 
         <%= link_to "Bridges",
-          admin_obs_bridge_path('obs'),
+          admin_obs_bridge_path('obs_bridge'),
+          class: "rounded px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 hover:text-white" %>
+
+        <%= link_to "Event Pipeline",
+          admin_event_pipeline_path,
+          class: "rounded px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 hover:text-white" %>
+
+        <%= link_to "WOSBrain",
+          wos_brain_path,
           class: "rounded px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 hover:text-white" %>
 
         <%= link_to "Twitch Chat",

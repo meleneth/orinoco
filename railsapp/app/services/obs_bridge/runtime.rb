@@ -1,13 +1,18 @@
 # frozen_string_literal: true
 
+require "time"
+
 module ObsBridge
   class Runtime
     def initialize(
       state:,
       inventory_store:,
       session_runner:,
-      affordance_host:,
-      affordance_context:,
+      affordance_host: nil,
+      affordance_context: nil,
+      event_publisher: nil,
+      result_publisher: nil,
+      event_types: nil,
       logger: nil,
       backoff: nil,
       heartbeat_interval: 5.0,
@@ -21,6 +26,9 @@ module ObsBridge
       @session_runner = session_runner
       @affordance_host = affordance_host
       @affordance_context = affordance_context
+      @event_publisher = event_publisher
+      @result_publisher = result_publisher
+      @event_types = event_types
       @logger = logger || ->(msg) { warn msg }
       @backoff = backoff || Backoff.new(sleeper: sleeper)
       @heartbeat_interval = heartbeat_interval
@@ -92,7 +100,7 @@ module ObsBridge
     def run_session
       @logger.call("[obs-bridge/runtime] connecting to OBS")
 
-      @session_runner.run(event_types: @affordance_host.event_types) do |session|
+      @session_runner.run(event_types: subscribed_event_types) do |session|
         @backoff.reset!
         @state.connected!
         @state.heartbeat!
@@ -102,6 +110,13 @@ module ObsBridge
       end
 
       @state.disconnected!
+    end
+
+    def subscribed_event_types
+      return @event_types if @event_types
+      return @affordance_host.event_types if @affordance_host
+
+      ["media_input_playback_ended"]
     end
 
     def serve_connected_session(session)
@@ -121,7 +136,7 @@ module ObsBridge
       command_result = drain_commands(session)
       return [:stop, next_heartbeat_at] if command_result == :stop
 
-      dispatch_events(session)
+      publish_or_dispatch_events(session)
       next_heartbeat_at = heartbeat_if_due(monotonic_now, next_heartbeat_at)
       idle_with_session(session)
 
@@ -146,7 +161,7 @@ module ObsBridge
         refresh_inventory_with(session)
         :continue
       when Hash
-        apply_obs_request(session, command)
+        apply_obs_command(session, command)
         :continue
       else
         @logger.call("[obs-bridge/runtime] ignoring unknown command #{command.inspect}")
@@ -154,19 +169,62 @@ module ObsBridge
       end
     end
 
-    def apply_obs_request(session, request)
-      session.apply_request(request)
+    def apply_obs_command(session, command)
+      request = command.key?("request") ? command.fetch("request") : command
+      started_at = Time.now.utc
+      result = session.apply_request(request)
+      completed_at = Time.now.utc
+
+      publish_screenshot_result(command, request, result, started_at, completed_at) if screenshot_request?(request)
+      result
     end
 
-    def dispatch_events(session)
+    def publish_screenshot_result(command, request, result, started_at, completed_at)
+      return unless @result_publisher
+
+      @result_publisher.call(
+        "obs.screenshot.captured",
+        screenshot_result_payload(request, result, started_at, completed_at),
+        topic: command["reply_topic"] || command["replyTopic"],
+        correlation: command.fetch("correlation", {})
+      )
+    end
+
+    def screenshot_result_payload(request, result, started_at, completed_at)
+      data = result.is_a?(Hash) ? result : {}
+      request_data = request.fetch("requestData", {})
+
+      {
+        "imageData" => data["imageData"],
+        "imageFormat" => data["imageFormat"] || request_data.fetch("imageFormat", "png"),
+        "sourceName" => data["sourceName"] || request_data["sourceName"],
+        "activeSceneName" => data["activeSceneName"],
+        "captureStartedAt" => started_at.iso8601(6),
+        "captureCompletedAt" => completed_at.iso8601(6),
+        "captureDurationMs" => ((completed_at - started_at) * 1000).round(3)
+      }.compact
+    end
+
+    def screenshot_request?(request)
+      request.fetch("requestType", nil) == "GetSourceScreenshot"
+    end
+
+    def publish_or_dispatch_events(session)
       return unless session.respond_to?(:poll_events)
 
       Array(session.poll_events(timeout: 0)).each do |event|
-        @affordance_host.dispatch(
-          event.fetch("eventType"),
-          event: event.fetch("eventData"),
-          context: @affordance_context
-        )
+        if @event_publisher
+          @event_publisher.call(
+            "obs.#{event.fetch("eventType").underscore}",
+            event.fetch("eventData", {})
+          )
+        elsif @affordance_host
+          @affordance_host.dispatch(
+            event.fetch("eventType"),
+            event: event.fetch("eventData"),
+            context: @affordance_context
+          )
+        end
       end
     end
 

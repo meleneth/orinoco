@@ -4,63 +4,143 @@
       <%= tag.div class: cx("space-y-6") do %>
         <%= tag.div do %>
           <%= tag.h1 "Basic Setup", class: cx("text-2xl", "font-bold") %>
-          <%= tag.p "OBS Config", class: cx("mt-1", "text-sm", "text-gray-600", "dark:text-gray-400") %>
+          <%= tag.p "OBS and Twitch bridge configuration", class: cx("mt-1", "text-sm", "text-gray-600", "dark:text-gray-400") %>
         <% end %>
 
-        <% if @obs_config.errors.any? %>
+        <% errors = @obs_config.errors.full_messages + @twitch_config.errors.full_messages + @wos_brain_config.errors.full_messages %>
+        <% if errors.any? %>
           <%= tag.div class: cx(
             "rounded-md border p-4",
             "border-red-200 bg-red-50 text-red-800",
             "dark:border-red-800 dark:bg-red-950 dark:text-red-200"
           ) do %>
-            <%= tag.h2 "#{pluralize(@obs_config.errors.count, "error")} prevented saving:",
+            <%= tag.h2 "#{pluralize(errors.count, "error")} prevented saving:",
               class: cx("text-sm", "font-semibold") %>
 
             <%= tag.ul class: cx("mt-2", "list-disc", "pl-5", "text-sm") do %>
-              <% @obs_config.errors.full_messages.each do |message| %>
+              <% errors.each do |message| %>
                 <%= tag.li message %>
               <% end %>
             <% end %>
           <% end %>
         <% end %>
 
-        <%= form_with model: @obs_config,
-          url: obs_config_path(return_to: params[:return_to]),
-          class: cx("space-y-6") do |form| %>
-          <%= tag.div class: cx("space-y-2") do %>
-            <%= form.label :host, class: cx(
-              "block", "text-sm", "font-medium",
-              "text-gray-700", "dark:text-gray-300"
-            ) %>
+        <%= form_with url: basic_setup_path, method: :post, class: cx("space-y-8") do |form| %>
+          <section class="space-y-4">
+            <div>
+              <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100">OBS</h2>
+              <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">WebSocket endpoint used by the OBS bridge.</p>
+            </div>
 
-            <%= form.text_field :host, class: cx(
-              "block w-full rounded-md border px-3 py-2 shadow-sm",
-              "border-gray-300 bg-white text-gray-900",
-              "placeholder:text-gray-400",
-              "focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500",
-              "dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100",
-              "dark:placeholder:text-gray-500 dark:focus:border-blue-400 dark:focus:ring-blue-400"
-            ) %>
-          <% end %>
+            <%= fields_for :obs_config, @obs_config do |obs_form| %>
+              <%= tag.div class: cx("space-y-2") do %>
+                <%= obs_form.label :host, class: cx(
+                  "block", "text-sm", "font-medium",
+                  "text-gray-700", "dark:text-gray-300"
+                ) %>
 
-          <%= tag.div class: cx("space-y-2") do %>
-            <%= form.label :port, class: cx(
-              "block", "text-sm", "font-medium",
-              "text-gray-700", "dark:text-gray-300"
-            ) %>
+                <%= obs_form.text_field :host, class: cx(
+                  "block w-full rounded-md border px-3 py-2 shadow-sm",
+                  "border-gray-300 bg-white text-gray-900",
+                  "placeholder:text-gray-400",
+                  "focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500",
+                  "dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100",
+                  "dark:placeholder:text-gray-500 dark:focus:border-blue-400 dark:focus:ring-blue-400"
+                ) %>
+                <%= tag.p "Use host.docker.internal when the bridge runs in Docker and OBS runs on the host machine.", class: cx("text-xs", "text-gray-500", "dark:text-gray-400") %>
+              <% end %>
 
-            <%= form.number_field :port, class: cx(
-              "block w-full rounded-md border px-3 py-2 shadow-sm",
-              "border-gray-300 bg-white text-gray-900",
-              "placeholder:text-gray-400",
-              "focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500",
-              "dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100",
-              "dark:placeholder:text-gray-500 dark:focus:border-blue-400 dark:focus:ring-blue-400"
-            ) %>
-          <% end %>
+              <%= tag.div class: cx("space-y-2") do %>
+                <%= obs_form.label :port, class: cx(
+                  "block", "text-sm", "font-medium",
+                  "text-gray-700", "dark:text-gray-300"
+                ) %>
 
+                <%= obs_form.number_field :port, class: cx(
+                  "block w-full rounded-md border px-3 py-2 shadow-sm",
+                  "border-gray-300 bg-white text-gray-900",
+                  "placeholder:text-gray-400",
+                  "focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500",
+                  "dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100",
+                  "dark:placeholder:text-gray-500 dark:focus:border-blue-400 dark:focus:ring-blue-400"
+                ) %>
+              <% end %>
+            <% end %>
+          </section>
+
+          <section class="space-y-4 border-t border-gray-200 pt-6 dark:border-gray-700">
+            <div>
+              <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100">Twitch</h2>
+              <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Channel name used when the Twitch bridge joins chat.</p>
+            </div>
+
+            <%= fields_for :twitch_config, @twitch_config do |twitch_form| %>
+              <%= tag.div class: cx("space-y-2") do %>
+                <%= twitch_form.label :channel_name, "Channel name", class: cx(
+                  "block", "text-sm", "font-medium",
+                  "text-gray-700", "dark:text-gray-300"
+                ) %>
+
+                <%= twitch_form.text_field :channel_name, class: cx(
+                  "block w-full rounded-md border px-3 py-2 shadow-sm",
+                  "border-gray-300 bg-white text-gray-900",
+                  "placeholder:text-gray-400",
+                  "focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500",
+                  "dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100",
+                  "dark:placeholder:text-gray-500 dark:focus:border-blue-400 dark:focus:ring-blue-400"
+                ) %>
+              <% end %>
+            <% end %>
+          </section>
+
+          <section class="space-y-4 border-t border-gray-200 pt-6 dark:border-gray-700">
+            <div>
+              <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100">WOSBrain</h2>
+              <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Words On Stream recognition affordance.</p>
+            </div>
+
+            <%= fields_for :wos_brain_affordance, @wos_brain_config do |wos_form| %>
+              <%= tag.div class: cx("flex items-center gap-3") do %>
+                <%= wos_form.check_box :enabled, class: cx(
+                  "h-4 w-4 rounded border-gray-300 text-blue-600",
+                  "focus:ring-2 focus:ring-blue-500",
+                  "dark:border-gray-600 dark:bg-gray-900 dark:focus:ring-blue-400"
+                ) %>
+                <%= wos_form.label :enabled, "Enable WOSBrain affordance", class: cx(
+                  "text-sm", "font-medium",
+                  "text-gray-700", "dark:text-gray-300"
+                ) %>
+              <% end %>
+
+              <%= tag.div class: cx("space-y-2") do %>
+                <%= wos_form.label :screenshot_source_name, "Screenshot source", class: cx(
+                  "block", "text-sm", "font-medium",
+                  "text-gray-700", "dark:text-gray-300"
+                ) %>
+                <% source_options = (@wos_source_options + [@wos_brain_config.screenshot_source_name]).reject(&:blank?).uniq.sort %>
+                <%= tag.div class: cx("flex gap-2") do %>
+                  <%= wos_form.select :screenshot_source_name,
+                    options_for_select(source_options, @wos_brain_config.screenshot_source_name),
+                    { include_blank: "Select an OBS source" },
+                    class: cx(
+                      "block min-w-0 flex-1 rounded-md border px-3 py-2 shadow-sm",
+                      "border-gray-300 bg-white text-gray-900",
+                      "focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500",
+                      "dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100",
+                      "dark:focus:border-blue-400 dark:focus:ring-blue-400"
+                    ) %>
+                  <%= button_tag "Auto", name: "auto_wos_source", value: "1", type: "submit", class: cx(
+                    "inline-flex items-center rounded-md px-3 py-2 text-sm font-medium shadow-sm",
+                    "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50",
+                    "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
+                    "dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+                  ) %>
+                <% end %>
+              <% end %>
+            <% end %>
+          </section>
           <%= tag.div do %>
-            <%= form.submit "Save OBS config", class: cx(
+            <%= form.submit "Save basic setup", class: cx(
               "inline-flex items-center rounded-md px-4 py-2 text-sm font-medium shadow-sm",
               "bg-blue-600 text-white hover:bg-blue-700",
               "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",

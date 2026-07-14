@@ -1,0 +1,4 @@
+interface:
+  display_name: "Screenshot A New Fixture"
+  short_description: "Capture the current WOS screenshot and add it to fixtures."
+  default_prompt: "Capture the current WOS screen as a new fixture."

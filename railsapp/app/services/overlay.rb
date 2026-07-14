@@ -8,4 +8,6 @@ module Overlay
   class UnknownStylePresetError < Error; end
 
   class InvalidConfigError < Error; end
+
+  class UnknownLayerError < Error; end
 end

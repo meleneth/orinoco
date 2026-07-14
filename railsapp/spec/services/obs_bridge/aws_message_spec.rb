@@ -1,12 +1,11 @@
 # frozen_string_literal: true
 
 require "spec_helper"
+require "obs_bridge/aws_message"
 
 RSpec.describe ObsBridge::AwsMessage do
-  Message = Struct.new(:body)
-
   it "unwraps a plain JSON payload" do
-    message = Message.new('{"type":"obs.bridge.enable","bridge_id":"main"}')
+    message = double(body: '{"type":"obs.bridge.enable","bridge_id":"main"}')
 
     expect(described_class.unwrap(message)).to eq(
       "type" => "obs.bridge.enable",
@@ -15,8 +14,8 @@ RSpec.describe ObsBridge::AwsMessage do
   end
 
   it "unwraps an SNS-style notification wrapper" do
-    message = Message.new(
-      {
+    message = double(
+      body: {
         "Type" => "Notification",
         "Message" => '{"type":"obs.bridge.capture_all","bridge_id":"main","duration_seconds":900}'
       }.to_json
@@ -30,7 +29,7 @@ RSpec.describe ObsBridge::AwsMessage do
   end
 
   it "raises on malformed outer JSON" do
-    message = Message.new("{ definitely not json")
+    message = double(body: "{ definitely not json")
 
     expect do
       described_class.unwrap(message)
@@ -38,8 +37,8 @@ RSpec.describe ObsBridge::AwsMessage do
   end
 
   it "raises on malformed inner SNS Message JSON" do
-    message = Message.new(
-      {
+    message = double(
+      body: {
         "Type" => "Notification",
         "Message" => "{ nope"
       }.to_json

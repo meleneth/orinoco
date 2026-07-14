@@ -56,6 +56,9 @@ Shortcuts:
   routes | r
   spec | sp
   bridge | obs
+  woscapture | wosc
+  wosbrain | wos
+  wosprojection | wosp
   tailwind | tw
   server | s
   generate | g
@@ -88,6 +91,15 @@ spec | sp)
   ;;
 bridge | obs)
   run_rails runner "ObsBridgeWorker.new.run" "$@"
+  ;;
+woscapture | wosc)
+  run_rails runner "WosBrainCaptureWorker.new.run" "$@"
+  ;;
+wosbrain | wos)
+  run_rails runner "WosBrainProcessorWorker.new.run" "$@"
+  ;;
+wosprojection | wosp)
+  run_rails runner "WosBrainProjectionWorker.new.run" "$@"
   ;;
 tailwind | tw)
   run_rails tailwindcss:build "$@"

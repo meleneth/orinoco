@@ -1,6 +1,14 @@
 # frozen_string_literal: true
 
 require "spec_helper"
+require "obs_bridge/affordance_context"
+require "obs_bridge/affordance_host"
+require "obs_bridge/backoff"
+require "obs_bridge/bridge_state"
+require "obs_bridge/inventory_reader"
+require "obs_bridge/inventory_store"
+require "obs_bridge/runtime"
+require "obs_bridge/obsws_session_runner"
 
 RSpec.describe ObsBridge::Runtime do
   class FakeThread
@@ -125,7 +133,7 @@ RSpec.describe ObsBridge::Runtime do
   end
 
   let(:inventory_reader) { instance_double(ObsBridge::InventoryReader) }
-  let(:affordance_config) { instance_double(AffordanceConfig) }
+  let(:affordance_config) { double("AffordanceConfig") }
   let(:obs_request_emitter) { instance_double(Proc) }
 
   let(:affordance_context) do
@@ -244,6 +252,78 @@ RSpec.describe ObsBridge::Runtime do
     request = { "requestType" => "RefreshSceneList" }
 
     expect(runtime.enqueue_obs_request!(request)).to be(false)
+  end
+  it "publishes screenshot results with reply topic and correlation" do
+    result_calls = []
+    result_publisher = lambda do |type, payload, topic:, correlation:|
+      result_calls << {
+        type: type,
+        payload: payload,
+        topic: topic,
+        correlation: correlation
+      }
+    end
+    screenshot_runtime = described_class.new(
+      state: state,
+      inventory_store: inventory_store,
+      session_runner: session_runner,
+      affordance_host: affordance_host,
+      affordance_context: affordance_context,
+      result_publisher: result_publisher,
+      logger: logger,
+      backoff: backoff,
+      heartbeat_interval: heartbeat_interval,
+      idle_sleep: idle_sleep,
+      monotonic_clock: monotonic_clock,
+      sleeper: sleeper,
+      thread_factory: thread_factory
+    )
+    request = {
+      "requestType" => "GetSourceScreenshot",
+      "requestData" => { "imageFormat" => "png" }
+    }
+    command = {
+      "request" => request,
+      "reply_topic" => "orinoco.obs.screenshot.custom",
+      "correlation" => { "request_id" => "req-1" }
+    }
+
+    allow(session_runner).to receive(:run)
+      .with(event_types: [ "MediaInputPlaybackEnded" ])
+      .and_yield(session)
+    allow(session).to receive(:apply_request).with(request).and_return(
+      "imageData" => "data:image/png;base64,abc",
+      "imageFormat" => "png",
+      "sourceName" => "Gameplay",
+      "activeSceneName" => "Gameplay"
+    )
+
+    screenshot_runtime.start!
+    runtime_step
+
+    expect(screenshot_runtime.enqueue_obs_request!(command)).to be(true)
+
+    runtime_step
+
+    expect(result_calls.length).to eq(1)
+    expect(result_calls.first).to include(
+      type: "obs.screenshot.captured",
+      topic: "orinoco.obs.screenshot.custom",
+      correlation: { "request_id" => "req-1" }
+    )
+    expect(result_calls.first.fetch(:payload)).to include(
+      "imageData" => "data:image/png;base64,abc",
+      "imageFormat" => "png",
+      "sourceName" => "Gameplay",
+      "activeSceneName" => "Gameplay"
+    )
+    expect(result_calls.first.fetch(:payload)).to include(
+      "captureStartedAt",
+      "captureCompletedAt",
+      "captureDurationMs"
+    )
+  ensure
+    screenshot_runtime&.stop!
   end
 
   it "dispatches polled events to the affordance host" do

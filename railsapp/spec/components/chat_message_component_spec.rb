@@ -5,6 +5,14 @@ require "rails_helper"
 RSpec.describe ChatMessageComponent, type: :component do
   include ViewComponent::TestHelpers
 
+  let(:redis) { instance_double(Redis) }
+
+  before do
+    allow(Redis).to receive(:new).and_return(redis)
+    allow(redis).to receive(:hgetall).with("twitch_emote_7tv").and_return({})
+    allow(redis).to receive(:hgetall).with("global_emote_7tv").and_return({})
+  end
+
   it "renders a parsed twitch chat message with emotes replaced" do
     message = TwitchChatBridge::Message.from_json(<<~JSON)
       {
@@ -88,9 +96,70 @@ RSpec.describe ChatMessageComponent, type: :component do
     html = rendered.to_html
 
     expect(html).to include('style="color: #5F9EA0"')
-    expect(html).to include("quantumapprentice:")
+    expect(html).to include("QuantumApprentice:")
     expect(html.scan("<img ").length).to eq(5)
     expect(html).to include("https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_35afd89499c240e7a57abcb30a7c0168/default/dark/2.0")
     expect(html).to include("https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_84b3b3e91a2d4395befc55a128463c36/default/dark/2.0")
+  end
+
+  it "escapes arbitrary HTML and JavaScript in message text" do
+    message = TwitchChatBridge::Message.new(
+      tags: { color: "#123456", display_name: "safe_name" },
+      emotes: [],
+      name: "safe_name",
+      txt: '<script>alert("xss")</script><img src=x onerror=alert(1)>'
+    )
+
+    html = render_inline(described_class.new(message: message)).to_html
+
+    expect(html).not_to include("<script>")
+    expect(html).not_to include("<img src=x")
+    expect(html).to include('&lt;script&gt;alert("xss")&lt;/script&gt;')
+    expect(html).to include("&lt;img src=x onerror=alert(1)&gt;")
+  end
+
+  it "escapes display names" do
+    message = TwitchChatBridge::Message.new(
+      tags: { color: "#123456", display_name: '<img src=x onerror=alert(1)>' },
+      emotes: [],
+      name: "fallback",
+      txt: "hello"
+    )
+
+    html = render_inline(described_class.new(message: message)).to_html
+
+    expect(html).not_to include('<img src=x onerror=alert(1)>')
+    expect(html).to include("&lt;img src=x onerror=alert(1)&gt;:")
+  end
+
+  it "falls back when the chat color is unsafe" do
+    message = TwitchChatBridge::Message.new(
+      tags: { color: 'red; background-image: url(javascript:alert(1))', display_name: "melen" },
+      emotes: [],
+      name: "melen",
+      txt: "hello"
+    )
+
+    html = render_inline(described_class.new(message: message)).to_html
+
+    expect(html).to include('style="color: #ffffff"')
+    expect(html).not_to include("javascript:alert")
+  end
+
+  it "renders 7TV emotes as images while escaping surrounding text" do
+    allow(redis).to receive(:hgetall).with("twitch_emote_7tv").and_return({ "WidePeepo" => "01F6N8N3E8000" })
+
+    message = TwitchChatBridge::Message.new(
+      tags: { color: "#123456", display_name: "melen" },
+      emotes: [],
+      name: "melen",
+      txt: "hello WidePeepo <script>alert(1)</script>"
+    )
+
+    html = render_inline(described_class.new(message: message)).to_html
+
+    expect(html).to include('src="https://cdn.7tv.app/emote/01F6N8N3E8000/2x.webp"')
+    expect(html).not_to include("<script>")
+    expect(html).to include("&lt;script&gt;alert(1)&lt;/script&gt;")
   end
 end
