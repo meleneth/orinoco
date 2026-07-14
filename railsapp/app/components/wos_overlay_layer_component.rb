@@ -34,7 +34,7 @@ class WosOverlayLayerComponent < ApplicationComponent
   end
 
   def display_word_rows
-    word_rows.reject { |row| row["state"] == "instruction" }.first(8)
+    word_rows.select { |row| row["state"] == "solved" || row["correct_word"].present? || row["text"].present? }.first(8)
   end
 
   def status_text

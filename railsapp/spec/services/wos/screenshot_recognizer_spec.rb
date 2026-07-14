@@ -87,6 +87,15 @@ RSpec.describe Wos::ScreenshotRecognizer do
     expect(result.solved_word_regions.map(&:word_length)).to all(eq(7))
     expect(result.solved_word_regions.map(&:filled_count)).to all(eq(0))
   end
+  it "serializes accepted words separately from blank word-bank evidence" do
+    result = described_class.call(File.join(fixtures_dir, "live_latest_20260713_130753.png"))
+    payload = result.to_h
+
+    expect(payload.fetch(:solved_words).map { |row| row.fetch(:state) }).to all(eq("solved"))
+    expect(payload.fetch(:solved_words).map { |row| row.fetch(:correct_word) }).to include("THANK")
+    expect(payload.fetch(:blank_word_banks).map { |row| row.fetch(:state) }).to all(eq("blank"))
+    expect(payload.fetch(:remaining_words)).to include(hash_including(length: 4, remaining: 12))
+  end
   it "extracts accepted words and player labels from answer-heavy fixtures" do
     expectations = {
       "live_latest_20260713_130753.png" => { word: "THANK", player: "MEL" },

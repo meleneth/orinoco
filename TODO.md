@@ -16,7 +16,7 @@ Current state:
 
 Next cleanup:
 
-- Split blank-bank evidence from user-facing remaining-word rows so `solved_words` stops exposing internal strip lengths like `12/12/13/12`.
+- [x] Split blank-bank evidence from user-facing remaining-word rows so `solved_words` stops exposing internal strip lengths like `12/12/13/12`.
 - Continue adding fixtures for missed board letters, solved words, and player labels.
 - Persist newly accepted WOS words into `official_wos_words` when solved-word OCR or Twitch guess correlation confirms them.
 - Correlate Twitch chat guesses with WOS accepted words once higher levels stop showing the solved list.

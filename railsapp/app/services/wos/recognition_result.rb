@@ -23,7 +23,8 @@ module Wos
         regions: regions.transform_values(&:to_h),
         ruleset: ruleset.to_h,
         letters: letter_tiles.map(&:to_h),
-        solved_words: solved_word_regions.map(&:to_h),
+        solved_words: solved_word_regions.select { |row| row.state == "solved" }.map(&:to_h),
+        blank_word_banks: solved_word_regions.select { |row| row.state == "blank" }.map(&:to_h),
         small_text: small_text_regions.map(&:to_h),
         remaining_words: remaining_words.map { |summary| summary.respond_to?(:to_h) ? summary.to_h : summary },
         warnings: warnings

@@ -57,7 +57,6 @@ RSpec.describe "Overlay", type: :request do
       expect(response.body).to include("Words")
       expect(response.body).to include("12 x 4")
       expect(response.body).to include("5 x 5")
-      expect(response.body).to include("_____")
       expect(response.body).to include("ABLE")
       expect(response.body).to include("chatuser")
     end
