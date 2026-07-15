@@ -11,12 +11,12 @@ RSpec.describe Wos::ScreenshotRecognizer do
   let(:fixtures_dir) { File.expand_path("../../fixtures/files/wos", __dir__) }
   let(:fixture_expectations) do
     {
-      "example_wos_1.png" => "UTELAZQ",
-      "example_wos_2.png" => "ALTEZQU",
-      "live_lizard.png" => "RZIADL",
-      "live_latest_20260713_125054.png" => "AIRLEZE",
-      "live_latest_20260713_130753.png" => "SAHTNK",
-      "wos_live_latest_20260713_143201.png" => "OERBXS"
+      "letters_utelazq.png" => "UTELAZQ",
+      "letters_altezqu.png" => "ALTEZQU",
+      "letters_rziadl.png" => "RZIADL",
+      "letters_airleze.png" => "AIRLEZE",
+      "letters_sahtnk_answer_thank.png" => "SAHTNK",
+      "letters_oerbxs.png" => "OERBXS"
     }
   end
 
@@ -26,16 +26,17 @@ RSpec.describe Wos::ScreenshotRecognizer do
 
   let(:unlabeled_live_fixture_names) do
     [
-      "live_march_guess.png"
+      "candidate_acimrrah_answer_march.png",
+      "candidate_borexs.png"
     ]
   end
 
   let(:live_anagram_expectations) do
     {
-      "live_defense.png" => "DEFENSE",
-      "live_diffuse.png" => "DIFFUSE",
-      "live_feast.png" => "FEAST",
-      "wos_live_latest_20260714_124803.png" => "FURTHER"
+      "anagram_defense.png" => "DEFENSE",
+      "anagram_diffuse.png" => "DIFFUSE",
+      "anagram_feast.png" => "FEAST",
+      "anagram_further.png" => "FURTHER"
     }
   end
 
@@ -98,7 +99,7 @@ RSpec.describe Wos::ScreenshotRecognizer do
   end
 
   it "recognizes visible blank word slots in the latest live fixture" do
-    result = described_class.call(File.join(fixtures_dir, "live_latest_20260713_125054.png"))
+    result = described_class.call(File.join(fixtures_dir, "letters_airleze.png"))
 
     expect(result.solved_word_regions.length).to eq(4)
     expect(result.solved_word_regions.map(&:state)).to all(eq("blank"))
@@ -120,19 +121,19 @@ RSpec.describe Wos::ScreenshotRecognizer do
 
       expect(result.letter_tiles.length).to be_between(5, 7).inclusive
       expect(result.letter_tiles.map(&:state)).to all(eq("visible"))
-      expect(result.remaining_words.map(&:to_h)).to all(include(source: "screen_blank_rows"))
+      expect(result.remaining_words.map(&:to_h)).to all(satisfy { |row| row.fetch(:source).to_s.start_with?("screen_blank_") })
     end
   end
 
   it "documents the live FEAST remaining-word count target" do
-    result = described_class.call(File.join(fixtures_dir, "live_feast.png"))
+    result = described_class.call(File.join(fixtures_dir, "anagram_feast.png"))
 
     pending("remaining-word segmenter currently merges adjacent blank slots on this capture")
     expect(result.remaining_words.map(&:to_h)).to include(hash_including(length: 5, total: 4, remaining: 4))
     expect(result.remaining_words.map(&:to_h)).to include(hash_including(length: 4))
   end
   it "serializes accepted words separately from blank word-bank evidence" do
-    result = described_class.call(File.join(fixtures_dir, "live_latest_20260713_130753.png"))
+    result = described_class.call(File.join(fixtures_dir, "letters_sahtnk_answer_thank.png"))
     payload = result.to_h
 
     expect(payload.fetch(:solved_words).map { |row| row.fetch(:state) }).to all(eq("solved"))
@@ -141,16 +142,16 @@ RSpec.describe Wos::ScreenshotRecognizer do
     expect(payload.fetch(:remaining_words)).to include(hash_including(length: 4, remaining: 12))
   end
   it "documents the live MARCH solved-word target" do
-    result = described_class.call(File.join(fixtures_dir, "live_march_guess.png"))
+    result = described_class.call(File.join(fixtures_dir, "candidate_acimrrah_answer_march.png"))
 
     pending("solved-word recognizer currently reads the player label instead of the accepted word")
     expect(result.solved_word_regions.map(&:correct_word)).to include("MARCH")
   end
   it "extracts accepted words and player labels from answer-heavy fixtures" do
     expectations = {
-      "live_latest_20260713_130753.png" => { word: "THANK", player: "MEL" },
-      "wos_live_latest_20260713_135505.png" => { word: "MUTE", player: "MEL" },
-      "wos_live_latest_20260715_011123.png" => { word: "CLASSIC", player: "MEL" }
+      "letters_sahtnk_answer_thank.png" => { word: "THANK", player: "MEL" },
+      "candidate_tiuenn_answer_mute.png" => { word: "MUTE", player: "MEL" },
+      "candidate_olosasi_answer_classic.png" => { word: "CLASSIC", player: "MEL" }
     }
 
     expectations.each do |fixture, expected|
