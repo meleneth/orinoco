@@ -66,6 +66,13 @@ module Wos
       )
     end
 
+    def no_active_board!
+      update!(
+        "state" => "no_active_board",
+        "last_error" => "WOSBrain recognized a frame, but no active board letters were found"
+      )
+    end
+
     def projection_failed!(message)
       update!(
         "state" => "projection_error",

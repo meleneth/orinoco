@@ -22,7 +22,10 @@ module WosProjection
     def call(event)
       previous_state = @store.read
       state = state_for(event)
-      return previous_state unless active_board?(state)
+      unless active_board?(state)
+        @status_store&.no_active_board!
+        return previous_state
+      end
 
       accepted_guesses = @accepted_guess_matcher.call(previous_state: previous_state, current_state: state)
       append_accepted_guesses!(state, accepted_guesses)

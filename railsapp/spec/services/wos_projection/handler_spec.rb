@@ -28,6 +28,7 @@ RSpec.describe WosProjection::Handler do
     instance_double(
       Wos::StatusStore,
       projection_succeeded!: nil,
+      no_active_board!: nil,
       projection_failed!: nil
     )
   end
@@ -136,6 +137,7 @@ RSpec.describe WosProjection::Handler do
     expect(accepted_word_learner).not_to have_received(:call)
     expect(broadcaster).not_to have_received(:broadcast_update_to)
     expect(status_store).not_to have_received(:projection_succeeded!)
+    expect(status_store).to have_received(:no_active_board!)
   end
   it "records projection failures and re-raises so the queue message is retried" do
     allow(broadcaster).to receive(:broadcast_update_to).and_raise(RuntimeError, "broadcast exploded")
