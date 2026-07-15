@@ -42,6 +42,12 @@ RSpec.describe WosBrainCaptureWorker do
   let(:redis) { WosBrainCaptureWorkerSpecRedis.new }
   let(:sns) { WosBrainCaptureWorkerSpecSns.new }
   let(:topology) { WosBrainCaptureWorkerSpecTopology.new }
+  let(:obs_status_reader) do
+    instance_double(
+      ObsBridge::StatusReader,
+      snapshot: { status: { connected: true } }
+    )
+  end
 
   before do
     @original_topology = Rails.configuration.x.orinoco.messaging_topology
@@ -56,6 +62,7 @@ RSpec.describe WosBrainCaptureWorker do
 
     allow(Redis).to receive(:new).and_return(redis)
     allow(Aws::SNS::Client).to receive(:new).and_return(sns)
+    allow(ObsBridge::StatusReader).to receive(:new).and_return(obs_status_reader)
     Rails.configuration.x.orinoco.messaging_topology = topology
   end
 

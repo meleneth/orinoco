@@ -1,3 +1,7 @@
+ENV["AWS_EC2_METADATA_DISABLED"] = "true"
+ENV["AWS_ACCESS_KEY_ID"] ||= "test"
+ENV["AWS_SECRET_ACCESS_KEY"] ||= "test"
+ENV["AWS_REGION"] ||= "us-east-1"
 require "rspec/core"
 
 require "super_diff/rspec"

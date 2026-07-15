@@ -49,6 +49,37 @@ RSpec.describe "WOSBrain", type: :request do
     )
   end
 
+  let(:queue_inspector) do
+    instance_double(
+      Orinoco::Messaging::QueueInspector,
+      queues: [
+        Orinoco::Messaging::QueueInspector::QueueSnapshot.new(
+          name: Orinoco::Messaging::Names::OBS_BRIDGE_COMMAND_QUEUE,
+          url: "http://goaws.example/obs-command",
+          arn: "arn:aws:sqs:us-east-1:000000000000:obs-command",
+          visible: 0,
+          in_flight: 0,
+          delayed: 0
+        ),
+        Orinoco::Messaging::QueueInspector::QueueSnapshot.new(
+          name: Orinoco::Messaging::Names::OBS_SCREENSHOT_RESULT_QUEUE,
+          url: "http://goaws.example/obs-screenshot-results",
+          arn: "arn:aws:sqs:us-east-1:000000000000:obs-screenshot-results",
+          visible: 1,
+          in_flight: 0,
+          delayed: 0
+        ),
+        Orinoco::Messaging::QueueInspector::QueueSnapshot.new(
+          name: Orinoco::Messaging::Names::WOS_BOARD_RECOGNIZED_QUEUE,
+          url: "http://goaws.example/wos-board-recognized",
+          arn: "arn:aws:sqs:us-east-1:000000000000:wos-board-recognized",
+          visible: 0,
+          in_flight: 0,
+          delayed: 0
+        )
+      ]
+    )
+  end
   before do
     AffordanceConfig.fetch!(:wos_brain).update!(
       enabled: true,
@@ -60,6 +91,7 @@ RSpec.describe "WOSBrain", type: :request do
       )
     )
     allow(Redis).to receive(:new).and_return(redis)
+    allow(Orinoco::Messaging::QueueInspector).to receive(:new).and_return(queue_inspector)
   end
 
   it "renders WOSBrain configuration, runtime status, and latest projection" do
