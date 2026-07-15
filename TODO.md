@@ -9,7 +9,7 @@ Current state:
 - `/overlay` has a `wos_brain` layer with side-by-side board/status and word output panels.
 - Screenshot fixtures live in `railsapp/spec/fixtures/files/wos`.
 - Repo-local skill `.codex/skills/screenshot-a-new-fixture` captures the current OBS/WOS frame, saves it under `railsapp/tmp`, promotes it into fixtures, and prints recognizer output.
-- Board letter recognition is covered by fixture specs, including recent OCR fixes for `I` and `O` cases.
+- Board letter recognition is covered by fixture specs, including exact-order starter fixtures and live anagram multiset fixtures. Recent fixes include `I`, `O`, and `F` cases from live captures.
 - Remaining-word counts are screen-derived from blank banks, not dictionary-derived. The current 6-letter layout reports `12 x 4` and `5 x 5` from the screen.
 - Solved-word OCR now detects accepted word/player pairs on known fixtures, including `THANK` by `MEL` and `MUTE` by `MEL`.
 - Twitch chat projection records pending WOS guesses against the latest board when the message is a plausible single-word guess.
@@ -19,12 +19,12 @@ Current state:
 Next cleanup:
 
 - [x] Split blank-bank evidence from user-facing remaining-word rows so `solved_words` stops exposing internal strip lengths like `12/12/13/12`.
-- Continue adding fixtures for missed board letters, solved words, and player labels.
+- Continue adding fixtures for missed board letters, solved words, and player labels. Current pending fixtures document FEAST remaining-word bank merging and MARCH solved-word/player extraction failures.
 - [x] Persist newly accepted WOS words into `official_wos_words` when solved-word OCR confirms them; Twitch guess correlation still needs to feed this path.
 - [x] Record pending Twitch chat guesses against the latest WOS board for later acceptance correlation.
 - [x] Correlate pending Twitch guesses with structured remaining-word count drops and learn accepted matches.
 - Extend Twitch guess correlation for higher levels that hide solved lists or add lock/fake-letter states.
-- Improve solved-word/player OCR beyond the current high-confidence TSV token heuristics.
+- Improve solved-word/player OCR beyond the current high-confidence TSV token heuristics; `live_march_guess.png` currently reads the player label instead of accepted `MARCH`.
 - [x] Feed WOS recognition/projection errors into the affordance status UI.
 ## Overlay layers for WOSBrain
 
@@ -137,7 +137,7 @@ Near-term work:
 - Use Twitch chat guesses as the incoming guess stream and correlate accepted guesses when the game hides solved words.
 - Improve solved-word OCR for multiple players, noisy labels, and higher-level board layouts.
 - Add explicit ruleset detection for hidden letters, fake letters, and hidden-and-fake rounds.
-- Keep expanding the screenshot fixture corpus with `$screenshot-a-new-fixture` whenever recognition misses.
+- Keep expanding the screenshot fixture corpus with `$screenshot-a-new-fixture` whenever recognition misses; record spoken accepted words as anagram/multiset truth unless the actual tile order is known.
 
 ## Make Event Capturing Work
 The bridge has something for 'capture the next 15 minutes', but it doesn't work.  We need to store events in redis for debugging purposes when it is enabled

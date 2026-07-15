@@ -5,12 +5,22 @@ require "json"
 
 RSpec.describe "WOSBrain", type: :request do
   class WosBrainRequestSpecRedis
+    attr_reader :values
+
     def initialize(values = {})
       @values = values
     end
 
     def get(key)
       @values[key]
+    end
+
+    def set(key, value)
+      @values[key] = value
+    end
+
+    def hgetall(_key)
+      {}
     end
   end
 
@@ -63,5 +73,26 @@ RSpec.describe "WOSBrain", type: :request do
     expect(response.body).to include("req-1")
     expect(response.body).to include("WOS")
     expect(response.body).to include("Open /overlay")
+    expect(response.body).to include("Enable")
+    expect(response.body).to include("Disable")
+    expect(response.body).to include("OBS Dependency")
+    expect(response.body).to include("Pipeline Queues")
+  end
+
+  it "enables WOSBrain from the status page" do
+    AffordanceConfig.fetch!(:wos_brain).update!(enabled: false)
+
+    post start_wos_brain_path
+
+    expect(response).to redirect_to(wos_brain_path)
+    expect(AffordanceConfig.fetch!(:wos_brain)).to be_enabled
+  end
+
+  it "disables WOSBrain from the status page" do
+    post stop_wos_brain_path
+
+    expect(response).to redirect_to(wos_brain_path)
+    expect(AffordanceConfig.fetch!(:wos_brain)).not_to be_enabled
+    expect(JSON.parse(redis.values.fetch(Wos::StatusStore::KEY))).to include("state" => "disabled")
   end
 end

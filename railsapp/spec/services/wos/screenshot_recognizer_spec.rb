@@ -5,6 +5,9 @@ require "tmpdir"
 require "wos/screenshot_recognizer"
 
 RSpec.describe Wos::ScreenshotRecognizer do
+  def sorted_letters(value)
+    value.chars.sort.join
+  end
   let(:fixtures_dir) { File.expand_path("../../fixtures/files/wos", __dir__) }
   let(:fixture_expectations) do
     {
@@ -19,6 +22,20 @@ RSpec.describe Wos::ScreenshotRecognizer do
 
   let(:wos_fixture_paths) do
     fixture_expectations.keys.map { |name| File.join(fixtures_dir, name) }
+  end
+
+  let(:unlabeled_live_fixture_names) do
+    [
+      "live_march_guess.png"
+    ]
+  end
+
+  let(:live_anagram_expectations) do
+    {
+      "live_defense.png" => "DEFENSE",
+      "live_diffuse.png" => "DIFFUSE",
+      "live_feast.png" => "FEAST"
+    }
   end
 
   it "returns a structured WOS recognition result for the starter screenshots" do
@@ -87,6 +104,32 @@ RSpec.describe Wos::ScreenshotRecognizer do
     expect(result.solved_word_regions.map(&:word_length)).to all(eq(7))
     expect(result.solved_word_regions.map(&:filled_count)).to all(eq(0))
   end
+  it "recognizes live board character multisets without assuming tile order" do
+    live_anagram_expectations.each do |fixture, expected_letters|
+      result = described_class.call(File.join(fixtures_dir, fixture))
+      visible_letters = result.letter_tiles.filter_map(&:char).join
+
+      expect(result.letter_tiles.length).to eq(expected_letters.length)
+      expect(sorted_letters(visible_letters)).to eq(sorted_letters(expected_letters))
+    end
+  end
+  it "keeps unlabeled live board captures in the corpus without assuming tile order" do
+    unlabeled_live_fixture_names.each do |fixture|
+      result = described_class.call(File.join(fixtures_dir, fixture))
+
+      expect(result.letter_tiles.length).to be_between(5, 7).inclusive
+      expect(result.letter_tiles.map(&:state)).to all(eq("visible"))
+      expect(result.remaining_words.map(&:to_h)).to all(include(source: "screen_blank_rows"))
+    end
+  end
+
+  it "documents the live FEAST remaining-word count target" do
+    result = described_class.call(File.join(fixtures_dir, "live_feast.png"))
+
+    pending("remaining-word segmenter currently merges adjacent blank slots on this capture")
+    expect(result.remaining_words.map(&:to_h)).to include(hash_including(length: 5, total: 4, remaining: 4))
+    expect(result.remaining_words.map(&:to_h)).to include(hash_including(length: 4))
+  end
   it "serializes accepted words separately from blank word-bank evidence" do
     result = described_class.call(File.join(fixtures_dir, "live_latest_20260713_130753.png"))
     payload = result.to_h
@@ -96,10 +139,17 @@ RSpec.describe Wos::ScreenshotRecognizer do
     expect(payload.fetch(:blank_word_banks).map { |row| row.fetch(:state) }).to all(eq("blank"))
     expect(payload.fetch(:remaining_words)).to include(hash_including(length: 4, remaining: 12))
   end
+  it "documents the live MARCH solved-word target" do
+    result = described_class.call(File.join(fixtures_dir, "live_march_guess.png"))
+
+    pending("solved-word recognizer currently reads the player label instead of the accepted word")
+    expect(result.solved_word_regions.map(&:correct_word)).to include("MARCH")
+  end
   it "extracts accepted words and player labels from answer-heavy fixtures" do
     expectations = {
       "live_latest_20260713_130753.png" => { word: "THANK", player: "MEL" },
-      "wos_live_latest_20260713_135505.png" => { word: "MUTE", player: "MEL" }
+      "wos_live_latest_20260713_135505.png" => { word: "MUTE", player: "MEL" },
+      "wos_live_latest_20260715_011123.png" => { word: "CLASSIC", player: "MEL" }
     }
 
     expectations.each do |fixture, expected|
