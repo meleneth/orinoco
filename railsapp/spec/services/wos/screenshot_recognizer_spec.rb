@@ -34,7 +34,8 @@ RSpec.describe Wos::ScreenshotRecognizer do
     {
       "live_defense.png" => "DEFENSE",
       "live_diffuse.png" => "DIFFUSE",
-      "live_feast.png" => "FEAST"
+      "live_feast.png" => "FEAST",
+      "wos_live_latest_20260714_124803.png" => "FURTHER"
     }
   end
 
