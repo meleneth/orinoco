@@ -36,6 +36,10 @@ module Wos
       update!("state" => "waiting_for_source", "last_error" => "WOSBrain screenshot source is not configured")
     end
 
+    def waiting_for_obs_bridge!(message = "OBS bridge is not connected")
+      update!("state" => "waiting_for_obs_bridge", "last_error" => message.to_s)
+    end
+
     def capture_requested!(source_name:, request_id:)
       update!(
         "state" => "capture_requested",

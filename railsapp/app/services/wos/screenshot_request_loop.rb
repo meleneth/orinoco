@@ -10,6 +10,7 @@ module Wos
       config_reader:,
       publisher:,
       status_store:,
+      bridge_available: -> { true },
       interval_seconds: DEFAULT_INTERVAL_SECONDS,
       image_width: DEFAULT_IMAGE_WIDTH,
       image_height: DEFAULT_IMAGE_HEIGHT,
@@ -19,6 +20,7 @@ module Wos
       @config_reader = config_reader
       @publisher = publisher
       @status_store = status_store
+      @bridge_available = bridge_available
       @interval_seconds = Float(interval_seconds)
       @image_width = Integer(image_width)
       @image_height = Integer(image_height)
@@ -39,6 +41,7 @@ module Wos
 
       source_name = config.screenshot_source_name.to_s.strip
       return @status_store.missing_source! if source_name.empty?
+      return @status_store.waiting_for_obs_bridge! unless @bridge_available.call
 
       event = @publisher.publish!(
         source_name: source_name,

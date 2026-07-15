@@ -41,6 +41,10 @@ module Orinoco
         queues.find { |queue| queue.name == name.to_s }
       end
 
+      def clear(name)
+        ref = @topology.queue_ref(name.to_s)
+        @sqs.purge_queue(queue_url: ref.url)
+      end
       def peek(name, limit: 10)
         ref = @topology.queue_ref(name.to_s)
         response = @sqs.receive_message(

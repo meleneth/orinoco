@@ -31,7 +31,10 @@
             <td class="px-4 py-3 text-right text-slate-200"><%= queue.in_flight %></td>
             <td class="px-4 py-3 text-right text-slate-200"><%= queue.delayed %></td>
             <td class="px-4 py-3 text-right">
-              <%= link_to "Spy", admin_event_pipeline_queue_path(queue.name), class: "rounded bg-slate-800 px-3 py-2 text-xs font-medium text-slate-100 hover:bg-slate-700" %>
+              <div class="flex justify-end gap-2">
+                <%= link_to "Spy", admin_event_pipeline_queue_path(queue.name), class: "rounded bg-slate-800 px-3 py-2 text-xs font-medium text-slate-100 hover:bg-slate-700" %>
+                <%= button_to "Clear", admin_clear_event_pipeline_queue_path(queue.name), method: :post, class: "rounded bg-red-900 px-3 py-2 text-xs font-medium text-red-100 hover:bg-red-800", form: { data: { turbo_confirm: "Clear #{queue.name}?" } } %>
+              </div>
             </td>
           </tr>
         <% end %>

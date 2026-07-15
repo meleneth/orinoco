@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "spec_helper"
+require "aws-sdk-sqs"
 require "orinoco/pipeline"
 
 RSpec.describe Orinoco::Pipeline::SqsConsumer do

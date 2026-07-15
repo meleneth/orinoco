@@ -3,6 +3,7 @@
 require_relative "../services/wos/screenshot_request_loop"
 require_relative "../services/wos/status_store"
 require_relative "../services/obs_bridge/screenshot_command_publisher"
+require_relative "../services/obs_bridge/status_reader"
 
 class WosBrainCaptureWorker
   def run
@@ -21,6 +22,7 @@ class WosBrainCaptureWorker
       config_reader: -> { AffordanceConfig.fetch!(:wos_brain) },
       publisher: screenshot_publisher,
       status_store: status_store,
+      bridge_available: -> { obs_bridge_connected? },
       interval_seconds: interval_seconds,
       image_width: image_width,
       image_height: image_height,
@@ -28,6 +30,20 @@ class WosBrainCaptureWorker
     )
   end
 
+  def obs_bridge_connected?
+    bridge_status.fetch(:status).fetch(:connected, false)
+  end
+
+  def bridge_status
+    obs_bridge_status_reader.snapshot
+  end
+
+  def obs_bridge_status_reader
+    @obs_bridge_status_reader ||= ObsBridge::StatusReader.new(
+      redis: redis,
+      bridge_id: config.obs_bridge.bridge_id || "obs_bridge"
+    )
+  end
   def screenshot_publisher
     @screenshot_publisher ||= ObsBridge::ScreenshotCommandPublisher.new(
       sns: Aws::SNS::Client.new(**config.event_pipeline.aws_client_options),

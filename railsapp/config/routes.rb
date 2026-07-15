@@ -31,6 +31,7 @@ Rails.application.routes.draw do
 
   namespace :admin do
     get "event_pipeline" => "event_pipeline#index", as: :event_pipeline
+    post "event_pipeline/:id/clear" => "event_pipeline#clear", as: :clear_event_pipeline_queue, constraints: { id: /[^\/]+/ }
     get "event_pipeline/:id" => "event_pipeline#show", as: :event_pipeline_queue, constraints: { id: /[^\/]+/ }
 
     resources :obs_bridges, only: [ :show ], param: :id do

@@ -80,11 +80,21 @@ For this repo's Windows/MSYS agent environment, also read `MSYS_AGENTS.md` befor
 ## Commit Cadence
 
 Commit working changes as you go instead of letting broad work accumulate uncommitted. After each coherent implementation slice passes its focused validation, make an intentional commit with the relevant code, tests, and documentation. If the worktree contains unrelated user changes, leave them unstaged unless the user explicitly asks to include them.
+
+## Live UI And WOS Debugging
+
+When the development site is already running, inspect the live Rails URLs before inferring behavior from files or stale state. In the dev stack the Rails app is commonly available at `http://localhost:31050`; check `/overlay` for browser-source overlay output, `/wos_brain` for affordance status, and `/admin/event_pipeline` for queue depth/spy/clear actions before digging deeper.
+
+For WOSBrain recognition, keep the implementation geometry-driven:
+
+- Detect the number of letter tiles from the dark tile boxes in the board scan region; do not hard-code a fixed tile count.
+- Detect remaining word slots from repeated blank-slot rectangles/components; do not hard-code a fixed answer count.
+- Use Tesseract for small text such as solved words/player labels, and as a fallback/debug signal for tile letters. The primary tile-letter path should use deterministic image features/templates from real WOS glyph crops because the letters are large, regular, and poorly served by raw OCR.
+
+If WOS recognition appears stale, compare the `/wos_brain` timestamps with `/admin/event_pipeline` queue depth first. Captures may be current while projection is stale; a growing `orinoco.wos.board.recognized.queue` with an old `last_projected_at` points at the projection worker path rather than OBS capture. Use direct Redis/SQS inspection only when the HTTP pages lack the needed detail or when performing an explicit destructive operation such as purging a queue.
 ## Root Files To Be Careful With
 
 - `development.env`, `production.env`, and `test.env` control service wiring.
 - `development-compose.yml`, `production-compose.yml`, and `test-compose.yml` define the top-level stack shape.
 - The corresponding `*-overrides.yml` files carry ports, env overrides, and dependency wiring.
 - `commands.txt` and `README.md` are human-facing references for the root workflow.
-
-

@@ -2,7 +2,7 @@
 
 require_relative "region"
 require_relative "tile"
-require_relative "tesseract_letter_recognizer"
+require_relative "fixture_glyph_letter_recognizer"
 
 module Wos
   class LetterBoardSegmenter
@@ -12,7 +12,7 @@ module Wos
     MAX_TILE_WIDTH = 190
     MAX_TILE_HEIGHT = 190
 
-    def initialize(letter_recognizer: TesseractLetterRecognizer.new)
+    def initialize(letter_recognizer: FixtureGlyphLetterRecognizer.new)
       @letter_recognizer = letter_recognizer
     end
 

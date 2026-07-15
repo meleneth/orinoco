@@ -61,6 +61,22 @@ RSpec.describe Wos::ScreenshotRequestLoop do
     expect(status_store.read).to include("state" => "disabled")
   end
 
+  it "does not publish when the OBS bridge is unavailable" do
+    loop = described_class.new(
+      config_reader: -> { config },
+      publisher: publisher,
+      status_store: status_store,
+      bridge_available: -> { false }
+    )
+
+    expect(publisher).not_to receive(:publish!)
+    loop.run_once
+
+    expect(status_store.read).to include(
+      "state" => "waiting_for_obs_bridge",
+      "last_error" => "OBS bridge is not connected"
+    )
+  end
   it "records missing source when enabled without a source" do
     missing = double("config", enabled?: true, screenshot_source_name: "")
     loop = described_class.new(config_reader: -> { missing }, publisher: publisher, status_store: status_store)

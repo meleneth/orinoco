@@ -69,7 +69,7 @@ module Orinoco
 
       def install_signal_handlers
         %w[INT TERM].each do |signal|
-          Signal.trap(signal) { @mutex.synchronize { @stop_requested = true } }
+          Signal.trap(signal) { @stop_requested = true }
         end
       end
 

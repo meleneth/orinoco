@@ -8,6 +8,15 @@ class Admin::EventPipelineController < ApplicationController
     @error = e
   end
 
+  def clear
+    queue = queue_inspector.queue(params[:id])
+    raise ActiveRecord::RecordNotFound, "unknown queue #{params[:id]}" unless queue
+
+    queue_inspector.clear(params[:id])
+    redirect_to admin_event_pipeline_path, notice: "Cleared #{params[:id]}"
+  rescue StandardError => e
+    redirect_to admin_event_pipeline_path, alert: "Could not clear #{params[:id]}: #{e.class}: #{e.message}"
+  end
   def show
     @queue = queue_inspector.queue(params[:id])
     raise ActiveRecord::RecordNotFound, "unknown queue #{params[:id]}" unless @queue

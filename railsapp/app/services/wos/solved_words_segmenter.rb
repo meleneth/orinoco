@@ -21,7 +21,7 @@ module Wos
     ANSWER_MAX_OFFSET = 90
     MIN_ACCEPTED_CONFIDENCE = 70.0
     WORD_ALLOWLIST = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-: "
-    UI_WORDS = %w[FOUND STREAM WORDS WORD ON THE FIRST ANAGRAM GOAL CODE JOIN SCAN GAME].freeze
+    UI_WORDS = %w[FOUND FIND STREAM WORDS WORD ON THE FIRST ANAGRAM GOAL CODE JOIN SCAN GAME].freeze
 
     SolvedWordRegion = Data.define(:index, :region, :state, :text, :player, :confidence, :metrics, :word_length, :filled_count, :correct_word, :raw_text) do
       def to_h
@@ -157,9 +157,12 @@ module Wos
       return false if word.confidence < MIN_ACCEPTED_CONFIDENCE
       return false if word.top > ANSWER_HEADER_PADDING + ANSWER_MAX_OFFSET
 
-      constructible?(clean, available)
+      constructible?(clean, available) || high_confidence_answer?(word, clean, letters)
     end
 
+    def high_confidence_answer?(word, clean, letters)
+      clean.length <= letters.to_s.length && word.confidence >= 85
+    end
     def player_for(word:, words:, correct_word:)
       candidates = words.select do |candidate|
         clean = clean_word(candidate.text)

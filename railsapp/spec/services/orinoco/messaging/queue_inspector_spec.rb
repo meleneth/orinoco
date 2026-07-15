@@ -25,10 +25,11 @@ RSpec.describe Orinoco::Messaging::QueueInspector do
   end
   let(:sqs) do
     Class.new do
-      attr_reader :receive_calls
+      attr_reader :receive_calls, :purge_calls
 
       def initialize
         @receive_calls = []
+        @purge_calls = []
       end
 
       def get_queue_attributes(**)
@@ -39,6 +40,10 @@ RSpec.describe Orinoco::Messaging::QueueInspector do
             "ApproximateNumberOfMessagesDelayed" => "1"
           }
         )
+      end
+
+      def purge_queue(**kwargs)
+        @purge_calls << kwargs
       end
 
       def receive_message(**kwargs)
@@ -67,6 +72,11 @@ RSpec.describe Orinoco::Messaging::QueueInspector do
     expect(queue.delayed).to eq(1)
   end
 
+  it "clears a queue by purging its resolved queue URL" do
+    inspector.clear("queue.one")
+
+    expect(sqs.purge_calls).to eq([{ queue_url: "queue-url" }])
+  end
   it "peeks messages without deleting them" do
     messages = inspector.peek("queue.one")
 
