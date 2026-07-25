@@ -46,6 +46,24 @@ RSpec.describe TwitchChatBridge::IrcMessageParser do
       expect(parser.parse(raw_message)).to be_nil
     end
 
+    it "parses first-time chatter PRIVMSG tags" do
+      raw_message = "@badge-info=;badges=;client-nonce=abc;color=;display-name=duchessDabbaDoo;emote-only=0;emotes=;first-msg=1;flags=;id=abc;mod=0;returning-chatter=0;room-id=159825609;subscriber=0;tmi-sent-ts=1776554770098;turbo=0;user-id=1516321509;user-type= :duchessdabbadoo!duchessdabbadoo@duchessdabbadoo.tmi.twitch.tv PRIVMSG #daresiel :hello"
+
+      message = parser.parse(raw_message)
+
+      expect(message).to have_attributes(
+        name: "duchessdabbadoo",
+        display_name: "duchessDabbaDoo",
+        txt: "hello"
+      )
+      expect(message.tags).to include(
+        color: "pink",
+        display_name: "duchessDabbaDoo",
+        subscriber: false,
+        user_id: "1516321509"
+      )
+    end
+
     it "parses a twitch PRIVMSG into a Message" do
       raw_message = "@badge-info=;badges=;client-nonce=bf3bc37a26844f3daa9e2361372bf9a5;color=;display-name=Meleneth;emote-only=1;emotes=555555584:0-1/emotesv2_fb2fbc5b7bb6466c8eacabb477da92aa:3-12/emotesv2_0d8139b214a649c0b0405cc0134d2ddf:14-21;first-msg=0;flags=;id=cc57784b-fafe-45dc-93f6-795bbc46cfad;mod=0;returning-chatter=0;room-id=159825609;subscriber=0;tmi-sent-ts=1776554770098;turbo=0;user-id=39179420;user-type= :meleneth!meleneth@meleneth.tmi.twitch.tv PRIVMSG #daresiel :<3 daresiLove NeedHeal"
 

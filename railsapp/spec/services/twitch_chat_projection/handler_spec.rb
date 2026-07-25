@@ -23,8 +23,8 @@ RSpec.describe TwitchChatProjection::Handler do
       list = lists[key]
       start_index += list.length if start_index.negative?
       stop_index += list.length if stop_index.negative?
-      start_index = [start_index, 0].max
-      stop_index = [stop_index, list.length - 1].min
+      start_index = [ start_index, 0 ].max
+      stop_index = [ stop_index, list.length - 1 ].min
       lists[key] = start_index <= stop_index ? list[start_index..stop_index] : []
     end
   end
@@ -32,11 +32,13 @@ RSpec.describe TwitchChatProjection::Handler do
   let(:redis) { TwitchChatProjectionHandlerSpecRedis.new }
   let(:broadcaster) { class_double(Turbo::StreamsChannel).as_stubbed_const }
   let(:wos_guess_tracker) { instance_double(Wos::ChatGuessTracker, call: nil) }
+  let(:logger) { instance_double(Logger, warn: nil) }
   let(:handler) do
     described_class.new(
       redis: redis,
       broadcaster: broadcaster,
-      wos_guess_tracker: wos_guess_tracker
+      wos_guess_tracker: wos_guess_tracker,
+      logger: logger
     )
   end
   let(:event) do
@@ -68,5 +70,16 @@ RSpec.describe TwitchChatProjection::Handler do
       renderable: a_kind_of(ChatMessageComponent)
     )
     expect(wos_guess_tracker).to have_received(:call).with(have_attributes(txt: "thank", display_name: "Mel"))
+  end
+
+  it "does not fail projection when live chat broadcast fails" do
+    allow(broadcaster).to receive(:broadcast_append_to).and_raise(RuntimeError, "cable stuck")
+
+    expect { handler.call(event) }.not_to raise_error
+
+    persisted = TwitchChatBridge::Message.from_json(redis.lists.fetch(described_class::HISTORY_KEY).first)
+    expect(persisted.txt).to eq("thank")
+    expect(wos_guess_tracker).to have_received(:call).with(have_attributes(txt: "thank", display_name: "Mel"))
+    expect(logger).to have_received(:warn).with("[twitch-chat-projection] broadcast failed: RuntimeError: cable stuck")
   end
 end
