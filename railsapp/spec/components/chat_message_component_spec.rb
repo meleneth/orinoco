@@ -162,4 +162,29 @@ RSpec.describe ChatMessageComponent, type: :component do
     expect(html).not_to include("<script>")
     expect(html).to include("&lt;script&gt;alert(1)&lt;/script&gt;")
   end
+
+  it "keeps twitch emote image markup rendered when replacing 7TV emotes" do
+    allow(redis).to receive(:hgetall).with("twitch_emote_7tv").and_return({ "WidePeepo" => "01F6N8N3E8000" })
+
+    message = TwitchChatBridge::Message.new(
+      tags: { color: "#123456", display_name: "melen" },
+      emotes: [
+        {
+          id: "emotesv2_35afd89499c240e7a57abcb30a7c0168",
+          url: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_35afd89499c240e7a57abcb30a7c0168/default/dark/2.0",
+          start: 0,
+          end: 10
+        }
+      ],
+      name: "melen",
+      txt: "TwitchWave WidePeepo"
+    )
+
+    html = render_inline(described_class.new(message: message)).to_html
+
+    expect(html.scan("<img ").length).to eq(2)
+    expect(html).to include('src="https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_35afd89499c240e7a57abcb30a7c0168/default/dark/2.0"')
+    expect(html).to include('src="https://cdn.7tv.app/emote/01F6N8N3E8000/2x.webp"')
+    expect(html).not_to include("&lt;img")
+  end
 end

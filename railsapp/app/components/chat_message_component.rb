@@ -65,6 +65,7 @@ class ChatMessageComponent < ApplicationComponent
     return segments if emotes.empty?
 
     segments.flat_map do |segment|
+      next segment if segment.respond_to?(:html_safe?) && segment.html_safe?
       next segment unless segment.is_a?(String)
 
       split_text_for_seven_tv(segment).map do |token|
