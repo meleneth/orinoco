@@ -128,6 +128,7 @@ RSpec.describe TankGame::Handler do
       tone: "info"
     )
   end
+
   it "starts setup for moderator trigger and asks OBS for the current scene" do
     event = Orinoco::Pipeline::Event.build(
       "twitch.chat.message_received",
@@ -166,6 +167,76 @@ RSpec.describe TankGame::Handler do
     expect(state).to include("phase" => "setup_pending", "demo" => true)
     expect(publisher.events.first.dig(:payload, "request", "requestType")).to eq("GetCurrentProgramScene")
   end
+
+  it "starts demo overlay-only when the OBS bridge is unavailable" do
+    offline_handler = described_class.new(
+      redis: redis,
+      publisher: publisher,
+      broadcaster: broadcaster,
+      config_reader: -> { config },
+      external_base_url: "http://example.test",
+      tick_scheduler: tick_scheduler,
+      toast_broadcaster: toast_broadcaster,
+      obs_bridge_available: -> { false }
+    )
+    event = Orinoco::Pipeline::Event.build(
+      "twitch.chat.message_received",
+      {
+        "tags" => { "display_name" => "Mod", "mod" => true },
+        "name" => "mod",
+        "txt" => "!TankDemo",
+        "twitch_emotes" => []
+      }
+    )
+
+    offline_handler.handle_chat_event(event)
+
+    state = JSON.parse(redis.values.fetch(TankGame::StateStore::KEY))
+    expect(state).to include("phase" => "active", "demo" => true, "obs_setup" => "unavailable")
+    expect(state["status"]).to include("overlay only")
+    expect(state["players"].length).to eq(10)
+    expect(publisher.events).to be_empty
+    expect(tick_scheduler.calls.last).to include(reason: "combat_tick")
+  end
+
+  it "recovers stuck setup as overlay-only when OBS is unavailable and TankDemo is triggered again" do
+    redis.set(
+      TankGame::StateStore::KEY,
+      JSON.generate(
+        "phase" => "setup_pending",
+        "demo" => true,
+        "round_id" => "round-1",
+        "setup_request_id" => "req-1",
+        "players" => [],
+        "tanks" => []
+      )
+    )
+    offline_handler = described_class.new(
+      redis: redis,
+      publisher: publisher,
+      broadcaster: broadcaster,
+      config_reader: -> { config },
+      tick_scheduler: tick_scheduler,
+      toast_broadcaster: toast_broadcaster,
+      obs_bridge_available: -> { false }
+    )
+    event = Orinoco::Pipeline::Event.build(
+      "twitch.chat.message_received",
+      {
+        "tags" => { "display_name" => "Mod", "mod" => true },
+        "name" => "mod",
+        "txt" => "!TankDemo",
+        "twitch_emotes" => []
+      }
+    )
+
+    offline_handler.handle_chat_event(event)
+
+    state = JSON.parse(redis.values.fetch(TankGame::StateStore::KEY))
+    expect(state).to include("phase" => "active", "demo" => true, "obs_setup" => "unavailable")
+    expect(publisher.events).to be_empty
+  end
+
   it "turns OBS current-scene result into setup commands and signup state" do
     redis.set(
       TankGame::StateStore::KEY,
@@ -259,6 +330,7 @@ RSpec.describe TankGame::Handler do
     end
     expect(transform_ids).to contain_exactly(11, 12)
   end
+
   it "turns OBS current-scene result into demo state and schedules combat" do
     redis.set(
       TankGame::StateStore::KEY,
@@ -323,6 +395,7 @@ RSpec.describe TankGame::Handler do
       hash_including(message: "Volley fired: 2 shots", title: "TankGame", tone: "warning")
     )
   end
+
   it "handles delayed tick events and schedules the next combat tick" do
     base_engine = TankGame::Engine.new(clock: -> { Time.utc(2026, 7, 25, 20, 0, 0) }, id_generator: -> { "id-1" })
     state = base_engine.start_setup(

@@ -54,7 +54,8 @@ class TankGameProcessorWorker
       publisher: publisher,
       inventory_reader: inventory_reader,
       tick_scheduler: tick_scheduler,
-      toast_broadcaster: toast_broadcaster
+      toast_broadcaster: toast_broadcaster,
+      obs_bridge_available: -> { obs_bridge_connected? }
     )
   end
 
@@ -75,6 +76,24 @@ class TankGameProcessorWorker
       topology: topology,
       default_topic: Orinoco::Messaging::Names::OBS_COMMAND_TOPIC
     )
+  end
+
+  def obs_bridge_connected?
+    status = obs_bridge_status.fetch(:status)
+    return false unless status.fetch(:connected, false)
+
+    heartbeat_at = status[:last_heartbeat_at]
+    return false unless heartbeat_at
+
+    heartbeat_at > Time.now.utc - 15
+  end
+
+  def obs_bridge_status
+    obs_bridge_status_reader.snapshot
+  end
+
+  def obs_bridge_status_reader
+    @obs_bridge_status_reader ||= ObsBridge::StatusReader.new(redis: redis, bridge_id: bridge_id)
   end
 
   def inventory_reader

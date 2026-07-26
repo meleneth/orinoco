@@ -9,7 +9,7 @@ module TankGame
   class Handler
     SOURCE = "tank_game"
 
-    def initialize(redis:, publisher:, broadcaster: Turbo::StreamsChannel, engine: Engine.new, config_reader: -> { AffordanceConfig.fetch!(:tank_game) }, inventory_reader: nil, external_base_url: nil, tick_scheduler: nil, toast_broadcaster: nil)
+    def initialize(redis:, publisher:, broadcaster: Turbo::StreamsChannel, engine: Engine.new, config_reader: -> { AffordanceConfig.fetch!(:tank_game) }, inventory_reader: nil, external_base_url: nil, tick_scheduler: nil, toast_broadcaster: nil, obs_bridge_available: -> { true })
       @store = StateStore.new(redis: redis)
       @publisher = publisher
       @broadcaster = broadcaster
@@ -19,6 +19,7 @@ module TankGame
       @external_base_url = external_base_url
       @tick_scheduler = tick_scheduler
       @toast_broadcaster = toast_broadcaster
+      @obs_bridge_available = obs_bridge_available
     end
 
     def handle_chat_event(event)
@@ -90,10 +91,11 @@ module TankGame
 
     private
 
-    attr_reader :store, :publisher, :broadcaster, :engine, :inventory_reader, :external_base_url, :tick_scheduler, :toast_broadcaster
+    attr_reader :store, :publisher, :broadcaster, :engine, :inventory_reader, :external_base_url, :tick_scheduler, :toast_broadcaster, :obs_bridge_available
 
     def start_game(state:, message:, config:, demo: false)
       return state unless authorized_starter?(message)
+      return finish_setup_without_obs(state: state, config: config) if state["phase"] == "setup_pending" && !obs_bridge_connected?
       return state if %w[setup_pending signup active ending].include?(state["phase"])
 
       setup_state = if demo
@@ -101,6 +103,8 @@ module TankGame
       else
                       engine.start_setup(state: state, trigger: message, config: config)
       end
+      return finish_setup_without_obs(state: setup_state, config: config) unless obs_bridge_connected?
+
       publish_obs_request(
         {
           "requestType" => "GetCurrentProgramScene",
@@ -110,6 +114,32 @@ module TankGame
         reply_topic: Orinoco::Messaging::Names::OBS_COMMAND_RESULT_TOPIC
       )
       setup_state
+    end
+
+    def finish_setup_without_obs(state:, config:)
+      next_state = if state["demo"]
+                     engine.begin_demo(state: state, previous_scene_name: "", config: config)
+      else
+                     engine.begin_signup(state: state, previous_scene_name: "", config: config)
+      end.merge(
+        "obs_setup" => "unavailable",
+        "status" => overlay_only_status(state)
+      )
+
+      schedule_next_tick(next_state)
+      broadcast_setup_toast(next_state)
+      next_state
+    end
+
+    def overlay_only_status(state)
+      state["demo"] ? "TankDemo active: 10 NPC tanks (OBS bridge unavailable; overlay only)" : "TankGame signup open (OBS bridge unavailable; overlay only)"
+    end
+
+    def obs_bridge_connected?
+      obs_bridge_available.call
+    rescue StandardError => e
+      Rails.logger.warn("[tank-game] OBS bridge availability check failed: #{e.class}: #{e.message}")
+      false
     end
 
     def authorized_starter?(message)
