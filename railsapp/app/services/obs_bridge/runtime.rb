@@ -116,7 +116,7 @@ module ObsBridge
       return @event_types if @event_types
       return @affordance_host.event_types if @affordance_host
 
-      ["media_input_playback_ended"]
+      [ "media_input_playback_ended" ]
     end
 
     def serve_connected_session(session)
@@ -134,13 +134,13 @@ module ObsBridge
 
     def run_connected_iteration(session, next_heartbeat_at)
       command_result = drain_commands(session)
-      return [:stop, next_heartbeat_at] if command_result == :stop
+      return [ :stop, next_heartbeat_at ] if command_result == :stop
 
       publish_or_dispatch_events(session)
       next_heartbeat_at = heartbeat_if_due(monotonic_now, next_heartbeat_at)
       idle_with_session(session)
 
-      [:continue, next_heartbeat_at]
+      [ :continue, next_heartbeat_at ]
     end
 
     def drain_commands(session)
@@ -175,8 +175,33 @@ module ObsBridge
       result = session.apply_request(request)
       completed_at = Time.now.utc
 
-      publish_screenshot_result(command, request, result, started_at, completed_at) if screenshot_request?(request)
+      if screenshot_request?(request)
+        publish_screenshot_result(command, request, result, started_at, completed_at)
+      else
+        publish_command_result(command, request, result, started_at, completed_at)
+      end
       result
+    end
+
+    def publish_command_result(command, request, result, started_at, completed_at)
+      return unless @result_publisher
+      return unless command["reply_topic"] || command["replyTopic"]
+
+      @result_publisher.call(
+        "obs.command.completed",
+        command_result_payload(request, result, started_at, completed_at),
+        topic: command["reply_topic"] || command["replyTopic"],
+        correlation: command.fetch("correlation", {})
+      )
+    end
+
+    def command_result_payload(request, result, started_at, completed_at)
+      {
+        "request" => request,
+        "response" => result.is_a?(Hash) ? result : {},
+        "completedAt" => completed_at.iso8601(6),
+        "durationMs" => ((completed_at - started_at) * 1000).round(3)
+      }
     end
 
     def publish_screenshot_result(command, request, result, started_at, completed_at)

@@ -326,6 +326,72 @@ RSpec.describe ObsBridge::Runtime do
     screenshot_runtime&.stop!
   end
 
+  it "publishes generic command results when a reply topic is provided" do
+    result_calls = []
+    result_publisher = lambda do |type, payload, topic:, correlation:|
+      result_calls << {
+        type: type,
+        payload: payload,
+        topic: topic,
+        correlation: correlation
+      }
+    end
+    command_runtime = described_class.new(
+      state: state,
+      inventory_store: inventory_store,
+      session_runner: session_runner,
+      affordance_host: affordance_host,
+      affordance_context: affordance_context,
+      result_publisher: result_publisher,
+      logger: logger,
+      backoff: backoff,
+      heartbeat_interval: heartbeat_interval,
+      idle_sleep: idle_sleep,
+      monotonic_clock: monotonic_clock,
+      sleeper: sleeper,
+      thread_factory: thread_factory
+    )
+    request = {
+      "requestType" => "GetCurrentProgramScene",
+      "requestData" => {}
+    }
+    command = {
+      "request" => request,
+      "reply_topic" => "orinoco.obs.command.results",
+      "correlation" => { "request_id" => "req-2" }
+    }
+
+    allow(session_runner).to receive(:run)
+      .with(event_types: [ "MediaInputPlaybackEnded" ])
+      .and_yield(session)
+    allow(session).to receive(:apply_request).with(request).and_return(
+      "currentProgramSceneName" => "Gameplay"
+    )
+
+    command_runtime.start!
+    runtime_step
+
+    expect(command_runtime.enqueue_obs_request!(command)).to be(true)
+
+    runtime_step
+
+    expect(result_calls.length).to eq(1)
+    expect(result_calls.first).to include(
+      type: "obs.command.completed",
+      topic: "orinoco.obs.command.results",
+      correlation: { "request_id" => "req-2" }
+    )
+    expect(result_calls.first.fetch(:payload)).to include(
+      "request" => request,
+      "response" => { "currentProgramSceneName" => "Gameplay" }
+    )
+    expect(result_calls.first.fetch(:payload)).to include(
+      "completedAt",
+      "durationMs"
+    )
+  ensure
+    command_runtime&.stop!
+  end
   it "dispatches polled events to the affordance host" do
     event = {
       "eventType" => "MediaInputPlaybackEnded",

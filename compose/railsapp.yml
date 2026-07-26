@@ -53,6 +53,13 @@ services:
     command: ["bundle", "exec", "rails", "runner", "ClipShowProcessorWorker.new.run"]
     environment: *railsapp_environment
     depends_on: *railsapp_depends_on
+  tank-game-processor-worker:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    image: orinoco/railsapp
+    command: ["bundle", "exec", "rails", "runner", "TankGameProcessorWorker.new.run"]
+    environment: *railsapp_environment
+    depends_on: *railsapp_depends_on
   wos-brain-capture-worker:
     image: orinoco/railsapp
     command: ["bundle", "exec", "rails", "runner", "WosBrainCaptureWorker.new.run"]

@@ -10,9 +10,13 @@ module Orinoco
       TWITCH_CHAT_MESSAGE_QUEUE = "orinoco.twitch.message.queue"
       TWITCH_BRIDGE_CONTROL_QUEUE = "orinoco.twitch.bridge.control"
       SEVEN_TV_BRIDGE_CONTROL_QUEUE = "orinoco.7tv.bridge.control"
+      TANK_GAME_TWITCH_QUEUE = "orinoco.tank_game.twitch.queue"
 
       OBS_COMMAND_TOPIC = "orinoco.obs.command"
       OBS_BRIDGE_COMMAND_QUEUE = "orinoco.obs.command.bridge"
+
+      OBS_COMMAND_RESULT_TOPIC = "orinoco.obs.command.results"
+      TANK_GAME_OBS_RESULT_QUEUE = "orinoco.tank_game.obs.results.queue"
 
       OBS_EVENTS_TOPIC = "orinoco.obs.events"
       OBS_EVENTS_QUEUE = "orinoco.obs.events.queue"

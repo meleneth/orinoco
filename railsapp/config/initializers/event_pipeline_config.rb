@@ -40,11 +40,19 @@ Rails.application.config.to_prepare do
         queue Orinoco::Messaging::Names::TWITCH_CHAT_MESSAGE_QUEUE,
           visibility_timeout: 30,
           receive_message_wait_time_seconds: 20
+        queue Orinoco::Messaging::Names::TANK_GAME_TWITCH_QUEUE,
+          visibility_timeout: 30,
+          receive_message_wait_time_seconds: 1
       end
       topic Orinoco::Messaging::Names::OBS_COMMAND_TOPIC do
         queue Orinoco::Messaging::Names::OBS_BRIDGE_COMMAND_QUEUE,
           visibility_timeout: 30,
           receive_message_wait_time_seconds: 20
+      end
+      topic Orinoco::Messaging::Names::OBS_COMMAND_RESULT_TOPIC do
+        queue Orinoco::Messaging::Names::TANK_GAME_OBS_RESULT_QUEUE,
+          visibility_timeout: 30,
+          receive_message_wait_time_seconds: 1
       end
       topic Orinoco::Messaging::Names::OBS_EVENTS_TOPIC do
         queue Orinoco::Messaging::Names::OBS_EVENTS_QUEUE,

@@ -104,6 +104,22 @@ services:
     volumes:
       - ./railsapp:/rails
       - bundle:/usr/local/bundle
+  tank-game-processor-worker:
+    environment:
+      - DATABASE_URL=${ORINOCO_DB_DATABASE_URL}
+      - RAILS_ENV=development
+      - RAILS_MAX_THREADS=5
+      - RAILS_MIN_THREADS=5
+      - SCOREBOARD_REDIS_URL=${SCOREBOARD_REDIS_URL}
+      - EVENT_PIPELINE_GOAWS_URL=${EVENT_PIPELINE_GOAWS_URL}
+      - OBS_HOST=${OBS_HOST}
+    depends_on:
+      orinoco-db:
+        condition: service_healthy
+        restart: true
+    volumes:
+      - ./railsapp:/rails
+      - bundle:/usr/local/bundle
   wos-brain-capture-worker:
     environment:
       - DATABASE_URL=${ORINOCO_DB_DATABASE_URL}

@@ -36,7 +36,7 @@ module ObsBridge
       first_event = pop_event(timeout: timeout)
       return [] unless first_event
 
-      events = [first_event]
+      events = [ first_event ]
 
       loop do
         events << @event_queue.pop(true)
@@ -62,6 +62,12 @@ module ObsBridge
           request_data.fetch("inputSettings"),
           request_data.fetch("sceneItemEnabled", true)
         )
+      when "CreateSceneItem"
+        @req.create_scene_item(
+          request_data.fetch("sceneName"),
+          request_data.fetch("sourceName"),
+          request_data.fetch("sceneItemEnabled", true)
+        )
       when "SetInputSettings"
         @req.set_input_settings(
           request_data.fetch("inputName"),
@@ -85,6 +91,13 @@ module ObsBridge
           request_data.fetch("sceneItemId"),
           request_data.fetch("sceneItemTransform")
         )
+      when "GetCurrentProgramScene"
+        response = @req.get_current_program_scene
+        {
+          "currentProgramSceneName" => fetch_value(response, :currentProgramSceneName, "currentProgramSceneName", :current_program_scene_name, "current_program_scene_name")
+        }.compact
+      when "SetCurrentProgramScene"
+        @req.set_current_program_scene(request_data.fetch("sceneName"))
       when "GetSourceScreenshot"
         get_source_screenshot(request_data)
       else

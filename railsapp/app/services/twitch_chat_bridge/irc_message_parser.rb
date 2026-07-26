@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require "faye/websocket"
 # require "net/http"
 
@@ -70,6 +71,10 @@ module TwitchChatBridge
           parsed_tags[:display_name] = tag_val
         when "subscriber"
           parsed_tags[:subscriber] = tag_val == "1"
+        when "mod"
+          parsed_tags[:mod] = tag_val == "1"
+        when "badges"
+          parsed_tags[:badges] = parse_badges_tag(tag_val)
         when "custom-reward-id"
           parsed_tags[:custom_reward_id] = tag_val
         when "user-id"
@@ -80,11 +85,20 @@ module TwitchChatBridge
       parsed_tags
     end
 
+    def parse_badges_tag(tag_val)
+      return [] if tag_val.blank?
+
+      tag_val.split(",").filter_map do |badge|
+        name, _version = badge.split("/", 2)
+        name.presence
+      end
+    end
+
     def parse_emotes_tag(tag_val)
       return nil if tag_val.blank?
       emote_list = []
 
-      # QTODO: Change 
+      # QTODO: Change
       # "tag_val.split("/", -1).each do |emote|"
       # to
       # "for emote in tag_val.split("/", -1)"
@@ -113,7 +127,7 @@ module TwitchChatBridge
       # Rails.logger.level = Logger::INFO
       # Rails.logger.info("DEBUG #{emote_list.sort_by { |h| h[:end_index] }}")
 
-      return emote_list.sort_by { |h| h[:end_index] }
+      emote_list.sort_by { |h| h[:end_index] }
     end
 
     def unescape_tag_value(value)

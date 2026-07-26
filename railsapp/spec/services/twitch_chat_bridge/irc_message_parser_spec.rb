@@ -47,7 +47,7 @@ RSpec.describe TwitchChatBridge::IrcMessageParser do
     end
 
     it "parses first-time chatter PRIVMSG tags" do
-      raw_message = "@badge-info=;badges=;client-nonce=abc;color=;display-name=duchessDabbaDoo;emote-only=0;emotes=;first-msg=1;flags=;id=abc;mod=0;returning-chatter=0;room-id=159825609;subscriber=0;tmi-sent-ts=1776554770098;turbo=0;user-id=1516321509;user-type= :duchessdabbadoo!duchessdabbadoo@duchessdabbadoo.tmi.twitch.tv PRIVMSG #daresiel :hello"
+      raw_message = "@badge-info=;badges=broadcaster/1;color=;display-name=duchessDabbaDoo;emote-only=0;emotes=;first-msg=1;flags=;id=abc;mod=1;returning-chatter=0;room-id=159825609;subscriber=0;tmi-sent-ts=1776554770098;turbo=0;user-id=1516321509;user-type= :duchessdabbadoo!duchessdabbadoo@duchessdabbadoo.tmi.twitch.tv PRIVMSG #daresiel :hello"
 
       message = parser.parse(raw_message)
 

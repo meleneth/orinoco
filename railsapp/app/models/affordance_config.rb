@@ -34,6 +34,21 @@ class AffordanceConfig < ApplicationRecord
         "manual_ruleset" => "base",
         "screenshot_source_name" => ""
       }
+    when "tank_game"
+      {
+        "enabled" => true,
+        "trigger_command" => "!TankGame",
+        "signup_command" => "!signup",
+        "aim_command" => "!aim",
+        "weapon_command" => "!weapon",
+        "signup_seconds" => 30,
+        "fire_interval_seconds" => 30,
+        "max_round_seconds" => 600,
+        "scene_name" => "TankGame",
+        "web_source_name" => "TankGameWebView",
+        "width" => 1920,
+        "height" => 1080
+      }
     else
       {}
     end
@@ -118,6 +133,10 @@ class AffordanceConfig < ApplicationRecord
         "manual_ruleset" => normalize_manual_ruleset(config["manual_ruleset"]),
         "screenshot_source_name" => config["screenshot_source_name"].to_s.strip
       )
+    when "tank_game"
+      defaults = self.class.default_config_for(:tank_game)
+      self.config = defaults.merge(config)
+      self.enabled = defaults["enabled"] if config["enabled"].nil?
     end
   end
 end

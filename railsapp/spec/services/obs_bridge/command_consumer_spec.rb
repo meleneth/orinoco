@@ -1,16 +1,17 @@
 # frozen_string_literal: true
 
 require "spec_helper"
+require "aws-sdk-sqs"
 require "obs_bridge/command_consumer"
 
 RSpec.describe ObsBridge::CommandConsumer do
   let(:queue_url) { "queue-url" }
   let(:signal_queue) { Queue.new }
   let(:sqs) { instance_double(Aws::SQS::Client) }
-  let(:logger) { ->(_message) {} }
+  let(:logger) { ->(_message) { } }
 
   before do
-    allow(sqs).to receive(:receive_message).and_return(double(messages: [message]))
+    allow(sqs).to receive(:receive_message).and_return(double(messages: [ message ]))
     allow(sqs).to receive(:delete_message)
   end
 
