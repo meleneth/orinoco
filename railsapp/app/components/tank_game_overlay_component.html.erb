@@ -76,3 +76,268 @@
     <% end %>
   </svg>
 </div>
+<script>
+(function() {
+  var LOG_PREFIX = "[tank-game:fallback]";
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  var SHOT_DURATION_MS = 1650;
+  var STATE_URL = "/tank_game/state";
+  window.__orinocoTankGameFallback = window.__orinocoTankGameFallback || { lastPlayedVolleyId: null, timer: null, pollCount: 0 };
+  var runtime = window.__orinocoTankGameFallback;
+
+  function log(message, detail) {
+    console.log(LOG_PREFIX, message, detail || {});
+  }
+
+  function root() {
+    return document.getElementById("tank_game_overlay");
+  }
+
+  function effectsTarget() {
+    var element = root();
+    return element ? element.querySelector('[data-tank-game-animation-target="effects"]') : null;
+  }
+
+  function volleyTarget() {
+    var element = root();
+    return element ? element.querySelector('[data-tank-game-animation-target="volley"]') : null;
+  }
+
+  function readDomVolley() {
+    var target = volleyTarget();
+    if (!target) return {};
+
+    try {
+      return JSON.parse(target.textContent || "{}");
+    } catch (error) {
+      log("dom volley parse failed", { message: error.message, text: (target.textContent || "").slice(0, 80) });
+      return {};
+    }
+  }
+
+  function expired(volley) {
+    if (!volley || !volley.expires_at) return false;
+
+    var expiresAt = Date.parse(volley.expires_at);
+    return Number.isFinite(expiresAt) && expiresAt < Date.now();
+  }
+
+  function clearElement(element) {
+    while (element.firstChild) element.removeChild(element.firstChild);
+  }
+
+  function playVolley(volley, source) {
+    var target = effectsTarget();
+    var shots = volley && volley.shots ? volley.shots : [];
+    var shotCount = shots.length;
+    if (!volley || !volley.id) {
+      log("skip volley: missing id", { source: source, hasEffectsTarget: Boolean(target) });
+      return;
+    }
+    if (!target) {
+      log("skip volley: missing effects target", { source: source, id: volley.id, shotCount: shotCount });
+      return;
+    }
+    if (volley.id === runtime.lastPlayedVolleyId) return;
+    if (expired(volley)) {
+      log("skip volley: expired", { source: source, id: volley.id, expiresAt: volley.expires_at });
+      return;
+    }
+
+    runtime.lastPlayedVolleyId = volley.id;
+    clearElement(target);
+    log("play volley", { source: source, id: volley.id, shotCount: shotCount });
+    shots.forEach(function(shot, index) {
+      setTimeout(function() { playShot(target, shot, index); }, index * 260);
+    });
+  }
+
+  function playShot(target, shot, shotIndex) {
+    var points = shot.points || [];
+    log("play shot", {
+      shotIndex: shotIndex,
+      shooter: shot.shooter || null,
+      pointCount: points.length,
+      explosionCount: (shot.explosions || []).length,
+      damageCount: (shot.damage_events || []).length
+    });
+    if (points.length === 0) return;
+
+    var group = document.createElementNS(SVG_NS, "g");
+    var traceGlow = polyline(points, "#f3a833", 14, 0.24);
+    var traceCore = polyline(points, "#fff3b0", 5, 0.78);
+    var shellGlow = circle(points[0].x, points[0].y, 18, "#f3a833");
+    var shell = circle(points[0].x, points[0].y, 7, "#ffffff");
+    shellGlow.setAttribute("opacity", "0.45");
+    group.appendChild(traceGlow);
+    group.appendChild(traceCore);
+    group.appendChild(shellGlow);
+    group.appendChild(shell);
+    target.appendChild(group);
+
+    playMuzzleFlash(target, points[0]);
+    seedSmoke(group, points);
+    prepareTrace(traceCore);
+    prepareTrace(traceGlow);
+
+    var startedAt = performance.now();
+    var step = function(now) {
+      var ratio = Math.min((now - startedAt) / SHOT_DURATION_MS, 1);
+      var point = points[Math.min(Math.floor(ratio * (points.length - 1)), points.length - 1)];
+      shell.setAttribute("cx", point.x);
+      shell.setAttribute("cy", point.y);
+      shellGlow.setAttribute("cx", point.x);
+      shellGlow.setAttribute("cy", point.y);
+      traceCore.setAttribute("stroke-dashoffset", traceOffset(traceCore, ratio));
+      traceGlow.setAttribute("stroke-dashoffset", traceOffset(traceGlow, ratio));
+
+      if (ratio < 1) {
+        requestAnimationFrame(step);
+      } else {
+        shell.remove();
+        shellGlow.remove();
+        playImpacts(target, shot);
+        setTimeout(function() { group.remove(); }, 1200);
+      }
+    };
+    requestAnimationFrame(step);
+  }
+
+  function animateElement(element, frames, options, fallbackMs) {
+    if (element.animate) element.animate(frames, options);
+    return setTimeout(function() { element.remove(); }, fallbackMs);
+  }
+
+  function seedSmoke(group, points) {
+    var stride = Math.max(Math.floor(points.length / 10), 1);
+    points.forEach(function(point, index) {
+      if (index % stride !== 0) return;
+      setTimeout(function() {
+        var puff = circle(point.x, point.y, 8 + (index % 4) * 3, index % 2 === 0 ? "#d7dde1" : "#8a9299");
+        puff.setAttribute("opacity", "0.52");
+        group.insertBefore(puff, group.firstChild);
+        animateElement(
+          puff,
+          [
+            { r: Number.parseFloat(puff.getAttribute("r")), opacity: 0.52, transform: "translateY(0px)" },
+            { r: 34, opacity: 0, transform: "translateY(-28px)" }
+          ],
+          { duration: 1150, easing: "cubic-bezier(.2,.8,.2,1)" },
+          1200
+        );
+      }, index * (SHOT_DURATION_MS / points.length));
+    });
+  }
+
+  function playMuzzleFlash(target, point) {
+    var flash = circle(point.x, point.y, 6, "#fff3b0");
+    flash.setAttribute("stroke", "#e98537");
+    flash.setAttribute("stroke-width", "4");
+    target.appendChild(flash);
+    animateElement(flash, [{ r: 6, opacity: 1 }, { r: 42, opacity: 0 }], { duration: 260, easing: "cubic-bezier(.2,.8,.2,1)" }, 300);
+  }
+
+  function playImpacts(target, shot) {
+    (shot.explosions || []).forEach(function(explosion) { playExplosion(target, explosion); });
+    (shot.damage_events || []).forEach(function(event) { playDamage(target, event); });
+  }
+
+  function playExplosion(target, explosion) {
+    var burst = circle(explosion.x, explosion.y, 8, "#e98537");
+    var shockwave = circle(explosion.x, explosion.y, 4, "none");
+    burst.setAttribute("stroke", "#fff3b0");
+    burst.setAttribute("stroke-width", "6");
+    burst.setAttribute("opacity", "0.92");
+    shockwave.setAttribute("stroke", "#ffffff");
+    shockwave.setAttribute("stroke-width", "5");
+    shockwave.setAttribute("opacity", "0.72");
+    target.appendChild(burst);
+    target.appendChild(shockwave);
+    animateElement(burst, [{ r: 8, opacity: 0.92 }, { r: explosion.radius || 56, opacity: 0 }], { duration: 760, easing: "cubic-bezier(.2,.8,.2,1)" }, 960);
+    animateElement(shockwave, [{ r: 4, opacity: 0.72 }, { r: (explosion.radius || 56) * 1.35, opacity: 0 }], { duration: 920, easing: "cubic-bezier(.2,.8,.2,1)" }, 960);
+  }
+
+  function playDamage(target, event) {
+    var label = document.createElementNS(SVG_NS, "text");
+    label.setAttribute("x", event.x || 0);
+    label.setAttribute("y", (event.y || 0) - 64);
+    label.setAttribute("text-anchor", "middle");
+    label.setAttribute("fill", "#ffffff");
+    label.setAttribute("stroke", "#ac2847");
+    label.setAttribute("stroke-width", "4");
+    label.setAttribute("paint-order", "stroke");
+    label.setAttribute("font-size", "34");
+    label.setAttribute("font-weight", "800");
+    label.textContent = "-" + event.damage;
+    target.appendChild(label);
+    animateElement(label, [{ transform: "translateY(0px)", opacity: 1 }, { transform: "translateY(-38px)", opacity: 0 }], { duration: 900, easing: "cubic-bezier(.2,.8,.2,1)" }, 940);
+  }
+
+  function polyline(points, stroke, width, opacity) {
+    var line = document.createElementNS(SVG_NS, "polyline");
+    line.setAttribute("points", points.map(function(point) { return point.x + "," + point.y; }).join(" "));
+    line.setAttribute("fill", "none");
+    line.setAttribute("stroke", stroke);
+    line.setAttribute("stroke-width", width);
+    line.setAttribute("stroke-linecap", "round");
+    line.setAttribute("stroke-linejoin", "round");
+    line.setAttribute("opacity", opacity);
+    return line;
+  }
+
+  function circle(x, y, radius, fill) {
+    var element = document.createElementNS(SVG_NS, "circle");
+    element.setAttribute("cx", x);
+    element.setAttribute("cy", y);
+    element.setAttribute("r", radius);
+    element.setAttribute("fill", fill);
+    return element;
+  }
+
+  function prepareTrace(line) {
+    var length = line.getTotalLength ? line.getTotalLength() : 1800;
+    line.setAttribute("data-length", length);
+    line.setAttribute("stroke-dasharray", length);
+    line.setAttribute("stroke-dashoffset", length);
+  }
+
+  function traceOffset(line, ratio) {
+    return Number.parseFloat(line.getAttribute("data-length") || "1800") * (1 - ratio);
+  }
+
+  function poll() {
+    runtime.pollCount += 1;
+    fetch(STATE_URL, { cache: "no-store" })
+      .then(function(response) { return response.json(); })
+      .then(function(state) {
+        var volley = state.last_volley || {};
+        var shots = volley.shots || [];
+        if (runtime.pollCount <= 5 || volley.id !== runtime.lastPlayedVolleyId) {
+          log("poll state", { phase: state.phase, status: state.status, volleyId: volley.id || null, shotCount: shots.length });
+        }
+        playVolley(volley, "poll");
+      })
+      .catch(function(error) {
+        log("poll failed", { message: error.message });
+      });
+  }
+
+  window.OrinocoTankGameDebug = {
+    playCurrent: function() { playVolley(readDomVolley(), "manual"); },
+    poll: poll
+  };
+  log("boot", {
+    hasRoot: Boolean(root()),
+    hasEffectsTarget: Boolean(effectsTarget()),
+    hasVolleyTarget: Boolean(volleyTarget()),
+    hasTimer: Boolean(runtime.timer)
+  });
+  playVolley(readDomVolley(), "dom");
+  if (window.fetch) {
+    poll();
+    if (!runtime.timer) runtime.timer = setInterval(poll, 1000);
+  } else {
+    log("poll disabled: fetch unavailable");
+  }
+})();
+</script>

@@ -8,6 +8,10 @@ class TankGameController < ApplicationController
     render TankGameOverlayComponent.new(state: state_store.read)
   end
 
+  def state
+    render json: state_store.read
+  end
+
   private
 
   def state_store

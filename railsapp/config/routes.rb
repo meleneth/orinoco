@@ -25,6 +25,7 @@ Rails.application.routes.draw do
   post "wos_brain/start" => "wos_brain#start", as: :start_wos_brain
   post "wos_brain/stop" => "wos_brain#stop", as: :stop_wos_brain
   get  "tank_game/overlay" => "tank_game#overlay", as: :tank_game_overlay
+  get  "tank_game/state" => "tank_game#state", as: :tank_game_state
   get  "interaction_demo" => "interaction_demo#show", as: :interaction_demo
   post "interaction_demo/starfall" => "interaction_demo#starfall", as: :interaction_demo_starfall
   post "interaction_demo/sunburst" => "interaction_demo#sunburst", as: :interaction_demo_sunburst

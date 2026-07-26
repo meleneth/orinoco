@@ -287,6 +287,6 @@ export default class extends Controller {
   }
 
   log(message, detail = {}) {
-    console.debug(LOG_PREFIX, message, detail)
+    console.log(LOG_PREFIX, message, detail)
   }
 }
