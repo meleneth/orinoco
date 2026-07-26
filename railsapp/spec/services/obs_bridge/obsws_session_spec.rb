@@ -74,12 +74,24 @@ RSpec.describe ObsBridge::ObswsSession do
   it "applies TankGame scene setup requests" do
     allow(req).to receive(:create_scene).with("TankGame")
     allow(req).to receive(:create_scene_item).with("TankGame", "Gameplay", true)
+    create_response = double("create input response", scene_item_id: 42)
     allow(req).to receive(:create_input).with(
       "TankGame",
       "TankGameWebView",
       "browser_source",
       { "url" => "http://localhost:31050/tank_game/overlay", "width" => 1920, "height" => 1080 },
       true
+    ).and_return(create_response)
+    allow(req).to receive(:set_scene_item_transform).with(
+      "TankGame",
+      42,
+      {
+        "positionX" => 0,
+        "positionY" => 0,
+        "boundsType" => "OBS_BOUNDS_STRETCH",
+        "boundsWidth" => 1920,
+        "boundsHeight" => 1080
+      }
     )
     allow(req).to receive(:set_current_program_scene).with("TankGame")
 
@@ -91,7 +103,14 @@ RSpec.describe ObsBridge::ObswsSession do
         "sceneName" => "TankGame",
         "inputName" => "TankGameWebView",
         "inputKind" => "browser_source",
-        "inputSettings" => { "url" => "http://localhost:31050/tank_game/overlay", "width" => 1920, "height" => 1080 }
+        "inputSettings" => { "url" => "http://localhost:31050/tank_game/overlay", "width" => 1920, "height" => 1080 },
+        "sceneItemTransform" => {
+          "positionX" => 0,
+          "positionY" => 0,
+          "boundsType" => "OBS_BOUNDS_STRETCH",
+          "boundsWidth" => 1920,
+          "boundsHeight" => 1080
+        }
       }
     )
     session.apply_request("requestType" => "SetCurrentProgramScene", "requestData" => { "sceneName" => "TankGame" })
@@ -99,6 +118,7 @@ RSpec.describe ObsBridge::ObswsSession do
     expect(req).to have_received(:create_scene)
     expect(req).to have_received(:create_scene_item)
     expect(req).to have_received(:create_input)
+    expect(req).to have_received(:set_scene_item_transform)
     expect(req).to have_received(:set_current_program_scene)
   end
 

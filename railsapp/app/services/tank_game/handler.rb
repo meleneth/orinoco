@@ -116,12 +116,25 @@ module TankGame
               "inputName" => web_source_name,
               "inputKind" => "browser_source",
               "inputSettings" => input_settings(config),
-              "sceneItemEnabled" => true
+              "sceneItemEnabled" => true,
+              "sceneItemTransform" => fullscreen_transform(config)
             }
           }
         )
       end
       publish_obs_request({ "requestType" => "SetInputSettings", "requestData" => { "inputName" => web_source_name, "inputSettings" => input_settings(config), "overlay" => true } })
+      if (web_scene_item = scene_item(scene_name, web_source_name))
+        publish_obs_request(
+          {
+            "requestType" => "SetSceneItemTransform",
+            "requestData" => {
+              "sceneName" => scene_name,
+              "sceneItemId" => web_scene_item.fetch("sceneItemId"),
+              "sceneItemTransform" => fullscreen_transform(config)
+            }
+          }
+        )
+      end
       publish_obs_request({ "requestType" => "SetCurrentProgramScene", "requestData" => { "sceneName" => scene_name } })
     end
 
@@ -167,6 +180,16 @@ module TankGame
       }
     end
 
+    def fullscreen_transform(config)
+      {
+        "positionX" => 0,
+        "positionY" => 0,
+        "boundsType" => "OBS_BOUNDS_STRETCH",
+        "boundsWidth" => positive_integer(config["width"], 1920),
+        "boundsHeight" => positive_integer(config["height"], 1080)
+      }
+    end
+
     def base_url
       external_base_url.presence || ENV.fetch("ORINOCO_EXTERNAL_BASE_URL", "http://localhost:31050")
     end
@@ -180,11 +203,15 @@ module TankGame
     end
 
     def scene_item_present?(scene_name, source_name)
-      return false unless inventory_reader
+      scene_item(scene_name, source_name).present?
+    end
 
-      inventory_reader.scene_items(scene_name).any? { |item| item["sourceName"] == source_name }
+    def scene_item(scene_name, source_name)
+      return nil unless inventory_reader
+
+      inventory_reader.scene_items(scene_name).find { |item| item["sourceName"] == source_name && item["sceneItemId"].present? }
     rescue StandardError
-      false
+      nil
     end
 
     def config_hash

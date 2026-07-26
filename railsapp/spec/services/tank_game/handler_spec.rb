@@ -96,5 +96,13 @@ RSpec.describe TankGame::Handler do
     expect(state).to include("phase" => "signup", "previous_scene_name" => "Main")
     request_types = publisher.events.map { |entry| entry.dig(:payload, "request", "requestType") }
     expect(request_types).to include("CreateScene", "CreateSceneItem", "CreateInput", "SetInputSettings", "SetCurrentProgramScene")
+    create_input = publisher.events.find { |entry| entry.dig(:payload, "request", "requestType") == "CreateInput" }
+    expect(create_input.dig(:payload, "request", "requestData", "sceneItemTransform")).to include(
+      "positionX" => 0,
+      "positionY" => 0,
+      "boundsType" => "OBS_BOUNDS_STRETCH",
+      "boundsWidth" => 1920,
+      "boundsHeight" => 1080
+    )
   end
 end
