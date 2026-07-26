@@ -61,9 +61,39 @@ RSpec.describe TankGame::Handler do
   end
 
   before do
-    allow(broadcaster).to receive(:broadcast_update_to)
+    allow(broadcaster).to receive(:broadcast_replace_to)
   end
 
+
+  it "broadcasts overlay replacements so animations reconnect" do
+    event = Orinoco::Pipeline::Event.build(
+      "twitch.chat.message_received",
+      {
+        "tags" => { "display_name" => "One" },
+        "name" => "one",
+        "txt" => "!signup",
+        "twitch_emotes" => []
+      }
+    )
+    redis.set(
+      TankGame::StateStore::KEY,
+      JSON.generate(
+        "phase" => "signup",
+        "round_id" => "round-1",
+        "players" => [],
+        "tanks" => []
+      )
+    )
+
+    handler.handle_chat_event(event)
+
+    expect(broadcaster).to have_received(:broadcast_replace_to).with(
+      "tank_game:overlay",
+      target: "tank_game_overlay",
+      layout: false,
+      renderable: an_instance_of(TankGameOverlayComponent)
+    )
+  end
   it "starts setup for moderator trigger and asks OBS for the current scene" do
     event = Orinoco::Pipeline::Event.build(
       "twitch.chat.message_received",

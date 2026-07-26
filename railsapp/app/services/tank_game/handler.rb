@@ -222,7 +222,7 @@ module TankGame
 
     def broadcast_state(state)
       Rails.application.reloader.wrap do
-        broadcaster.broadcast_update_to(
+        broadcaster.broadcast_replace_to(
           "tank_game:overlay",
           target: "tank_game_overlay",
           layout: false,

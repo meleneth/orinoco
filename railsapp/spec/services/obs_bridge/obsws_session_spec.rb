@@ -143,7 +143,7 @@ RSpec.describe ObsBridge::ObswsSession do
     expect(req).to have_received(:create_scene)
     expect(req).to have_received(:create_scene_item)
     expect(req).to have_received(:create_input)
-    expect(req).to have_received(:set_scene_item_transform)
+    expect(req).to have_received(:set_scene_item_transform).twice
     expect(req).to have_received(:set_current_program_scene)
   end
 

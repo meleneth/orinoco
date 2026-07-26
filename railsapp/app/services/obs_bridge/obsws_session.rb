@@ -72,11 +72,20 @@ module ObsBridge
         end
         { "sceneItemId" => scene_item_id }.compact
       when "CreateSceneItem"
-        @req.create_scene_item(
+        response = @req.create_scene_item(
           request_data.fetch("sceneName"),
           request_data.fetch("sourceName"),
           request_data.fetch("sceneItemEnabled", true)
         )
+        scene_item_id = fetch_value(response, :sceneItemId, "sceneItemId", :scene_item_id, "scene_item_id")
+        if request_data["sceneItemTransform"] && scene_item_id
+          @req.set_scene_item_transform(
+            request_data.fetch("sceneName"),
+            scene_item_id,
+            request_data.fetch("sceneItemTransform")
+          )
+        end
+        { "sceneItemId" => scene_item_id }.compact
       when "SetInputSettings"
         @req.set_input_settings(
           request_data.fetch("inputName"),
