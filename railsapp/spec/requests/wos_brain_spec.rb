@@ -105,6 +105,8 @@ RSpec.describe "WOSBrain", type: :request do
     expect(response.body).to include("req-1")
     expect(response.body).to include("WOS")
     expect(response.body).to include("Open /overlay")
+    expect(response.body).to include("TankGame Overlay")
+    expect(response.body).to include(tank_game_overlay_path)
     expect(response.body).to include("Enable")
     expect(response.body).to include("Disable")
     expect(response.body).to include("OBS Dependency")
