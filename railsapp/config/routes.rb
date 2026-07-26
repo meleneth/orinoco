@@ -29,6 +29,7 @@ Rails.application.routes.draw do
   post "interaction_demo/starfall" => "interaction_demo#starfall", as: :interaction_demo_starfall
   post "interaction_demo/sunburst" => "interaction_demo#sunburst", as: :interaction_demo_sunburst
   post "interaction_demo/wtf" => "interaction_demo#wtf", as: :interaction_demo_wtf
+  post "interaction_demo/toast" => "interaction_demo#toast", as: :interaction_demo_toast
 
   resource :obs_config, only: [ :show, :edit, :update, :create ]
 

@@ -25,7 +25,7 @@ RSpec.describe TankGame::Engine do
     expect(active_state["terrain"].length).to be >= 12
     expect(active_state["tanks"].map { |tank| tank["login"] }).to eq(%w[one two])
     expect(active_state["players"].map { |player| player["health"] }).to eq([ 100, 100 ])
-    expect(active_state["next_fire_at"]).to eq((now + 61).iso8601)
+    expect(active_state["next_fire_at"]).to eq((now + 36).iso8601)
   end
 
   it "emits volley animation data without persisting transient effects" do
@@ -35,12 +35,12 @@ RSpec.describe TankGame::Engine do
     state = engine.add_player(state: state, message: player_two)
 
     active_state = described_class.new(clock: -> { now + 31 }, id_generator: id_generator).tick(state: state, config: config)
-    fired_state = described_class.new(clock: -> { now + 61 }, id_generator: id_generator).tick(state: active_state, config: config)
+    fired_state = described_class.new(clock: -> { now + 36 }, id_generator: id_generator).tick(state: active_state, config: config)
 
     expect(fired_state["last_volley"]).to include(
       "id" => "round-1",
-      "fired_at" => (now + 61).iso8601,
-      "expires_at" => (now + 71).iso8601
+      "fired_at" => (now + 36).iso8601,
+      "expires_at" => (now + 46).iso8601
     )
     expect(fired_state.dig("last_volley", "shots").length).to eq(2)
     expect(fired_state.dig("last_volley", "shots", 0)).to include("shooter" => "one", "weapon" => 1)
@@ -71,6 +71,6 @@ RSpec.describe TankGame::Engine do
     expect(demo_state["players"].length).to eq(10)
     expect(demo_state["tanks"].length).to eq(10)
     expect(demo_state["players"].map { |player| player["display_name"] }.first(4)).to eq(%w[Mussolini Cleopatra Godiva Adolf])
-    expect(demo_state["next_fire_at"]).to eq((now + 30).iso8601)
+    expect(demo_state["next_fire_at"]).to eq((now + 5).iso8601)
   end
 end

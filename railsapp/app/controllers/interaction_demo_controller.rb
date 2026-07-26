@@ -22,6 +22,15 @@ class InteractionDemoController < ApplicationController
     respond_without_navigation
   end
 
+  def toast
+    Overlay::ToastBroadcaster.new.broadcast!(
+      message: toast_message,
+      title: toast_title,
+      tone: toast_tone
+    )
+    respond_without_navigation
+  end
+
   helper_method :interaction_demo_component
 
   private
@@ -37,6 +46,19 @@ class InteractionDemoController < ApplicationController
 
   def overlay_mode?
     ActiveModel::Type::Boolean.new.cast(params[:no_layout])
+  end
+
+  def toast_message
+    params[:message].to_s.strip.presence || "Manual toast from Interaction Demo"
+  end
+
+  def toast_title
+    params[:title].to_s.strip.presence || "Interaction Demo"
+  end
+
+  def toast_tone
+    tone = params[:tone].to_s
+    %w[info success warning error].include?(tone) ? tone : "info"
   end
 
   def state_store

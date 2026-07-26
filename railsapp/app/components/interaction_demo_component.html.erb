@@ -88,6 +88,28 @@
       <% end %>
 
       <%= render CardComponent.new do %>
+        <div class="space-y-4">
+          <h2 class="text-lg font-medium">Send Toast</h2>
+          <%= form_with url: interaction_demo_toast_path, method: :post, class: "space-y-3" do |form| %>
+            <div>
+              <%= form.label :title, "Title", class: "mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300" %>
+              <%= form.text_field :title, value: "Interaction Demo", class: "block w-full rounded border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100" %>
+            </div>
+            <div>
+              <%= form.label :message, "Message", class: "mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300" %>
+              <%= form.text_field :message, value: "Manual toast from Interaction Demo", class: "block w-full rounded border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100" %>
+            </div>
+            <div class="flex items-end gap-3">
+              <div class="min-w-32 flex-1">
+                <%= form.label :tone, "Tone", class: "mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300" %>
+                <%= form.select :tone, options_for_select([["Info", "info"], ["Success", "success"], ["Warning", "warning"], ["Error", "error"]], "info"), {}, class: "block w-full rounded border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100" %>
+              </div>
+              <%= form.submit "Send", class: "rounded bg-emerald-600 px-4 py-2 text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400" %>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+      <%= render CardComponent.new do %>
         <div class="space-y-3">
           <h2 class="text-lg font-medium">Counter</h2>
           <div id="<%= counter_target %>">

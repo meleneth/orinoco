@@ -19,4 +19,21 @@ RSpec.describe "TankGame overlay", type: :request do
     expect(response.body).to include('data-tank-game-animation-target="volley"')
     expect(response.body).to include("TankGame")
   end
+  it "renders parseable volley JSON for the animation controller" do
+    allow(redis).to receive(:get).with(TankGame::StateStore::KEY).and_return(
+      JSON.generate(
+        "phase" => "active",
+        "status" => "Volley fired",
+        "last_volley" => {
+          "id" => "volley-1",
+          "shots" => []
+        }
+      )
+    )
+
+    get tank_game_overlay_path
+
+    expect(response.body).to include('{"id":"volley-1"')
+    expect(response.body).not_to include('{&quot;id&quot;')
+  end
 end

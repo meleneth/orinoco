@@ -429,6 +429,6 @@ RSpec.describe TankGame::Handler do
     next_state = JSON.parse(redis.values.fetch(TankGame::StateStore::KEY))
     expect(next_state["phase"]).to eq("active")
     expect(tick_scheduler.calls.last).to include(reason: "combat_tick")
-    expect(tick_scheduler.calls.last.fetch(:run_at)).to eq(Time.utc(2026, 7, 25, 20, 1, 1))
+    expect(tick_scheduler.calls.last.fetch(:run_at)).to eq(Time.utc(2026, 7, 25, 20, 0, 36))
   end
 end

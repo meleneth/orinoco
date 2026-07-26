@@ -3,6 +3,7 @@ import { Controller } from "@hotwired/stimulus"
 let lastPlayedVolleyId = null
 const SVG_NS = "http://www.w3.org/2000/svg"
 const SHOT_DURATION_MS = 1650
+const LOG_PREFIX = "[tank-game]"
 
 export default class extends Controller {
   static targets = ["effects", "volley"]
@@ -10,20 +11,55 @@ export default class extends Controller {
   connect() {
     this.timeouts = []
     this.animationFrames = []
+    this.log("connect", {
+      hasEffectsTarget: this.hasEffectsTarget,
+      hasVolleyTarget: this.hasVolleyTarget,
+      lastPlayedVolleyId
+    })
     this.playCurrentVolley()
   }
 
   disconnect() {
+    this.log("disconnect", {
+      timeouts: this.timeouts.length,
+      animationFrames: this.animationFrames.length
+    })
     this.timeouts.forEach((timeout) => clearTimeout(timeout))
     this.animationFrames.forEach((frame) => cancelAnimationFrame(frame))
   }
 
   playCurrentVolley() {
     const volley = this.volley
-    if (!volley.id || volley.id === lastPlayedVolleyId || this.expired(volley) || !this.hasEffectsTarget) return
+    const expired = this.expired(volley)
+    this.log("volley check", {
+      id: volley.id || null,
+      shotCount: (volley.shots || []).length,
+      expiresAt: volley.expires_at || null,
+      expired,
+      duplicate: Boolean(volley.id && volley.id === lastPlayedVolleyId),
+      hasEffectsTarget: this.hasEffectsTarget
+    })
+
+    if (!volley.id) {
+      this.log("skip volley: missing id")
+      return
+    }
+    if (volley.id === lastPlayedVolleyId) {
+      this.log("skip volley: already played", { id: volley.id })
+      return
+    }
+    if (expired) {
+      this.log("skip volley: expired", { id: volley.id, expiresAt: volley.expires_at })
+      return
+    }
+    if (!this.hasEffectsTarget) {
+      this.log("skip volley: missing effects target", { id: volley.id })
+      return
+    }
 
     lastPlayedVolleyId = volley.id
     this.effectsTarget.replaceChildren()
+    this.log("play volley", { id: volley.id, shotCount: (volley.shots || []).length })
     this.playShots(volley.shots || [])
   }
 
@@ -31,8 +67,15 @@ export default class extends Controller {
     if (!this.hasVolleyTarget) return {}
 
     try {
-      return JSON.parse(this.volleyTarget.textContent || "{}")
-    } catch (_error) {
+      const parsed = JSON.parse(this.volleyTarget.textContent || "{}")
+      this.log("parsed volley", {
+        id: parsed.id || null,
+        shotCount: (parsed.shots || []).length,
+        payloadBytes: this.volleyTarget.textContent.length
+      })
+      return parsed
+    } catch (error) {
+      this.log("failed to parse volley", { message: error.message })
       return {}
     }
   }
@@ -45,14 +88,26 @@ export default class extends Controller {
   }
 
   playShots(shots) {
+    this.log("queue shots", { shotCount: shots.length })
     shots.forEach((shot, shotIndex) => {
-      this.after(shotIndex * 260, () => this.playShot(shot))
+      this.after(shotIndex * 260, () => this.playShot(shot, shotIndex))
     })
   }
 
-  playShot(shot) {
+  playShot(shot, shotIndex) {
     const points = shot.points || []
-    if (points.length === 0) return
+    this.log("play shot", {
+      shotIndex,
+      shooter: shot.shooter || null,
+      weapon: shot.weapon || null,
+      pointCount: points.length,
+      explosionCount: (shot.explosions || []).length,
+      damageCount: (shot.damage_events || []).length
+    })
+    if (points.length === 0) {
+      this.log("skip shot: no points", { shotIndex, shooter: shot.shooter || null })
+      return
+    }
 
     const group = document.createElementNS(SVG_NS, "g")
     const traceGlow = this.polyline(points, "#f3a833", 14, 0.24)
@@ -80,6 +135,7 @@ export default class extends Controller {
       if (ratio < 1) {
         this.animationFrames.push(requestAnimationFrame(step))
       } else {
+        this.log("shot impact", { shotIndex, shooter: shot.shooter || null })
         shell.remove()
         shellGlow.remove()
         this.playImpacts(shot)
@@ -228,5 +284,9 @@ export default class extends Controller {
   after(delay, callback) {
     const timeout = setTimeout(callback, delay)
     this.timeouts.push(timeout)
+  }
+
+  log(message, detail = {}) {
+    console.debug(LOG_PREFIX, message, detail)
   }
 }

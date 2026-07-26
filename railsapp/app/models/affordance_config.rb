@@ -43,7 +43,7 @@ class AffordanceConfig < ApplicationRecord
         "aim_command" => "!aim",
         "weapon_command" => "!weapon",
         "signup_seconds" => 30,
-        "fire_interval_seconds" => 30,
+        "fire_interval_seconds" => 5,
         "max_round_seconds" => 600,
         "scene_name" => "TankGame",
         "web_source_name" => "TankGameWebView",
