@@ -24,6 +24,9 @@ RSpec.describe "Overlay", type: :request do
 
     expect(response).to have_http_status(:success)
     expect(response.body).to include('data-overlay-root="default"')
+    expect(response.body).to include('id="overlay_layer_toasts"')
+    expect(response.body).to include('data-overlay-layer="toasts"')
+    expect(response.body).to include('@keyframes overlay-toast')
     expect(response.body).to include('id="overlay_layer_wos_brain"')
     expect(response.body).to include('data-overlay-layer="wos_brain"')
     expect(response.body).to include("Waiting for WOSBrain")

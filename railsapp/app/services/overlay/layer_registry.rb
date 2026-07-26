@@ -8,6 +8,12 @@ module Overlay
 
     LAYERS = [
       Layer.new(
+        key: "toasts",
+        label: "Toasts",
+        target: "overlay_layer_toasts",
+        stream: DEFAULT_STREAM
+      ),
+      Layer.new(
         key: "wos_brain",
         label: "WOSBrain",
         target: "overlay_layer_wos_brain",

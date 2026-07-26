@@ -32,6 +32,18 @@ RSpec.describe TankGame::Handler do
     end
   end
 
+  class TankGameHandlerSpecToasts
+    attr_reader :messages
+
+    def initialize
+      @messages = []
+    end
+
+    def broadcast!(message:, tone:, title:)
+      messages << { message: message, tone: tone, title: title }
+    end
+  end
+
   class TankGameHandlerSpecPublisher
     attr_reader :events
 
@@ -47,6 +59,7 @@ RSpec.describe TankGame::Handler do
   let(:redis) { TankGameHandlerSpecRedis.new }
   let(:publisher) { TankGameHandlerSpecPublisher.new }
   let(:tick_scheduler) { TankGameHandlerSpecScheduler.new }
+  let(:toast_broadcaster) { TankGameHandlerSpecToasts.new }
   let(:broadcaster) { class_double(Turbo::StreamsChannel).as_stubbed_const }
   let(:config) { AffordanceConfig.default_config_for(:tank_game) }
   let(:handler) do
@@ -56,7 +69,8 @@ RSpec.describe TankGame::Handler do
       broadcaster: broadcaster,
       config_reader: -> { config },
       external_base_url: "http://example.test",
-      tick_scheduler: tick_scheduler
+      tick_scheduler: tick_scheduler,
+      toast_broadcaster: toast_broadcaster
     )
   end
 
@@ -92,6 +106,26 @@ RSpec.describe TankGame::Handler do
       target: "tank_game_overlay",
       layout: false,
       renderable: an_instance_of(TankGameOverlayComponent)
+    )
+  end
+
+  it "broadcasts TankGame lifecycle toasts" do
+    event = Orinoco::Pipeline::Event.build(
+      "twitch.chat.message_received",
+      {
+        "tags" => { "display_name" => "Mod", "mod" => true },
+        "name" => "mod",
+        "txt" => "!TankGame",
+        "twitch_emotes" => []
+      }
+    )
+
+    handler.handle_chat_event(event)
+
+    expect(toast_broadcaster.messages.last).to include(
+      message: "Mod requested TankGame",
+      title: "TankGame",
+      tone: "info"
     )
   end
   it "starts setup for moderator trigger and asks OBS for the current scene" do
@@ -204,7 +238,8 @@ RSpec.describe TankGame::Handler do
       broadcaster: broadcaster,
       config_reader: -> { config },
       inventory_reader: inventory_reader,
-      tick_scheduler: tick_scheduler
+      tick_scheduler: tick_scheduler,
+      toast_broadcaster: toast_broadcaster
     )
     event = Orinoco::Pipeline::Event.build(
       "obs.command.completed",
@@ -252,6 +287,42 @@ RSpec.describe TankGame::Handler do
     expect(state["players"].length).to eq(10)
     expect(tick_scheduler.calls.last).to include(reason: "combat_tick")
   end
+
+  it "broadcasts volley toasts from delayed tick events" do
+    state = {
+      "phase" => "active",
+      "round_id" => "round-1",
+      "round_ends_at" => "2026-07-25T20:10:00Z",
+      "next_fire_at" => "2026-07-25T20:00:00Z",
+      "players" => [
+        { "login" => "one", "display_name" => "One", "health" => 100, "active" => true, "angle" => 45, "power" => 55, "weapon" => 1 },
+        { "login" => "two", "display_name" => "Two", "health" => 100, "active" => true, "angle" => 135, "power" => 55, "weapon" => 1 }
+      ],
+      "tanks" => [
+        { "login" => "one", "x" => 100, "y" => 780, "turret_x" => 100, "turret_y" => 758 },
+        { "login" => "two", "x" => 1820, "y" => 780, "turret_x" => 1820, "turret_y" => 758 }
+      ],
+      "terrain" => [ { "x" => 0, "y" => 860 }, { "x" => 1920, "y" => 860 } ],
+      "last_volley" => nil
+    }
+    redis.set(TankGame::StateStore::KEY, JSON.generate(state))
+    tick_handler = described_class.new(
+      redis: redis,
+      publisher: publisher,
+      broadcaster: broadcaster,
+      engine: TankGame::Engine.new(clock: -> { Time.utc(2026, 7, 25, 20, 0, 0) }, id_generator: -> { "volley-1" }),
+      config_reader: -> { config },
+      tick_scheduler: tick_scheduler,
+      toast_broadcaster: toast_broadcaster
+    )
+    event = Orinoco::Pipeline::Event.build("tank_game.tick", { "round_id" => "round-1" })
+
+    tick_handler.handle_tick_event(event)
+
+    expect(toast_broadcaster.messages).to include(
+      hash_including(message: "Volley fired: 2 shots", title: "TankGame", tone: "warning")
+    )
+  end
   it "handles delayed tick events and schedules the next combat tick" do
     base_engine = TankGame::Engine.new(clock: -> { Time.utc(2026, 7, 25, 20, 0, 0) }, id_generator: -> { "id-1" })
     state = base_engine.start_setup(
@@ -271,7 +342,8 @@ RSpec.describe TankGame::Handler do
       broadcaster: broadcaster,
       engine: TankGame::Engine.new(clock: -> { Time.utc(2026, 7, 25, 20, 0, 31) }, id_generator: -> { "id-2" }),
       config_reader: -> { config },
-      tick_scheduler: tick_scheduler
+      tick_scheduler: tick_scheduler,
+      toast_broadcaster: toast_broadcaster
     )
     event = Orinoco::Pipeline::Event.build(
       "tank_game.tick",

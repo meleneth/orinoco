@@ -9,7 +9,7 @@ module TankGame
   class Handler
     SOURCE = "tank_game"
 
-    def initialize(redis:, publisher:, broadcaster: Turbo::StreamsChannel, engine: Engine.new, config_reader: -> { AffordanceConfig.fetch!(:tank_game) }, inventory_reader: nil, external_base_url: nil, tick_scheduler: nil)
+    def initialize(redis:, publisher:, broadcaster: Turbo::StreamsChannel, engine: Engine.new, config_reader: -> { AffordanceConfig.fetch!(:tank_game) }, inventory_reader: nil, external_base_url: nil, tick_scheduler: nil, toast_broadcaster: nil)
       @store = StateStore.new(redis: redis)
       @publisher = publisher
       @broadcaster = broadcaster
@@ -18,6 +18,7 @@ module TankGame
       @inventory_reader = inventory_reader
       @external_base_url = external_base_url
       @tick_scheduler = tick_scheduler
+      @toast_broadcaster = toast_broadcaster
     end
 
     def handle_chat_event(event)
@@ -44,7 +45,10 @@ module TankGame
                      state
       end
 
-      persist_and_broadcast(next_state) unless next_state == state
+      if next_state != state
+        persist_and_broadcast(next_state)
+        broadcast_chat_toast(command, message, next_state)
+      end
       :handled
     end
 
@@ -66,6 +70,7 @@ module TankGame
       publish_setup_commands(next_state, config_hash)
       persist_and_broadcast(next_state)
       schedule_next_tick(next_state)
+      broadcast_setup_toast(next_state)
       :handled
     end
 
@@ -79,12 +84,13 @@ module TankGame
       publish_restore_command(next_state) if state["phase"] == "ending" && next_state["phase"] == "ended"
       persist_and_broadcast(next_state)
       schedule_next_tick(next_state)
+      broadcast_tick_toast(previous_state: state, current_state: next_state)
       :handled
     end
 
     private
 
-    attr_reader :store, :publisher, :broadcaster, :engine, :inventory_reader, :external_base_url, :tick_scheduler
+    attr_reader :store, :publisher, :broadcaster, :engine, :inventory_reader, :external_base_url, :tick_scheduler, :toast_broadcaster
 
     def start_game(state:, message:, config:, demo: false)
       return state unless authorized_starter?(message)
@@ -164,6 +170,73 @@ module TankGame
         )
       end
       publish_obs_request({ "requestType" => "SetCurrentProgramScene", "requestData" => { "sceneName" => scene_name } })
+    end
+
+    def broadcast_chat_toast(command, message, state)
+      case command.type
+      when :start
+        broadcast_toast("#{display_name(message)} requested TankGame", tone: "info", title: "TankGame")
+      when :demo
+        broadcast_toast("#{display_name(message)} requested TankDemo", tone: "info", title: "TankDemo")
+      when :signup
+        broadcast_toast("#{display_name(message)} joined TankGame", tone: "success", title: "TankGame")
+      when :aim
+        player = player_for_state(state, message)
+        broadcast_toast("#{display_name(message)} aim #{player.fetch("angle", command.args.fetch("angle"))} / #{player.fetch("power", command.args.fetch("power"))}", tone: "info", title: "TankGame")
+      when :weapon
+        player = player_for_state(state, message)
+        broadcast_toast("#{display_name(message)} selected weapon #{player.fetch("weapon", command.args.fetch("weapon"))}", tone: "info", title: "TankGame")
+      end
+    end
+
+    def broadcast_setup_toast(state)
+      if state["demo"]
+        broadcast_toast("TankDemo live: #{Array(state["players"]).length} NPC tanks", tone: "warning", title: "TankDemo")
+      else
+        broadcast_toast("Signup open for TankGame", tone: "success", title: "TankGame")
+      end
+    end
+
+    def broadcast_tick_toast(previous_state:, current_state:)
+      if volley_changed?(previous_state, current_state)
+        shots = Array(current_state.dig("last_volley", "shots")).length
+        broadcast_toast("Volley fired: #{shots} shots", tone: "warning", title: current_state["demo"] ? "TankDemo" : "TankGame")
+      end
+
+      if previous_state["phase"] != current_state["phase"]
+        case current_state["phase"]
+        when "active"
+          broadcast_toast("TankGame live: #{Array(current_state["players"]).length} tanks", tone: "success", title: "TankGame")
+        when "ending"
+          broadcast_toast(current_state["status"], tone: "success", title: "TankGame")
+        when "ended"
+          broadcast_toast("TankGame overlay restored", tone: "info", title: "TankGame")
+        end
+      end
+    end
+
+    def volley_changed?(previous_state, current_state)
+      previous_state.dig("last_volley", "id") != current_state.dig("last_volley", "id") && current_state.dig("last_volley", "id").present?
+    end
+
+    def display_name(message)
+      message.display_name.to_s.presence || login_name(message)
+    end
+
+    def login_name(message)
+      message.name.to_s.downcase
+    end
+
+    def player_for_state(state, message)
+      Array(state["players"]).find { |player| player["login"] == login_name(message) } || {}
+    end
+
+    def broadcast_toast(message, tone:, title:)
+      return unless toast_broadcaster
+
+      toast_broadcaster.broadcast!(message: message, tone: tone, title: title)
+    rescue StandardError => e
+      Rails.logger.warn("[tank-game] toast broadcast failed: #{e.class}: #{e.message}")
     end
 
     def schedule_next_tick(state)

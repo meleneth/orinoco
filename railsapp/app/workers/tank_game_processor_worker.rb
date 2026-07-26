@@ -3,6 +3,7 @@
 require_relative "../services/orinoco/pipeline"
 require_relative "../services/tank_game/handler"
 require_relative "../services/tank_game/tick_scheduler"
+require_relative "../services/overlay/toast_broadcaster"
 
 class TankGameProcessorWorker
   def initialize(wait_time_seconds: 1, max_number_of_messages: 10, sleeper: ->(seconds) { sleep seconds })
@@ -52,8 +53,13 @@ class TankGameProcessorWorker
       redis: redis,
       publisher: publisher,
       inventory_reader: inventory_reader,
-      tick_scheduler: tick_scheduler
+      tick_scheduler: tick_scheduler,
+      toast_broadcaster: toast_broadcaster
     )
+  end
+
+  def toast_broadcaster
+    @toast_broadcaster ||= Overlay::ToastBroadcaster.new
   end
 
   def tick_scheduler

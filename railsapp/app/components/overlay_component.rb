@@ -14,6 +14,14 @@ class OverlayComponent < ApplicationComponent
     layers.map(&:stream).uniq
   end
 
+  def layer_class(layer)
+    if layer.key == "toasts"
+      "pointer-events-none absolute bottom-8 left-8 right-8 z-[1000] flex flex-col-reverse items-start"
+    else
+      "pointer-events-none absolute inset-0"
+    end
+  end
+
   def render_layer(layer)
     case layer.key
     when "wos_brain"

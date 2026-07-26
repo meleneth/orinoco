@@ -1,10 +1,19 @@
+<style>
+  @keyframes overlay-toast {
+    0% { opacity: 0; transform: translateY(18px) scale(0.98); }
+    8% { opacity: 1; transform: translateY(0) scale(1); }
+    78% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-22px) scale(0.98); }
+  }
+</style>
+
 <% stream_names.each do |stream_name| %>
   <%= helpers.turbo_stream_from stream_name %>
 <% end %>
 
 <div class="fixed inset-0 overflow-hidden bg-transparent" data-overlay-root="default">
   <% layers.each do |layer| %>
-    <div class="pointer-events-none absolute inset-0" id="<%= layer.target %>" data-overlay-layer="<%= layer.key %>">
+    <div class="<%= layer_class(layer) %>" id="<%= layer.target %>" data-overlay-layer="<%= layer.key %>">
       <%= render_layer(layer) %>
     </div>
   <% end %>
