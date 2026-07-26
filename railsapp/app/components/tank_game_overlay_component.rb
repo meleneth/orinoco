@@ -28,12 +28,8 @@ class TankGameOverlayComponent < ApplicationComponent
     Array(state["terrain"])
   end
 
-  def projectiles
-    Array(state["projectiles"])
-  end
-
-  def explosions
-    Array(state["explosions"])
+  def last_volley
+    state["last_volley"].is_a?(Hash) ? state["last_volley"] : {}
   end
 
   def status_text
@@ -60,9 +56,9 @@ class TankGameOverlayComponent < ApplicationComponent
   end
 
   def tank_color(index, active)
-    return "#64748b" unless active
+    return "#5e5b8c" unless active
 
-    %w[#22c55e #38bdf8 #f97316 #e879f9 #facc15 #a78bfa #fb7185 #2dd4bf][index % 8]
+    %w[#5ab552 #36c5f4 #e98537 #c878af #f3a833 #8c78a5 #fa6e79 #6dead6][index % 8]
   end
 
   def barrel_end(tank, player)

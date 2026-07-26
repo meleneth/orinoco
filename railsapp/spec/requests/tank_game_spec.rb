@@ -15,6 +15,8 @@ RSpec.describe "TankGame overlay", type: :request do
 
     expect(response).to have_http_status(:ok)
     expect(response.body).to include('id="tank_game_overlay"')
+    expect(response.body).to include('data-controller="tank-game-animation"')
+    expect(response.body).to include('data-tank-game-animation-target="volley"')
     expect(response.body).to include("TankGame")
   end
 end

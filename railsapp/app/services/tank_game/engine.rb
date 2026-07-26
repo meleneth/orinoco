@@ -35,6 +35,7 @@ module TankGame
         "terrain" => [],
         "projectiles" => [],
         "explosions" => [],
+        "last_volley" => nil,
         "winner" => nil,
         "status" => "Preparing TankGame scene...",
         "config" => public_config(config)
@@ -140,19 +141,30 @@ module TankGame
     end
 
     def fire_round(state, config:)
+      now = clock.call
+      volley = {
+        "id" => id_generator.call,
+        "fired_at" => now.iso8601,
+        "expires_at" => (now + 10).iso8601,
+        "shots" => [],
+        "damage_events" => []
+      }
       state = state.merge("projectiles" => [], "explosions" => [])
       active_players(state).each do |player|
         tank = tank_for(state, player.fetch("login"))
         next unless tank
 
-        state = resolve_shot(state, shooter: player, tank: tank)
+        before_players = Array(state["players"])
+        state, shot = resolve_shot(state, shooter: player, tank: tank)
+        damage_events = damage_events_between(before_players, Array(state["players"]), shooter: player, tanks: state["tanks"])
+        volley["shots"] << shot.merge("damage_events" => damage_events)
+        volley["damage_events"].concat(damage_events)
       end
-      now = clock.call
+      state = state.merge("last_fire_at" => now.iso8601, "last_volley" => volley, "projectiles" => [], "explosions" => [])
       state = finish_round(state, reason: "winner") if active_players(state).length <= 1
-      return state if state["phase"] == "ending"
+      return state.merge("last_volley" => volley, "projectiles" => [], "explosions" => []) if state["phase"] == "ending"
 
       state.merge(
-        "last_fire_at" => now.iso8601,
         "next_fire_at" => (now + fire_interval_seconds(config)).iso8601,
         "status" => "Volley fired at #{now.strftime("%H:%M:%S UTC")}"
       )
@@ -161,11 +173,16 @@ module TankGame
     def resolve_shot(state, shooter:, tank:)
       weapon = WEAPONS.fetch(shooter.fetch("weapon", 1), WEAPONS.fetch(1))
       impacts = impacts_for(state, shooter: shooter, tank: tank, weapon: weapon)
-      state = state.merge("projectiles" => Array(state["projectiles"]) + impacts.fetch(:paths))
+      shot = {
+        "shooter" => shooter.fetch("login"),
+        "weapon" => shooter.fetch("weapon", 1),
+        "points" => impacts.fetch(:paths).first.fetch("points", []),
+        "explosions" => impacts.fetch(:explosions)
+      }
       impacts.fetch(:explosions).each do |explosion|
         state = apply_explosion(state, explosion: explosion, shooter: shooter, weapon: weapon)
       end
-      state
+      [ state, shot ]
     end
 
     def impacts_for(state, shooter:, tank:, weapon:)
@@ -218,6 +235,27 @@ module TankGame
         "explosions" => Array(state["explosions"]) + [ explosion ],
         "terrain" => deform_terrain(state.fetch("terrain", []), explosion)
       )
+    end
+
+    def damage_events_between(before_players, after_players, shooter:, tanks:)
+      before_by_login = before_players.index_by { |player| player.fetch("login") }
+      after_players.filter_map do |player|
+        before = before_by_login[player.fetch("login")]
+        next unless before
+
+        damage = before.fetch("health", 100).to_i - player.fetch("health", 100).to_i
+        next unless damage.positive?
+
+        tank = tank_for({ "tanks" => tanks }, player.fetch("login")) || {}
+        {
+          "shooter" => shooter.fetch("login"),
+          "target" => player.fetch("login"),
+          "damage" => damage,
+          "health" => player.fetch("health", 0).to_i,
+          "x" => tank.fetch("x", 0),
+          "y" => tank.fetch("y", 0)
+        }
+      end
     end
 
     def finish_round(state, reason:)
@@ -373,3 +411,4 @@ module TankGame
     end
   end
 end
+
