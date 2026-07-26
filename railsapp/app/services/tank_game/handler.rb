@@ -3,12 +3,13 @@
 require_relative "command_parser"
 require_relative "engine"
 require_relative "state_store"
+require_relative "tick_scheduler"
 
 module TankGame
   class Handler
     SOURCE = "tank_game"
 
-    def initialize(redis:, publisher:, broadcaster: Turbo::StreamsChannel, engine: Engine.new, config_reader: -> { AffordanceConfig.fetch!(:tank_game) }, inventory_reader: nil, external_base_url: nil)
+    def initialize(redis:, publisher:, broadcaster: Turbo::StreamsChannel, engine: Engine.new, config_reader: -> { AffordanceConfig.fetch!(:tank_game) }, inventory_reader: nil, external_base_url: nil, tick_scheduler: nil)
       @store = StateStore.new(redis: redis)
       @publisher = publisher
       @broadcaster = broadcaster
@@ -16,6 +17,7 @@ module TankGame
       @config_reader = config_reader
       @inventory_reader = inventory_reader
       @external_base_url = external_base_url
+      @tick_scheduler = tick_scheduler
     end
 
     def handle_chat_event(event)
@@ -30,6 +32,8 @@ module TankGame
       next_state = case command.type
       when :start
                      start_game(state: state, message: message, config: config)
+      when :demo
+                     start_game(state: state, message: message, config: config, demo: true)
       when :signup
                      engine.add_player(state: state, message: message)
       when :aim
@@ -54,31 +58,43 @@ module TankGame
       previous_scene = event.payload.dig("request", "requestData", "sceneName").to_s if previous_scene.empty?
       previous_scene = "" if previous_scene == config_hash.fetch("scene_name", "TankGame")
 
-      next_state = engine.begin_signup(state: state, previous_scene_name: previous_scene, config: config_hash)
+      next_state = if state["demo"]
+                     engine.begin_demo(state: state, previous_scene_name: previous_scene, config: config_hash)
+      else
+                     engine.begin_signup(state: state, previous_scene_name: previous_scene, config: config_hash)
+      end
       publish_setup_commands(next_state, config_hash)
       persist_and_broadcast(next_state)
+      schedule_next_tick(next_state)
       :handled
     end
 
-    def tick
+    def handle_tick_event(event)
       state = store.read
+      return :ignored unless event.payload["round_id"].to_s == state["round_id"].to_s
+
       next_state = engine.tick(state: state, config: config_hash)
       return :idle if next_state == state
 
       publish_restore_command(next_state) if state["phase"] == "ending" && next_state["phase"] == "ended"
       persist_and_broadcast(next_state)
+      schedule_next_tick(next_state)
       :handled
     end
 
     private
 
-    attr_reader :store, :publisher, :broadcaster, :engine, :inventory_reader, :external_base_url
+    attr_reader :store, :publisher, :broadcaster, :engine, :inventory_reader, :external_base_url, :tick_scheduler
 
-    def start_game(state:, message:, config:)
+    def start_game(state:, message:, config:, demo: false)
       return state unless authorized_starter?(message)
       return state if %w[setup_pending signup active ending].include?(state["phase"])
 
-      setup_state = engine.start_setup(state: state, trigger: message, config: config)
+      setup_state = if demo
+                      engine.start_demo_setup(state: state, trigger: message, config: config)
+      else
+                      engine.start_setup(state: state, trigger: message, config: config)
+      end
       publish_obs_request(
         {
           "requestType" => "GetCurrentProgramScene",
@@ -136,6 +152,41 @@ module TankGame
         )
       end
       publish_obs_request({ "requestType" => "SetCurrentProgramScene", "requestData" => { "sceneName" => scene_name } })
+    end
+
+    def schedule_next_tick(state)
+      return unless tick_scheduler
+
+      case state["phase"]
+      when "signup"
+        schedule_tick_at(state, state["signup_ends_at"], "signup_closed")
+      when "active"
+        schedule_tick_at(state, next_active_tick_at(state), "combat_tick")
+      when "ending"
+        schedule_tick_at(state, state["restore_at"], "restore_scene")
+      end
+    end
+
+    def next_active_tick_at(state)
+      candidates = [ state["next_fire_at"], state["round_ends_at"] ].filter_map { |value| parse_time(value) }
+      candidates.min&.iso8601
+    end
+
+    def schedule_tick_at(state, timestamp, reason)
+      run_at = parse_time(timestamp)
+      return unless run_at
+
+      tick_scheduler.schedule!(state, run_at: run_at, reason: reason)
+    rescue StandardError => e
+      Rails.logger.warn("[tank-game] failed to schedule #{reason}: #{e.class}: #{e.message}")
+    end
+
+    def parse_time(value)
+      return nil if value.blank?
+
+      Time.iso8601(value.to_s)
+    rescue ArgumentError
+      nil
     end
 
     def publish_restore_command(state)

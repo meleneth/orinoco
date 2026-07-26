@@ -2,6 +2,7 @@
 
 require_relative "../services/orinoco/pipeline"
 require_relative "../services/tank_game/handler"
+require_relative "../services/tank_game/tick_scheduler"
 
 class TankGameProcessorWorker
   def initialize(wait_time_seconds: 1, max_number_of_messages: 10, sleeper: ->(seconds) { sleep seconds })
@@ -24,7 +25,7 @@ class TankGameProcessorWorker
   def run_once
     process_queue(Orinoco::Messaging::Names::TANK_GAME_TWITCH_QUEUE) { |event| handler.handle_chat_event(event) }
     process_queue(Orinoco::Messaging::Names::TANK_GAME_OBS_RESULT_QUEUE) { |event| handler.handle_obs_result(event) }
-    handler.tick
+    process_queue(Orinoco::Messaging::Names::TANK_GAME_TICK_QUEUE) { |event| handler.handle_tick_event(event) }
   end
 
   private
@@ -50,7 +51,15 @@ class TankGameProcessorWorker
     @handler ||= TankGame::Handler.new(
       redis: redis,
       publisher: publisher,
-      inventory_reader: inventory_reader
+      inventory_reader: inventory_reader,
+      tick_scheduler: tick_scheduler
+    )
+  end
+
+  def tick_scheduler
+    @tick_scheduler ||= TankGame::TickScheduler.new(
+      sqs: sqs,
+      topology: topology
     )
   end
 

@@ -11,6 +11,8 @@ module Orinoco
       TWITCH_BRIDGE_CONTROL_QUEUE = "orinoco.twitch.bridge.control"
       SEVEN_TV_BRIDGE_CONTROL_QUEUE = "orinoco.7tv.bridge.control"
       TANK_GAME_TWITCH_QUEUE = "orinoco.tank_game.twitch.queue"
+      TANK_GAME_TICK_TOPIC = "orinoco.tank_game.tick"
+      TANK_GAME_TICK_QUEUE = "orinoco.tank_game.tick.queue"
 
       OBS_COMMAND_TOPIC = "orinoco.obs.command"
       OBS_BRIDGE_COMMAND_QUEUE = "orinoco.obs.command.bridge"

@@ -14,6 +14,8 @@ module TankGame
 
       if command_match?(body, trigger_command)
         Command.new(type: :start, args: {})
+      elsif command_match?(body, demo_command)
+        Command.new(type: :demo, args: {})
       elsif command_match?(body, signup_command)
         Command.new(type: :signup, args: {})
       elsif (match = body.match(/\A#{Regexp.escape(aim_command)}\s+(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\z/i))
@@ -33,6 +35,10 @@ module TankGame
 
     def trigger_command
       config.fetch("trigger_command", "!TankGame")
+    end
+
+    def demo_command
+      config.fetch("demo_command", "!TankDemo")
     end
 
     def signup_command

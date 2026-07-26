@@ -11,6 +11,8 @@ module TankGame
     GRAVITY = 0.26
     TANK_RADIUS = 22
 
+    SCORCHED_EARTH_NPC_NAMES = %w[Mussolini Cleopatra Godiva Adolf Napoleon Caesar Hannibal Patton Rommel Genghis].freeze
+
     WEAPONS = {
       1 => { "name" => "Shell", "damage" => 38, "radius" => 72, "speed" => 1.0, "cluster" => 0 },
       2 => { "name" => "Heavy", "damage" => 58, "radius" => 96, "speed" => 0.82, "cluster" => 0 },
@@ -42,6 +44,13 @@ module TankGame
       }
     end
 
+    def start_demo_setup(state:, trigger:, config:, request_id: nil)
+      start_setup(state: state, trigger: trigger, config: config, request_id: request_id).merge(
+        "demo" => true,
+        "status" => "Preparing TankDemo scene..."
+      )
+    end
+
     def begin_signup(state:, previous_scene_name:, config:)
       now = clock.call
       state.merge(
@@ -51,6 +60,38 @@ module TankGame
         "signup_ends_at" => (now + signup_seconds(config)).iso8601,
         "round_ends_at" => (now + max_round_seconds(config)).iso8601,
         "status" => "Type #{config.fetch("signup_command", "!signup")} to join TankGame"
+      )
+    end
+
+    def begin_demo(state:, previous_scene_name:, config:)
+      now = clock.call
+      players = demo_players(now)
+      terrain = build_terrain(players.length)
+      tanks = players.each_with_index.map do |player, index|
+        x = tank_x(index, players.length)
+        y = terrain_y(terrain, x)
+        {
+          "login" => player.fetch("login"),
+          "x" => x.round(2),
+          "y" => y.round(2),
+          "turret_x" => x.round(2),
+          "turret_y" => (y - TANK_RADIUS).round(2)
+        }
+      end
+
+      state.merge(
+        "phase" => "active",
+        "demo" => true,
+        "previous_scene_name" => previous_scene_name,
+        "players" => players,
+        "tanks" => tanks,
+        "terrain" => terrain,
+        "signup_started_at" => nil,
+        "signup_ends_at" => nil,
+        "round_ends_at" => (now + max_round_seconds(config)).iso8601,
+        "next_fire_at" => (now + fire_interval_seconds(config)).iso8601,
+        "last_fire_at" => nil,
+        "status" => "TankDemo active: 10 NPC tanks"
       )
     end
 
@@ -134,7 +175,7 @@ module TankGame
         "phase" => "active",
         "terrain" => terrain,
         "tanks" => tanks,
-        "next_fire_at" => now.iso8601,
+        "next_fire_at" => (now + fire_interval_seconds(config)).iso8601,
         "last_fire_at" => nil,
         "status" => "TankGame active: #{players.length} tanks"
       )
@@ -151,6 +192,7 @@ module TankGame
       }
       state = state.merge("projectiles" => [], "explosions" => [])
       active_players(state).each do |player|
+        player = demo_player_strategy(state, player) if state["demo"]
         tank = tank_for(state, player.fetch("login"))
         next unless tank
 
@@ -296,6 +338,41 @@ module TankGame
       changed ? state.merge("players" => players) : state
     end
 
+    def demo_players(now)
+      SCORCHED_EARTH_NPC_NAMES.map.with_index do |name, index|
+        {
+          "login" => "npc_#{index + 1}",
+          "display_name" => name,
+          "health" => 100,
+          "active" => true,
+          "angle" => 45.0,
+          "power" => 55.0,
+          "weapon" => (index % WEAPONS.length) + 1,
+          "damage_dealt" => 0,
+          "npc" => true,
+          "signed_up_at" => now.iso8601
+        }
+      end
+    end
+
+    def demo_player_strategy(state, player)
+      tank = tank_for(state, player.fetch("login"))
+      targets = active_players(state).reject { |candidate| candidate.fetch("login") == player.fetch("login") }
+      target = targets.min_by do |candidate|
+        target_tank = tank_for(state, candidate.fetch("login")) || {}
+        (target_tank.fetch("x", 0).to_f - tank.fetch("x", 0).to_f).abs
+      end
+      target_tank = tank_for(state, target.fetch("login")) if tank && target
+      return player unless tank && target_tank
+
+      dx = target_tank.fetch("x").to_f - tank.fetch("x").to_f
+      distance = dx.abs
+      angle = dx.negative? ? 135.0 : 45.0
+      power = clamp(38.0 + (distance / 26.0), 30.0, 92.0)
+      weapon = distance < 220 ? 1 : ((player.fetch("weapon", 1).to_i % WEAPONS.length) + 1)
+      player.merge("angle" => angle, "power" => power.round(2), "weapon" => weapon)
+    end
+
     def build_terrain(player_count)
       points = []
       segments = [ 12, player_count * 2 ].max
@@ -387,7 +464,7 @@ module TankGame
     end
 
     def public_config(config)
-      config.slice("trigger_command", "signup_command", "aim_command", "weapon_command", "signup_seconds", "fire_interval_seconds", "max_round_seconds", "scene_name", "web_source_name", "width", "height")
+      config.slice("trigger_command", "signup_command", "demo_command", "aim_command", "weapon_command", "signup_seconds", "fire_interval_seconds", "max_round_seconds", "scene_name", "web_source_name", "width", "height")
     end
 
     def player_identity(message)
@@ -411,4 +488,3 @@ module TankGame
     end
   end
 end
-

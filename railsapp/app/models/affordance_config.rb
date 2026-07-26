@@ -39,6 +39,7 @@ class AffordanceConfig < ApplicationRecord
         "enabled" => true,
         "trigger_command" => "!TankGame",
         "signup_command" => "!signup",
+        "demo_command" => "!TankDemo",
         "aim_command" => "!aim",
         "weapon_command" => "!weapon",
         "signup_seconds" => 30,

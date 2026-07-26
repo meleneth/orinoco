@@ -44,6 +44,11 @@ Rails.application.config.to_prepare do
           visibility_timeout: 30,
           receive_message_wait_time_seconds: 1
       end
+      topic Orinoco::Messaging::Names::TANK_GAME_TICK_TOPIC do
+        queue Orinoco::Messaging::Names::TANK_GAME_TICK_QUEUE,
+          visibility_timeout: 30,
+          receive_message_wait_time_seconds: 1
+      end
       topic Orinoco::Messaging::Names::OBS_COMMAND_TOPIC do
         queue Orinoco::Messaging::Names::OBS_BRIDGE_COMMAND_QUEUE,
           visibility_timeout: 30,
@@ -72,3 +77,5 @@ Rails.application.config.to_prepare do
     end.ensure!
   end
 end
+
+

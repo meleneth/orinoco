@@ -20,6 +20,18 @@ RSpec.describe TankGame::Handler do
     end
   end
 
+  class TankGameHandlerSpecScheduler
+    attr_reader :calls
+
+    def initialize
+      @calls = []
+    end
+
+    def schedule!(state, run_at:, reason:)
+      calls << { state: state, run_at: run_at, reason: reason }
+    end
+  end
+
   class TankGameHandlerSpecPublisher
     attr_reader :events
 
@@ -34,6 +46,7 @@ RSpec.describe TankGame::Handler do
 
   let(:redis) { TankGameHandlerSpecRedis.new }
   let(:publisher) { TankGameHandlerSpecPublisher.new }
+  let(:tick_scheduler) { TankGameHandlerSpecScheduler.new }
   let(:broadcaster) { class_double(Turbo::StreamsChannel).as_stubbed_const }
   let(:config) { AffordanceConfig.default_config_for(:tank_game) }
   let(:handler) do
@@ -42,7 +55,8 @@ RSpec.describe TankGame::Handler do
       publisher: publisher,
       broadcaster: broadcaster,
       config_reader: -> { config },
-      external_base_url: "http://example.test"
+      external_base_url: "http://example.test",
+      tick_scheduler: tick_scheduler
     )
   end
 
@@ -70,6 +84,24 @@ RSpec.describe TankGame::Handler do
     expect(publisher.events.first.dig(:payload, "reply_topic")).to eq(Orinoco::Messaging::Names::OBS_COMMAND_RESULT_TOPIC)
   end
 
+
+  it "starts demo setup for moderator trigger" do
+    event = Orinoco::Pipeline::Event.build(
+      "twitch.chat.message_received",
+      {
+        "tags" => { "display_name" => "Mod", "mod" => true },
+        "name" => "mod",
+        "txt" => "!TankDemo",
+        "twitch_emotes" => []
+      }
+    )
+
+    handler.handle_chat_event(event)
+
+    state = JSON.parse(redis.values.fetch(TankGame::StateStore::KEY))
+    expect(state).to include("phase" => "setup_pending", "demo" => true)
+    expect(publisher.events.first.dig(:payload, "request", "requestType")).to eq("GetCurrentProgramScene")
+  end
   it "turns OBS current-scene result into setup commands and signup state" do
     redis.set(
       TankGame::StateStore::KEY,
@@ -104,5 +136,68 @@ RSpec.describe TankGame::Handler do
       "boundsWidth" => 1920,
       "boundsHeight" => 1080
     )
+  end
+
+  it "turns OBS current-scene result into demo state and schedules combat" do
+    redis.set(
+      TankGame::StateStore::KEY,
+      JSON.generate(
+        "phase" => "setup_pending",
+        "demo" => true,
+        "round_id" => "round-1",
+        "setup_request_id" => "req-1",
+        "players" => [],
+        "tanks" => []
+      )
+    )
+    event = Orinoco::Pipeline::Event.build(
+      "obs.command.completed",
+      {
+        "request" => { "requestType" => "GetCurrentProgramScene", "requestData" => {} },
+        "response" => { "currentProgramSceneName" => "Main" }
+      },
+      correlation: { "request_id" => "req-1" }
+    )
+
+    handler.handle_obs_result(event)
+
+    state = JSON.parse(redis.values.fetch(TankGame::StateStore::KEY))
+    expect(state).to include("phase" => "active", "demo" => true, "previous_scene_name" => "Main")
+    expect(state["players"].length).to eq(10)
+    expect(tick_scheduler.calls.last).to include(reason: "combat_tick")
+  end
+  it "handles delayed tick events and schedules the next combat tick" do
+    base_engine = TankGame::Engine.new(clock: -> { Time.utc(2026, 7, 25, 20, 0, 0) }, id_generator: -> { "id-1" })
+    state = base_engine.start_setup(
+      state: {},
+      trigger: TwitchChatBridge::Message.new(tags: { display_name: "Mod", mod: true }, name: "mod", txt: "!TankGame"),
+      config: config,
+      request_id: "req-1"
+    )
+    state = base_engine.begin_signup(state: state, previous_scene_name: "Main", config: config)
+    state = base_engine.add_player(state: state, message: TwitchChatBridge::Message.new(tags: { display_name: "One" }, name: "one", txt: "!signup"))
+    state = base_engine.add_player(state: state, message: TwitchChatBridge::Message.new(tags: { display_name: "Two" }, name: "two", txt: "!signup"))
+    redis.set(TankGame::StateStore::KEY, JSON.generate(state))
+
+    tick_handler = described_class.new(
+      redis: redis,
+      publisher: publisher,
+      broadcaster: broadcaster,
+      engine: TankGame::Engine.new(clock: -> { Time.utc(2026, 7, 25, 20, 0, 31) }, id_generator: -> { "id-2" }),
+      config_reader: -> { config },
+      tick_scheduler: tick_scheduler
+    )
+    event = Orinoco::Pipeline::Event.build(
+      "tank_game.tick",
+      { "round_id" => state.fetch("round_id"), "reason" => "signup_closed" },
+      correlation: { "round_id" => state.fetch("round_id") }
+    )
+
+    tick_handler.handle_tick_event(event)
+
+    next_state = JSON.parse(redis.values.fetch(TankGame::StateStore::KEY))
+    expect(next_state["phase"]).to eq("active")
+    expect(tick_scheduler.calls.last).to include(reason: "combat_tick")
+    expect(tick_scheduler.calls.last.fetch(:run_at)).to eq(Time.utc(2026, 7, 25, 20, 1, 1))
   end
 end
