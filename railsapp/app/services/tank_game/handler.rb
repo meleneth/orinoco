@@ -121,7 +121,7 @@ module TankGame
 
       publish_obs_request({ "requestType" => "CreateScene", "requestData" => { "sceneName" => scene_name } }) unless scene_present?(scene_name)
       if previous_scene.present? && !scene_item_present?(scene_name, previous_scene)
-        publish_obs_request({ "requestType" => "CreateSceneItem", "requestData" => { "sceneName" => scene_name, "sourceName" => previous_scene, "sceneItemEnabled" => true } })
+        publish_obs_request({ "requestType" => "CreateSceneItem", "requestData" => { "sceneName" => scene_name, "sourceName" => previous_scene, "sceneItemEnabled" => true, "sceneItemTransform" => fullscreen_transform(config) } })
       end
       unless scene_item_present?(scene_name, web_source_name)
         publish_obs_request(
@@ -139,6 +139,18 @@ module TankGame
         )
       end
       publish_obs_request({ "requestType" => "SetInputSettings", "requestData" => { "inputName" => web_source_name, "inputSettings" => input_settings(config), "overlay" => true } })
+      if previous_scene.present? && (background_scene_item = scene_item(scene_name, previous_scene))
+        publish_obs_request(
+          {
+            "requestType" => "SetSceneItemTransform",
+            "requestData" => {
+              "sceneName" => scene_name,
+              "sceneItemId" => background_scene_item.fetch("sceneItemId"),
+              "sceneItemTransform" => fullscreen_transform(config)
+            }
+          }
+        )
+      end
       if (web_scene_item = scene_item(scene_name, web_source_name))
         publish_obs_request(
           {

@@ -223,6 +223,7 @@ module ObsBridge
       response = @req.get_current_program_scene
       fetch_value(response, :currentProgramSceneName, "currentProgramSceneName", :current_program_scene_name, "current_program_scene_name")
     end
+
     def fetch_value(object, *keys)
       keys.each do |key|
         if object.respond_to?(:key?) && object.key?(key)

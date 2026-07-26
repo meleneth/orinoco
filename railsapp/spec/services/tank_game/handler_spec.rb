@@ -128,6 +128,14 @@ RSpec.describe TankGame::Handler do
     expect(state).to include("phase" => "signup", "previous_scene_name" => "Main")
     request_types = publisher.events.map { |entry| entry.dig(:payload, "request", "requestType") }
     expect(request_types).to include("CreateScene", "CreateSceneItem", "CreateInput", "SetInputSettings", "SetCurrentProgramScene")
+    create_scene_item = publisher.events.find { |entry| entry.dig(:payload, "request", "requestType") == "CreateSceneItem" }
+    expect(create_scene_item.dig(:payload, "request", "requestData", "sceneItemTransform")).to include(
+      "positionX" => 0,
+      "positionY" => 0,
+      "boundsType" => "OBS_BOUNDS_STRETCH",
+      "boundsWidth" => 1920,
+      "boundsHeight" => 1080
+    )
     create_input = publisher.events.find { |entry| entry.dig(:payload, "request", "requestType") == "CreateInput" }
     expect(create_input.dig(:payload, "request", "requestData", "sceneItemTransform")).to include(
       "positionX" => 0,
@@ -138,6 +146,54 @@ RSpec.describe TankGame::Handler do
     )
   end
 
+
+  it "resizes existing TankGame scene items during setup" do
+    redis.set(
+      TankGame::StateStore::KEY,
+      JSON.generate(
+        "phase" => "setup_pending",
+        "round_id" => "round-1",
+        "setup_request_id" => "req-1",
+        "players" => [],
+        "tanks" => []
+      )
+    )
+    inventory_reader = instance_double(
+      ObsBridge::InventoryReader,
+      scenes: [ { "sceneName" => "TankGame" } ]
+    )
+    allow(inventory_reader).to receive(:scene_items).with("TankGame").and_return(
+      [
+        { "sceneItemId" => 11, "sourceName" => "Main" },
+        { "sceneItemId" => 12, "sourceName" => "TankGameWebView" }
+      ]
+    )
+    existing_handler = described_class.new(
+      redis: redis,
+      publisher: publisher,
+      broadcaster: broadcaster,
+      config_reader: -> { config },
+      inventory_reader: inventory_reader,
+      tick_scheduler: tick_scheduler
+    )
+    event = Orinoco::Pipeline::Event.build(
+      "obs.command.completed",
+      {
+        "request" => { "requestType" => "GetCurrentProgramScene", "requestData" => {} },
+        "response" => { "currentProgramSceneName" => "Main" }
+      },
+      correlation: { "request_id" => "req-1" }
+    )
+
+    existing_handler.handle_obs_result(event)
+
+    transform_ids = publisher.events.filter_map do |entry|
+      next unless entry.dig(:payload, "request", "requestType") == "SetSceneItemTransform"
+
+      entry.dig(:payload, "request", "requestData", "sceneItemId")
+    end
+    expect(transform_ids).to contain_exactly(11, 12)
+  end
   it "turns OBS current-scene result into demo state and schedules combat" do
     redis.set(
       TankGame::StateStore::KEY,
