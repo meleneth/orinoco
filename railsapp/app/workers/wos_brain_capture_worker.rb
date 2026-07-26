@@ -6,6 +6,8 @@ require_relative "../services/obs_bridge/screenshot_command_publisher"
 require_relative "../services/obs_bridge/status_reader"
 
 class WosBrainCaptureWorker
+  BRIDGE_HEARTBEAT_STALE_AFTER_SECONDS = 15
+
   def run
     install_signal_handlers
     loop.run(stop: -> { stop_requested? })
@@ -31,7 +33,13 @@ class WosBrainCaptureWorker
   end
 
   def obs_bridge_connected?
-    bridge_status.fetch(:status).fetch(:connected, false)
+    status = bridge_status.fetch(:status)
+    return false unless status.fetch(:connected, false)
+
+    heartbeat_at = status[:last_heartbeat_at]
+    return false unless heartbeat_at
+
+    heartbeat_at > Time.now.utc - BRIDGE_HEARTBEAT_STALE_AFTER_SECONDS
   end
 
   def bridge_status

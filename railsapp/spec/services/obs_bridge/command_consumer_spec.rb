@@ -61,6 +61,8 @@ RSpec.describe ObsBridge::CommandConsumer do
           "requestType" => "GetSourceScreenshot",
           "requestData" => { "imageFormat" => "png" }
         },
+        "source" => "spec",
+        "occurred_at" => "2026-07-11T00:00:00Z",
         "reply_topic" => "orinoco.obs.screenshot.results",
         "correlation" => {
           "request_id" => "req-1",
@@ -70,14 +72,39 @@ RSpec.describe ObsBridge::CommandConsumer do
       expect(sqs).to have_received(:delete_message).with(queue_url: queue_url, receipt_handle: "rh-1")
     end
 
-    it "leaves the message on the queue when runtime dispatch rejects it" do
+    it "drops stale screenshot commands when runtime dispatch rejects them" do
+      run_once(dispatch: ->(_command) { false })
+
+      expect(signal_queue).to be_empty
+      expect(sqs).to have_received(:delete_message).with(queue_url: queue_url, receipt_handle: "rh-1")
+    end
+  end
+
+
+  context "with a non-disposable OBS command" do
+    let(:body) do
+      JSON.generate(
+        "type" => "obs.command.requested",
+        "source" => "tank_game",
+        "occurred_at" => "2026-07-11T00:00:00Z",
+        "payload" => {
+          "request" => {
+            "requestType" => "SetCurrentProgramScene",
+            "requestData" => { "sceneName" => "TankGame" }
+          }
+        },
+        "correlation" => {}
+      )
+    end
+    let(:message) { command_message(body, "rh-2") }
+
+    it "leaves scene setup commands on the queue when runtime dispatch rejects them" do
       run_once(dispatch: ->(_command) { false })
 
       expect(signal_queue).to be_empty
       expect(sqs).not_to have_received(:delete_message)
     end
   end
-
   context "with a legacy raw OBS request" do
     let(:body) do
       JSON.generate(

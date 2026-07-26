@@ -45,7 +45,7 @@ RSpec.describe WosBrainCaptureWorker do
   let(:obs_status_reader) do
     instance_double(
       ObsBridge::StatusReader,
-      snapshot: { status: { connected: true } }
+      snapshot: { status: { connected: true, last_heartbeat_at: Time.now.utc } }
     )
   end
 
@@ -95,5 +95,22 @@ RSpec.describe WosBrainCaptureWorker do
       "screenshot_source_name" => "Display Capture"
     )
     expect(status.fetch("last_request_id")).to be_present
+  end
+  it "does not publish when the OBS bridge heartbeat is stale" do
+    allow(obs_status_reader).to receive(:snapshot).and_return(
+      status: {
+        connected: true,
+        last_heartbeat_at: Time.now.utc - 60
+      }
+    )
+
+    described_class.new.run_once
+
+    expect(sns.publish_calls).to be_empty
+    status = JSON.parse(redis.values.fetch(Wos::StatusStore::KEY))
+    expect(status).to include(
+      "state" => "waiting_for_obs_bridge",
+      "last_error" => "OBS bridge is not connected"
+    )
   end
 end

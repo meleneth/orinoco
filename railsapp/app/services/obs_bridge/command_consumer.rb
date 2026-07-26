@@ -24,13 +24,15 @@ module ObsBridge
     def run(stop:, dispatch: nil)
       until stop.call
         receive_messages.each do |message|
-          @logger.call("[obs-bridge/command-consumer] message: #{message.class}: #{message.body}")
-
           request = decode_message_body(message.body)
+          @logger.call("[obs-bridge/command-consumer] received #{command_label(request)}")
           if dispatch_command(request, dispatch)
             delete_message(message)
+          elsif disposable_command?(request)
+            @logger.call("[obs-bridge/command-consumer] runtime unavailable; dropping stale #{command_label(request)}")
+            delete_message(message)
           else
-            @logger.call("[obs-bridge/command-consumer] runtime unavailable; leaving message on queue")
+            @logger.call("[obs-bridge/command-consumer] runtime unavailable; leaving #{command_label(request)} on queue")
           end
         rescue StandardError => e
           @logger.call("[obs-bridge/command-consumer] failed to process message: #{e.class}: #{e.message}")
@@ -87,10 +89,27 @@ module ObsBridge
       payload = event.payload
       command = {
         "request" => payload.fetch("request"),
+        "source" => event.source,
+        "occurred_at" => event.occurred_at,
         "correlation" => event.correlation.merge(payload.fetch("correlation", {}))
       }
       command["reply_topic"] = payload["reply_topic"] || payload["replyTopic"] if payload["reply_topic"] || payload["replyTopic"]
       command
+    end
+
+    def disposable_command?(command)
+      request = command.is_a?(Hash) && command.key?("request") ? command.fetch("request") : command
+      return false unless request.is_a?(Hash)
+
+      request["requestType"] == "GetSourceScreenshot"
+    end
+
+    def command_label(command)
+      request = command.is_a?(Hash) && command.key?("request") ? command.fetch("request") : command
+      request_type = request.is_a?(Hash) ? request["requestType"] : nil
+      source = command.is_a?(Hash) ? command["source"] : nil
+
+      [ source, request_type ].compact.join(" ")
     end
   end
 end
