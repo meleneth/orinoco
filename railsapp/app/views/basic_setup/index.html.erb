@@ -7,7 +7,7 @@
           <%= tag.p "OBS and Twitch bridge configuration", class: cx("mt-1", "text-sm", "text-gray-600", "dark:text-gray-400") %>
         <% end %>
 
-        <% errors = @obs_config.errors.full_messages + @twitch_config.errors.full_messages + @wos_brain_config.errors.full_messages %>
+        <% errors = @obs_config.errors.full_messages + @twitch_config.errors.full_messages + @wos_brain_config.errors.full_messages + @tank_game_config.errors.full_messages %>
         <% if errors.any? %>
           <%= tag.div class: cx(
             "rounded-md border p-4",
@@ -136,6 +136,27 @@
                     "dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
                   ) %>
                 <% end %>
+              <% end %>
+            <% end %>
+          </section>
+
+          <section class="space-y-4 border-t border-gray-200 pt-6 dark:border-gray-700">
+            <div>
+              <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100">TankGame</h2>
+              <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Chat-triggered Scorched Earth style tank battle affordance.</p>
+            </div>
+
+            <%= fields_for :tank_game_affordance, @tank_game_config do |tank_form| %>
+              <%= tag.div class: cx("flex items-center gap-3") do %>
+                <%= tank_form.check_box :enabled, class: cx(
+                  "h-4 w-4 rounded border-gray-300 text-blue-600",
+                  "focus:ring-2 focus:ring-blue-500",
+                  "dark:border-gray-600 dark:bg-gray-900 dark:focus:ring-blue-400"
+                ) %>
+                <%= tank_form.label :enabled, "Enable TankGame affordance", class: cx(
+                  "text-sm", "font-medium",
+                  "text-gray-700", "dark:text-gray-300"
+                ) %>
               <% end %>
             <% end %>
           </section>
