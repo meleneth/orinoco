@@ -207,11 +207,17 @@ module TankGame
       return state.merge("last_volley" => volley, "projectiles" => [], "explosions" => []) if state["phase"] == "ending"
 
       state.merge(
-        "next_fire_at" => (now + fire_interval_seconds(config)).iso8601,
+        "next_fire_at" => next_fire_time(state, config, now).iso8601,
         "status" => "Volley fired at #{now.strftime("%H:%M:%S UTC")}"
       )
     end
 
+    def next_fire_time(state, config, now)
+      interval = fire_interval_seconds(config)
+      scheduled_at = parse_time(state["next_fire_at"])
+      base = scheduled_at < (now - interval) ? now : scheduled_at
+      base + interval
+    end
     def resolve_shot(state, shooter:, tank:)
       weapon = WEAPONS.fetch(shooter.fetch("weapon", 1), WEAPONS.fetch(1))
       impacts = impacts_for(state, shooter: shooter, tank: tank, weapon: weapon)

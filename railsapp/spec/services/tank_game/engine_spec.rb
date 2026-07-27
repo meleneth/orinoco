@@ -73,4 +73,27 @@ RSpec.describe TankGame::Engine do
     expect(demo_state["players"].map { |player| player["display_name"] }.first(4)).to eq(%w[Mussolini Cleopatra Godiva Adolf])
     expect(demo_state["next_fire_at"]).to eq((now + 5).iso8601)
   end
+  it "preserves combat cadence when a tick is delivered slightly late" do
+    active_state = {
+      "phase" => "active",
+      "round_id" => "round-1",
+      "round_ends_at" => (now + 60).iso8601,
+      "next_fire_at" => (now + 5).iso8601,
+      "players" => [
+        { "login" => "one", "display_name" => "One", "health" => 100, "active" => true, "angle" => 45, "power" => 55, "weapon" => 1 },
+        { "login" => "two", "display_name" => "Two", "health" => 100, "active" => true, "angle" => 135, "power" => 55, "weapon" => 1 }
+      ],
+      "tanks" => [
+        { "login" => "one", "x" => 100, "y" => 780, "turret_x" => 100, "turret_y" => 758 },
+        { "login" => "two", "x" => 1820, "y" => 780, "turret_x" => 1820, "turret_y" => 758 }
+      ],
+      "terrain" => [ { "x" => 0, "y" => 860 }, { "x" => 1920, "y" => 860 } ],
+      "last_volley" => nil
+    }
+
+    fired_state = described_class.new(clock: -> { now + 7 }, id_generator: id_generator).tick(state: active_state, config: config)
+
+    expect(fired_state["last_fire_at"]).to eq((now + 7).iso8601)
+    expect(fired_state["next_fire_at"]).to eq((now + 10).iso8601)
+  end
 end

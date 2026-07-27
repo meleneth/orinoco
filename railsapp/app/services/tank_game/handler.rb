@@ -77,11 +77,19 @@ module TankGame
 
     def handle_tick_event(event)
       state = store.read
-      return :ignored unless event.payload["round_id"].to_s == state["round_id"].to_s
+      Rails.logger.info("[tank-game] tick received event_round_id=#{event.payload["round_id"]} state_round_id=#{state["round_id"]} reason=#{event.payload["reason"]} phase=#{state["phase"]} next_fire_at=#{state["next_fire_at"]}")
+      unless event.payload["round_id"].to_s == state["round_id"].to_s
+        Rails.logger.info("[tank-game] tick ignored: round mismatch")
+        return :ignored
+      end
 
       next_state = engine.tick(state: state, config: config_hash)
-      return :idle if next_state == state
+      if next_state == state
+        Rails.logger.info("[tank-game] tick idle phase=#{state["phase"]} next_fire_at=#{state["next_fire_at"]}")
+        return :idle
+      end
 
+      Rails.logger.info("[tank-game] tick advanced phase=#{state["phase"]}->#{next_state["phase"]} volley=#{state.dig("last_volley", "id")}->#{next_state.dig("last_volley", "id")} next_fire_at=#{next_state["next_fire_at"]}")
       publish_restore_command(next_state) if state["phase"] == "ending" && next_state["phase"] == "ended"
       persist_and_broadcast(next_state)
       schedule_next_tick(next_state)

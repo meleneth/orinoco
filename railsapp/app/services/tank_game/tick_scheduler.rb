@@ -29,10 +29,13 @@ module TankGame
         correlation: { "round_id" => round_id }
       )
 
+      queue_url = topology.queue_url(queue_name)
+      delay = delay_seconds(run_at)
+      Rails.logger.info("[tank-game] scheduling tick reason=#{reason} round_id=#{round_id} run_at=#{run_at.iso8601} delay_seconds=#{delay} queue=#{queue_name}")
       sqs.send_message(
-        queue_url: topology.queue_url(queue_name),
+        queue_url: queue_url,
         message_body: JSON.generate(event.to_h),
-        delay_seconds: delay_seconds(run_at)
+        delay_seconds: delay
       )
     end
 

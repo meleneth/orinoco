@@ -14,6 +14,7 @@ class TankGameProcessorWorker
   end
 
   def run
+    Rails.logger.info("[tank-game] processor starting")
     install_signal_handlers
     loop do
       break if @stop_requested
@@ -24,27 +25,31 @@ class TankGameProcessorWorker
   end
 
   def run_once
-    process_queue(Orinoco::Messaging::Names::TANK_GAME_TWITCH_QUEUE) { |event| handler.handle_chat_event(event) }
-    process_queue(Orinoco::Messaging::Names::TANK_GAME_OBS_RESULT_QUEUE) { |event| handler.handle_obs_result(event) }
     process_queue(Orinoco::Messaging::Names::TANK_GAME_TICK_QUEUE) { |event| handler.handle_tick_event(event) }
+    process_queue(Orinoco::Messaging::Names::TANK_GAME_TWITCH_QUEUE, wait_time_seconds: 0) { |event| handler.handle_chat_event(event) }
+    process_queue(Orinoco::Messaging::Names::TANK_GAME_OBS_RESULT_QUEUE, wait_time_seconds: 0) { |event| handler.handle_obs_result(event) }
   end
 
   private
 
-  def process_queue(queue_name)
+  def process_queue(queue_name, wait_time_seconds: @wait_time_seconds)
     queue_url = topology.queue_url(queue_name)
     response = sqs.receive_message(
       queue_url: queue_url,
-      wait_time_seconds: @wait_time_seconds,
+      wait_time_seconds: wait_time_seconds,
       max_number_of_messages: @max_number_of_messages
     )
 
-    Array(response.messages).each do |message|
+    messages = Array(response.messages)
+    Rails.logger.info("[tank-game] received #{messages.length} message(s) from #{queue_name}") if messages.any?
+    messages.each do |message|
       event = Orinoco::Pipeline::Event.from_hash(Orinoco::Messaging::AwsMessage.unwrap_body(message.body))
+      Rails.logger.info("[tank-game] processing #{queue_name} event=#{event.type} reason=#{event.payload["reason"]} round_id=#{event.payload["round_id"] || event.correlation["round_id"]}")
       yield event
       sqs.delete_message(queue_url: queue_url, receipt_handle: message.receipt_handle)
+      Rails.logger.info("[tank-game] deleted #{queue_name} event=#{event.type}")
     rescue StandardError => e
-      Rails.logger.warn("[tank-game] failed to process #{queue_name}: #{e.class}: #{e.message}")
+      Rails.logger.warn("[tank-game] failed to process #{queue_name}: #{e.class}: #{e.message}\n#{Array(e.backtrace).first(8).join("\n")}")
     end
   end
 
