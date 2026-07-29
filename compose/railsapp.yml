@@ -15,6 +15,7 @@ services:
       - OBS_HOST=${OBS_HOST}
     build:
       context: "./railsapp"
+      network: ${ORINOCO_BUILD_NETWORK:-default}
     depends_on: &railsapp_depends_on
       orinoco-db:
         condition: service_healthy
