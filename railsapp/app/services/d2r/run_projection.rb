@@ -55,13 +55,14 @@ module D2r
     private
 
     def initial_state
-      { "game" => nil, "previous_run_kind" => nil, "run" => nil,
+      { "game" => nil, "previous_run_kind" => nil, "previous_run" => nil, "run" => nil,
         "level" => nil, "area" => nil, "screen" => nil, "events" => [] }
     end
 
     def start_game(state, payload, at)
       finish_step(state, at)
       state["previous_run_kind"] = state.dig("run", "kind")
+      state["previous_run"] = state["run"]
       state["game"] = { "id" => payload.fetch("game_id").to_s,
                         "started_at" => at, "ended_at" => nil }
       state["run"] = nil
@@ -79,6 +80,7 @@ module D2r
       state["run"] = {
         "kind" => kind,
         "repeated" => state["previous_run_kind"] == kind,
+        "previous_steps" => state["previous_run_kind"] == kind ? Array(state.dig("previous_run", "steps")) : [],
         "started_at" => at,
         "step" => nil,
         "steps" => []
