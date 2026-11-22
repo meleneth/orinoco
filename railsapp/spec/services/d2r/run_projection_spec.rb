@@ -48,6 +48,7 @@ RSpec.describe D2r::RunProjection do
     state = emit("d2r.run.selected", { "kind" => "countess" }, "10:01:01")
 
     expect(state.dig("run", "repeated")).to eq(true)
+    expect(state.dig("run", "previous_steps").map { |step| step.fetch("seconds") }).to eq([10.0, 18.0])
     expect(state.dig("run", "steps")).to be_empty
     state = emit("d2r.run.step", { "name" => "waypoint" }, "10:01:05")
     state = emit("d2r.run.step", { "name" => "tower" }, "10:01:11")
