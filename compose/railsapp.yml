@@ -76,3 +76,13 @@ services:
     command: ["bundle", "exec", "rails", "runner", "WosBrainProjectionWorker.new.run"]
     environment: *railsapp_environment
     depends_on: *railsapp_depends_on
+  d2r-observer-capture-worker:
+    image: orinoco/railsapp
+    command: ["bundle", "exec", "rails", "runner", "D2rObserverCaptureWorker.new.run"]
+    environment: *railsapp_environment
+    depends_on: *railsapp_depends_on
+  d2r-observer-processor-worker:
+    image: orinoco/railsapp
+    command: ["bundle", "exec", "rails", "runner", "D2rObserverProcessorWorker.new.run"]
+    environment: *railsapp_environment
+    depends_on: *railsapp_depends_on

@@ -26,6 +26,10 @@ module Orinoco
       OBS_SCREENSHOT_RESULT_TOPIC = "orinoco.obs.screenshot.results"
       OBS_SCREENSHOT_RESULT_QUEUE = "orinoco.obs.screenshot.results.queue"
 
+      D2R_SCREENSHOT_RESULT_QUEUE = "orinoco.d2r.screenshot.results.queue"
+      D2R_EVENTS_TOPIC = "orinoco.d2r.events"
+      D2R_EVENTS_QUEUE = "orinoco.d2r.events.queue"
+
       WOS_BOARD_RECOGNIZED_TOPIC = "orinoco.wos.board.recognized"
       WOS_BOARD_RECOGNIZED_QUEUE = "orinoco.wos.board.recognized.queue"
     end

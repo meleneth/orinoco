@@ -33,4 +33,20 @@ RSpec.describe AffordanceConfig, type: :model do
       expect(config.screenshot_source_name).to eq("Display Capture")
     end
   end
+
+
+  describe "D2R observer defaults" do
+    it "is disabled and normalizes bounded capture settings" do
+      config = described_class.fetch!(:d2r_observer)
+
+      expect(config).not_to be_enabled
+      expect(config.screenshot_source_name).to eq("")
+      expect(config.config).to include(
+        "interval_seconds" => 0.5, "image_width" => 640, "image_height" => 400, "jpeg_quality" => 70
+      )
+
+      config.update!(config: config.config.merge("interval_seconds" => 0.01, "jpeg_quality" => 999))
+      expect(config.reload.config).to include("interval_seconds" => 0.2, "jpeg_quality" => 100)
+    end
+  end
 end

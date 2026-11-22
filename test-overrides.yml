@@ -40,3 +40,7 @@ services:
     profiles: ["workers"]
   wos-brain-projection-worker:
     profiles: ["workers"]
+  d2r-observer-capture-worker:
+    profiles: ["workers"]
+  d2r-observer-processor-worker:
+    profiles: ["workers"]

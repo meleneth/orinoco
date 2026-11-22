@@ -91,3 +91,32 @@ cp railsapp/tmp/d2r-captures/<session-id>/frame-01.png \
 
 Do not promote a large raw corpus or overwrite an existing fixture. Add the
 fixture and its explicit truth to a focused detector spec in the same commit.
+
+## Fast D2R state observation
+
+The development stack includes separate `d2r-observer-capture-worker` and
+`d2r-observer-processor-worker` services. Both use the persisted
+`d2r_observer` `AffordanceConfig`; disabling the affordance stops new capture
+requests and causes the processor to ignore queued frames. The default config
+requests a 640x400 JPEG at quality 70 every 0.5 seconds, with only one request
+in flight. It also waits for a current OBS bridge heartbeat, so a disconnected
+bridge cannot create an ever-growing command queue.
+
+The processor classifies four independent signal groups—screen, left panel,
+right panel, and tooltip—then requires two matching observations out of three
+for ordinary changes. High-confidence loading and death states can enter
+immediately. It publishes changes to `orinoco.d2r.events`; unchanged frames do
+not produce events. OCR is intentionally excluded from this fast path.
+
+Enable it from Basic Setup by selecting the game source and checking **Enable
+D2R Observer affordance**. The current deterministic model is generated from
+the sanitized training fixtures with:
+
+```sh
+cd railsapp
+bin/rails runner script/build_d2r_fast_classifier.rb
+bin/rails runner script/benchmark_d2r_fast_classifier.rb
+```
+
+Keep the native fixture corpus local. The committed 480x300 JPEGs are split
+into training and held-out images in `spec/fixtures/files/d2r/truth.yml`.

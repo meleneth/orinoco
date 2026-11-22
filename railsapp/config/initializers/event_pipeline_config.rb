@@ -16,7 +16,7 @@ require Rails.root.join("app/services/orinoco/messaging/topology")
 
 Rails.application.config.to_prepare do
   opts = Rails.configuration.x.event_pipeline.aws_client_options
-  if (not opts[:endpoint].include?("unset_event_pipeline_goaws_url"))
+  if not opts[:endpoint].include?("unset_event_pipeline_goaws_url")
     sns_client = Aws::SNS::Client.new(**opts)
     sqs_client = Aws::SQS::Client.new(**opts)
 
@@ -68,6 +68,14 @@ Rails.application.config.to_prepare do
         queue Orinoco::Messaging::Names::OBS_SCREENSHOT_RESULT_QUEUE,
           visibility_timeout: 30,
           receive_message_wait_time_seconds: 20
+        queue Orinoco::Messaging::Names::D2R_SCREENSHOT_RESULT_QUEUE,
+          visibility_timeout: 10,
+          receive_message_wait_time_seconds: 1
+      end
+      topic Orinoco::Messaging::Names::D2R_EVENTS_TOPIC do
+        queue Orinoco::Messaging::Names::D2R_EVENTS_QUEUE,
+          visibility_timeout: 30,
+          receive_message_wait_time_seconds: 20
       end
       topic Orinoco::Messaging::Names::WOS_BOARD_RECOGNIZED_TOPIC do
         queue Orinoco::Messaging::Names::WOS_BOARD_RECOGNIZED_QUEUE,
@@ -77,5 +85,3 @@ Rails.application.config.to_prepare do
     end.ensure!
   end
 end
-
-
