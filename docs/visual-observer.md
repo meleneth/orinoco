@@ -34,3 +34,60 @@ automatic game detection, scene setup, polling, OCR, or persistent storage.
 - Source-region capture benchmarking using screenshot results.
 - A D2R screenshot classifier and deterministic fixture-based tests, followed by
   run-state tracking, inventory reconciliation, and commentary projections.
+
+## Collecting D2R fixtures on Linux
+
+The root `d2r_capture` wrapper connects to the host OBS WebSocket through a
+temporary host-networked Rails container. It mounts OBS's WebSocket config
+read-only so the password is never copied into the repository, command line,
+capture manifest, or process environment. It does not switch scenes or mutate
+source transforms.
+
+OBS and D2R must already be running. To collect a confirmed three-frame burst:
+
+```sh
+./d2r_capture capture gameplay_idle \
+  --source "[Game] Game Capture" \
+  --confirmed \
+  --frames 3 \
+  --interval 1 \
+  --label location=town \
+  --label minimap=open
+```
+
+For an interactive checklist that waits before every state:
+
+```sh
+./d2r_capture guide \
+  --source "[Game] Game Capture" \
+  --states gameplay_idle,inventory_open,item_tooltip_rune,stash_runes,stash_other
+```
+
+Raw captures are stored in the gitignored directory
+`railsapp/tmp/d2r-captures/<session-id>/`. Each session contains the original
+source frames and `manifest.json`, including frame hashes and dimensions, OBS
+base/output/source dimensions, the raw scene-item transform, expected state,
+and manually confirmed labels. Unknown metadata remains `null`.
+
+Validate all local sessions with:
+
+```sh
+./d2r_capture validate
+./d2r_capture validate --require-pairs
+```
+
+The strict form fails until every detector listed by the validator has at least
+one positive and one useful negative state. Missing states are expected during
+an incomplete guided session; never invent them.
+
+After reviewing a frame for private or unrelated content, promote only a small,
+representative labeled selection:
+
+```sh
+mkdir -p railsapp/spec/fixtures/files/d2r
+cp railsapp/tmp/d2r-captures/<session-id>/frame-01.png \
+  railsapp/spec/fixtures/files/d2r/<descriptive-state-name>.png
+```
+
+Do not promote a large raw corpus or overwrite an existing fixture. Add the
+fixture and its explicit truth to a focused detector spec in the same commit.

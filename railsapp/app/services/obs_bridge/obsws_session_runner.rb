@@ -17,11 +17,13 @@ module ObsBridge
     def initialize(
       host:,
       port:,
+      password: nil,
       requests_client_class: OBSWS::Requests::Client,
       events_client_class: OBSWS::Events::Client
     )
       @host = host
       @port = port
+      @password = password
       @requests_client_class = requests_client_class
       @events_client_class = events_client_class
     end
@@ -32,7 +34,7 @@ module ObsBridge
 
       req.run do |requests|
         yielded_from_client = true
-        events = @events_client_class.new(host: @host, port: @port)
+        events = @events_client_class.new(**connection_options)
         session = ObswsSession.new(req: requests, events: events)
 
         session.subscribe!(event_types)
@@ -49,9 +51,15 @@ module ObsBridge
     private
 
     def connected_requests_client
-      @requests_client_class.new(host: @host, port: @port)
+      @requests_client_class.new(**connection_options)
     rescue StandardError => e
       raise ConnectionError.new(host: @host, port: @port, cause: e)
+    end
+
+    def connection_options
+      { host: @host, port: @port }.tap do |options|
+        options[:password] = @password unless @password.nil?
+      end
     end
   end
 end
