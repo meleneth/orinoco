@@ -24,6 +24,18 @@ RSpec.describe D2r::StateTracker do
     expect(tracker.observe(classification(screen: "boss_visible"))).to be_empty
   end
 
+  it "reports confirmed character selection and creation separately" do
+    tracker = described_class.new
+    tracker.observe(classification(screen: "character_select"))
+    events = tracker.observe(classification(screen: "character_select"))
+    expect(events.map { |event| event.fetch("type") }).to include("d2r.character.selection.visible")
+
+    tracker.observe(classification(screen: "character_creation"))
+    events = tracker.observe(classification(screen: "character_creation"))
+    expect(events.map { |event| event.fetch("type") }).to include("d2r.character.creation.visible")
+    expect(tracker.observe(classification(screen: "character_creation"))).to be_empty
+  end
+
   it "emits high-confidence death immediately" do
     events = described_class.new.observe(classification(screen: "death_screen", confidence: 0.99))
 
