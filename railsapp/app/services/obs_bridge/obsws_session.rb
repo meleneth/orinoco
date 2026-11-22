@@ -109,6 +109,24 @@ module ObsBridge
           request_data.fetch("sceneItemId"),
           request_data.fetch("sceneItemTransform")
         )
+      when "GetSceneItemTransform"
+        scene_name = request_data.fetch("sceneName")
+        scene_item_id = Integer(request_data.fetch("sceneItemId"))
+        response = @req.get_scene_item_transform(scene_name, scene_item_id)
+        transform = fetch_value(response, :sceneItemTransform, "sceneItemTransform", :scene_item_transform, "scene_item_transform")
+        {
+          "sceneName" => scene_name,
+          "sceneItemId" => scene_item_id,
+          "sceneItemTransform" => normalize_response_hash(transform)
+        }
+      when "GetVideoSettings"
+        response = @req.get_video_settings
+        {
+          "baseWidth" => fetch_value(response, :baseWidth, "baseWidth", :base_width, "base_width"),
+          "baseHeight" => fetch_value(response, :baseHeight, "baseHeight", :base_height, "base_height"),
+          "outputWidth" => fetch_value(response, :outputWidth, "outputWidth", :output_width, "output_width"),
+          "outputHeight" => fetch_value(response, :outputHeight, "outputHeight", :output_height, "output_height")
+        }.compact
       when "GetCurrentProgramScene"
         response = @req.get_current_program_scene
         {
@@ -222,6 +240,17 @@ module ObsBridge
         "imageHeight" => image_height,
         "imageCompressionQuality" => image_compression_quality
       }.compact
+    end
+
+    def normalize_response_hash(value)
+      case value
+      when Hash
+        value.transform_keys(&:to_s)
+      when nil
+        {}
+      else
+        value.respond_to?(:to_h) ? value.to_h.transform_keys(&:to_s) : {}
+      end
     end
 
     def first_present(*values)
