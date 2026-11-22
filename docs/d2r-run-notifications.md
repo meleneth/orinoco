@@ -28,3 +28,21 @@ Start the usual development environment (the `d2rprojection` Procfile entry runs
 `bundle exec rspec spec/services/d2r/run_projection_spec.rb`
 
 The specs exercise timestamp ordering, capped history, sticky state, repeated-run comparisons, and per-step durations using an in-memory Redis fake.
+
+## Character-menu recognizer fixtures
+
+The fast classifier uses trained screen fingerprints from confirmed captures. The guided capture vocabulary now includes two distinct screens:
+
+- `character_select`: the character roster.
+- `character_creation`: the new-character creation interface, not the in-game character sheet.
+
+Collect confirmed examples using the existing wrapper:
+
+```sh
+./d2r_capture guide --source "[Game] Game Capture" --states character_select,character_creation,gameplay_idle,loading_screen
+./d2r_capture validate
+```
+
+Review the captured frames, add train and holdout examples with explicit `screen` labels to `railsapp/spec/fixtures/files/d2r/truth.yml`, then regenerate the fingerprints via `railsapp/script/build_d2r_fast_classifier.rb`. Run held-out classifier specs and the state-tracker specs. Do **not** add dummy fingerprints or claim these menus are recognized until the real labeled images have been collected and verified.
+
+Once the model recognizes them, the tracker publishes `d2r.character.selection.visible` or `d2r.character.creation.visible` on confirmed transitions. These are lifecycle observations, not authoritative `d2r.game.started` events.
