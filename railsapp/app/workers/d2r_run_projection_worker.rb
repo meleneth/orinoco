@@ -27,8 +27,13 @@ class D2rRunProjectionWorker
     projection = D2r::RunProjection.new(redis: Redis.new(url: config.scoreboard.redis_url))
     @definition ||= Orinoco::Pipeline.processor(:d2r_run_projection) do
       consume Orinoco::Messaging::Names::D2R_EVENTS_QUEUE, wait_time_seconds: 1
-      on "d2r.*" do |event, _context|
-        projection.call(event)
+      %w[d2r.state.changed d2r.area.banner.visible d2r.boss.engaged d2r.boss.slain
+         d2r.player.died d2r.loading.started d2r.loading.finished d2r.game.started
+         d2r.game.ended d2r.run.selected d2r.run.step d2r.level.changed
+         d2r.area.changed].each do |type|
+        on type do |event, _context|
+          projection.call(event)
+        end
       end
     end
   end
