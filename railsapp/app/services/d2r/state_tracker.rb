@@ -10,7 +10,9 @@ module D2r
       "boss_visible" => "d2r.boss.engaged",
       "boss_dead" => "d2r.boss.slain",
       "death_screen" => "d2r.player.died",
-      "loading_screen" => "d2r.loading.started"
+      "loading_screen" => "d2r.loading.started",
+      "character_select" => "d2r.character.selection.visible",
+      "character_creation" => "d2r.character.creation.visible"
     }.freeze
 
     def initialize(window_size: 3, confirmations: 2, immediate_confidence: 0.9)
