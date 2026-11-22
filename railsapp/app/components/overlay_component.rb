@@ -24,6 +24,8 @@ class OverlayComponent < ApplicationComponent
 
   def render_layer(layer)
     case layer.key
+    when "d2r_run"
+      render D2rRunOverlayComponent.new
     when "wos_brain"
       render WosOverlayLayerComponent.new(state: wos_state)
     else
