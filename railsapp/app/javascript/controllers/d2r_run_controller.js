@@ -49,7 +49,9 @@ export default class extends Controller {
     }))
     this.splitsTarget.replaceChildren(...(run?.steps || []).map(step => {
       const row = document.createElement("li")
-      row.textContent = `${step.name}: ${this.format(step.seconds)}`
+      const prior = run.previous_steps?.find(previous => previous.name === step.name)
+      const delta = prior ? ` (${step.seconds >= prior.seconds ? "+" : ""}${(step.seconds - prior.seconds).toFixed(1)}s)` : ""
+      row.textContent = `${step.name}: ${this.format(step.seconds)}${delta}`
       return row
     }))
     this.tick()
