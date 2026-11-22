@@ -30,7 +30,8 @@ class D2rRunProjectionWorker
       %w[d2r.state.changed d2r.area.banner.visible d2r.boss.engaged d2r.boss.slain
          d2r.player.died d2r.loading.started d2r.loading.finished d2r.game.started
          d2r.game.ended d2r.run.selected d2r.run.step d2r.level.changed
-         d2r.area.changed].each do |type|
+         d2r.area.changed d2r.character.selection.visible
+         d2r.character.creation.visible].each do |type|
         on type do |event, _context|
           projection.call(event)
         end
