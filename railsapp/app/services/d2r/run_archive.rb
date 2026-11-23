@@ -34,6 +34,8 @@ module D2r
           run_started_at: parse_time(state.dig("run", "started_at")),
           run_kind: state.dig("run", "kind"),
           repeated: !!state.dig("run", "repeated"),
+          run_confidence: state.dig("run", "confidence"),
+          run_evidence: state.dig("run", "evidence") || [],
           character_level: state["level"],
           area: state["area"],
           difficulty: state["difficulty"],
@@ -68,6 +70,17 @@ module D2r
           existing = run.events
           changes[:events] = (existing.any? { |old| old["id"] == entry["id"] } ?
             existing : (existing + [entry]).last(EVENT_LIMIT))
+        end
+        if %w[d2r.loot.rune.sighted d2r.loot.unique.sighted].include?(event.type)
+          sighting = {
+            "kind" => event.type == "d2r.loot.rune.sighted" ? "rune" : "unique",
+            "name" => event.payload.fetch("name"),
+            "at" => at.utc.iso8601(6),
+            "confidence" => event.payload["confidence"] || "candidate"
+          }
+          sightings = run.loot_sightings
+          changes[:loot_sightings] = (sightings.any? { |old| old == sighting } ?
+            sightings : sightings + [sighting])
         end
         run.update!(changes)
         run
