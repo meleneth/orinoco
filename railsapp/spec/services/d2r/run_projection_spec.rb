@@ -73,17 +73,19 @@ RSpec.describe D2r::RunProjection do
     ])
   end
 
-  it "projects difficulty and terror zones as sticky fields and visible events" do
+  it "projects difficulty and terror zones without spending visible event slots" do
     emit("d2r.difficulty.changed", { "difficulty" => "Hell" }, "10:00:00")
     state = emit("d2r.terror_zones.changed", { "terror_zones" => [ "Dry Hills", "Halls of the Dead" ] }, "10:00:01")
 
     expect(state["difficulty"]).to eq("Hell")
     expect(state["terror_zones"]).to eq([ "Dry Hills", "Halls of the Dead" ])
-    expect(state["events"].first.fetch("message")).to eq("Terror zones: Dry Hills · Halls of the Dead")
+    expect(state["events"]).to be_empty
   end
 
   it "ignores classifier chatter in the visible feed" do
     state = emit("d2r.state.changed", { "group" => "screen", "current" => "gameplay" }, "10:00:00")
+    state = emit("d2r.loading.started", {}, "10:00:01")
+    state = emit("d2r.loading.finished", {}, "10:00:02")
     expect(state["events"]).to be_empty
     expect(state["screen"]).to eq("gameplay")
   end

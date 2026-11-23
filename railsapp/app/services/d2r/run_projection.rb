@@ -117,7 +117,10 @@ module D2r
     end
 
     def display_event?(type)
-      !%w[d2r.state.changed].include?(type) && type.start_with?("d2r.")
+      !%w[
+        d2r.state.changed d2r.loading.started d2r.loading.finished
+        d2r.difficulty.changed d2r.terror_zones.changed
+      ].include?(type) && type.start_with?("d2r.")
     end
 
     def message(type, payload)
@@ -128,8 +131,6 @@ module D2r
       when "d2r.run.step" then "Step: #{payload.fetch("name")}"
       when "d2r.level.changed" then "Level #{payload.fetch("level")}"
       when "d2r.area.changed" then "Entered #{payload.fetch("area")}"
-      when "d2r.difficulty.changed" then "Difficulty: #{payload.fetch("difficulty")}"
-      when "d2r.terror_zones.changed" then "Terror zones: #{Array(payload.fetch("terror_zones")).join(" · ")}"
       else
         type.delete_prefix("d2r.").tr(".", " ").capitalize
       end

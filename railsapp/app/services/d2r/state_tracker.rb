@@ -22,6 +22,7 @@ module D2r
       @immediate_confidence = Float(immediate_confidence)
       @history = Hash.new { |hash, key| hash[key] = [] }
       @stable = {}
+      @game_lifecycle = :outside
     end
 
     def observe(classification, observed_at: Time.now.utc.iso8601(6))
@@ -59,6 +60,7 @@ module D2r
       }
       events = [ { "type" => "d2r.state.changed", "payload" => payload } ]
       events.concat(domain_events(group:, previous:, current: stable_state, payload:))
+      events.concat(lifecycle_events(group:, previous:, current: stable_state, payload:))
       events
     end
 
@@ -81,6 +83,29 @@ module D2r
       events = []
       events << { "type" => "d2r.loading.finished", "payload" => payload } if previous == "loading_screen" && current != "loading_screen"
       events << { "type" => DOMAIN_EVENTS.fetch(current), "payload" => payload } if DOMAIN_EVENTS.key?(current)
+      events
+    end
+
+    def lifecycle_events(group:, previous:, current:, payload:)
+      return [] unless group == "screen"
+
+      events = []
+      if current == "character_select"
+        events << { "type" => "d2r.game.ended", "payload" => payload } if @game_lifecycle == :in_game
+        @game_lifecycle = :armed
+      elsif current == "loading_screen" && @game_lifecycle == :armed
+        @game_lifecycle = :entry_loading
+      elsif previous == "loading_screen" && @game_lifecycle == :entry_loading
+        @game_lifecycle = :in_game
+        events << {
+          "type" => "d2r.game.started",
+          "payload" => {
+            "game_id" => "visual-#{payload.fetch("observed_at")}",
+            "boundary" => "character_select_loading_gameplay",
+            "observed_at" => payload.fetch("observed_at")
+          }
+        }
+      end
       events
     end
   end

@@ -8,7 +8,7 @@ The existing `orinoco.d2r.events` topic feeds `D2rRunProjectionWorker` through `
 
 Event envelope timestamps (`occurred_at`) determine event order/durations, not projection processing time.
 
-- `d2r.game.started`: `{ "game_id": "unique-id" }`. Must fire on an actual new-game boundary; a loading screen alone is not sufficient.
+- `d2r.game.started`: `{ "game_id": "unique-id" }`. The visual tracker emits this only after a confirmed character-selection → loading → gameplay sequence; an in-game loading screen alone is not sufficient.
 - `d2r.game.ended`: `{}`. Closes the active run step.
 - `d2r.level.changed`: `{ "level": 85 }`. Sticky character level until replaced.
 - `d2r.area.changed`: `{ "area": "Tower Cellar Level 1" }`. Sticky current area until replaced or new game starts.
@@ -17,7 +17,7 @@ Event envelope timestamps (`occurred_at`) determine event order/durations, not p
 - `d2r.run.selected`: `{ "kind": "countess" }`. Defines the run category for the active game.
 - `d2r.run.step`: `{ "name": "tower" }`. Ends the previous step and begins this one.
 
-Detected screen events (boss, loading, player death, area banner) and confirmed HUD changes populate the five-event visible feed. Bare state changes update sticky screen state without spamming the feed. Like the chat browser source, the event feed is server-rendered and updated over Turbo Streams; each update replaces the feed with the projection's newest five messages so a long-running overlay cannot accumulate stale DOM nodes. The JSON endpoint remains the source for sticky run/timer fields. The overlay displays recent events newest-first with timestamps, character level, area, difficulty, terror zones, game elapsed time, current run/step, completed splits, and deltas against the immediately preceding game if the run kind matches. Run step names should remain stable across attempts.
+Detected lifecycle and domain events (game boundaries, named area changes, bosses, player death, and area banners) populate the five-event visible feed. Loading transitions remain available to the lifecycle FSM but do not consume a visible slot. Difficulty and terror-zone changes update their sticky info rows without consuming an event slot. Bare classifier state changes also stay out of the feed. Like the chat browser source, the event feed is server-rendered and updated over Turbo Streams; each update replaces the feed with the projection's newest five messages so a long-running overlay cannot accumulate stale DOM nodes. The JSON endpoint remains the source for sticky run/timer fields. The overlay displays recent events newest-first with timestamps, character level, area, difficulty, terror zones, game elapsed time, current run/step, completed splits, and deltas against the immediately preceding game if the run kind matches. Run step names should remain stable across attempts.
 
 The decorative D2R HUD font is not reliably recognized by stock Tesseract. `D2r::HudReader` instead segments right-aligned gold and purple rows by color and compares normalized line geometry with confirmed reference crops under `spec/fixtures/files/d2r/hud`. When a previously unseen label appears, add a confirmed reference capture and a holdout example before claiming support for it.
 
