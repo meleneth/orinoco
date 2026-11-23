@@ -4,6 +4,7 @@ require "base64"
 require "tempfile"
 require_relative "fast_classifier"
 require_relative "hud_reader"
+require_relative "hud_area_reader"
 require_relative "hud_tracker"
 require_relative "loot_tracker"
 require_relative "ground_label_reader"
@@ -14,12 +15,13 @@ module D2r
     DATA_URI_PATTERN = %r{\Adata:image/(?<format>[a-zA-Z0-9.+-]+);base64,(?<data>.+)\z}m
 
     def initialize(config_reader:, classifier: FastClassifier.new, tracker: StateTracker.new,
-      hud_reader: HudReader.new, hud_tracker: HudTracker.new,
+      hud_reader: HudReader.new, hud_area_reader: HudAreaReader.new, hud_tracker: HudTracker.new,
       ground_label_reader: GroundLabelReader.new, loot_tracker: LootTracker.new, gate: nil)
       @config_reader = config_reader
       @classifier = classifier
       @tracker = tracker
       @hud_reader = hud_reader
+      @hud_area_reader = hud_area_reader
       @hud_tracker = hud_tracker
       @ground_label_reader = ground_label_reader
       @loot_tracker = loot_tracker
@@ -36,7 +38,18 @@ module D2r
 
       classification, hud, loot = with_screenshot_file(event.payload) do |path|
         result = @classifier.call(path).to_h
-        [ result, @hud_reader.call(path), @ground_label_reader.call(path) ]
+        hud_reading = @hud_reader.call(path)
+        if hud_reading["area"].nil?
+          inferred_area = @hud_area_reader.call(path)
+          hud_reading["area"] = inferred_area if inferred_area
+        end
+        screen = result.dig("signals", "screen", "state")
+        labels = if %w[loading_screen character_select character_creation death_screen].include?(screen)
+          []
+        else
+          @ground_label_reader.call(path)
+        end
+        [ result, hud_reading, labels ]
       end
       events = @tracker.observe(classification, observed_at: event.occurred_at)
       events.concat(@hud_tracker.observe(hud, observed_at: event.occurred_at))
