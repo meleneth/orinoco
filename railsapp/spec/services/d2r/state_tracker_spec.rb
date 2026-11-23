@@ -20,6 +20,8 @@ RSpec.describe D2r::StateTracker do
     events = tracker.observe(classification(screen: "boss_visible"))
     expect(events.map { |event| event.fetch("type") }).not_to include("d2r.boss.engaged")
     events = tracker.observe(classification(screen: "boss_visible"))
+    expect(events.map { |event| event.fetch("type") }).not_to include("d2r.boss.engaged")
+    events = tracker.observe(classification(screen: "boss_visible"))
     expect(events.map { |event| event.fetch("type") }).to include("d2r.state.changed", "d2r.boss.engaged")
     expect(tracker.observe(classification(screen: "boss_visible"))).to be_empty
   end
@@ -36,8 +38,14 @@ RSpec.describe D2r::StateTracker do
     expect(tracker.observe(classification(screen: "character_creation"))).to be_empty
   end
 
-  it "emits high-confidence death immediately" do
-    events = described_class.new.observe(classification(screen: "death_screen", confidence: 0.99))
+  it "requires three consecutive death frames even at high confidence" do
+    tracker = described_class.new
+
+    first = tracker.observe(classification(screen: "death_screen", confidence: 0.99))
+    second = tracker.observe(classification(screen: "death_screen", confidence: 0.99))
+    expect(first.map { |event| event.fetch("type") }).not_to include("d2r.player.died")
+    expect(second.map { |event| event.fetch("type") }).not_to include("d2r.player.died")
+    events = tracker.observe(classification(screen: "death_screen", confidence: 0.99))
 
     expect(events.map { |event| event.fetch("type") }).to include("d2r.player.died")
   end

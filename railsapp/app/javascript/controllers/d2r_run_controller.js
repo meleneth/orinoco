@@ -3,7 +3,7 @@ import { Controller } from "@hotwired/stimulus"
 // The projection stores timestamps, not a ticking Redis counter. The browser
 // renders elapsed time from server-origin event timestamps.
 export default class extends Controller {
-  static targets = ["elapsed", "level", "area", "run", "step", "events", "splits"]
+  static targets = ["elapsed", "level", "area", "difficulty", "terrorZones", "run", "step", "splits"]
   static values = { url: String }
 
   connect() {
@@ -33,20 +33,11 @@ export default class extends Controller {
     const state = this.state || {}
     this.levelTarget.textContent = state.level ?? "?"
     this.areaTarget.textContent = state.area || "Unknown area"
+    this.difficultyTarget.textContent = state.difficulty || "?"
+    this.terrorZonesTarget.textContent = state.terror_zones?.join(" · ") || "No active zones"
     const run = state.run
     this.runTarget.textContent = run ? `${run.kind}${run.repeated ? " (repeat)" : ""}` : "Unclassified run"
     this.stepTarget.textContent = run?.step?.name || "No active step"
-    this.eventsTarget.replaceChildren(...(state.events || []).map(event => {
-      const row = document.createElement("li")
-      row.className = "flex gap-3 justify-between"
-      const label = document.createElement("span")
-      label.textContent = event.message
-      const time = document.createElement("time")
-      time.className = "font-mono text-cyan-300 shrink-0"
-      time.textContent = new Date(event.at).toLocaleTimeString()
-      row.append(label, time)
-      return row
-    }))
     this.splitsTarget.replaceChildren(...(run?.steps || []).map(step => {
       const row = document.createElement("li")
       const prior = run.previous_steps?.find(previous => previous.name === step.name)

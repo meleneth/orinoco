@@ -29,7 +29,36 @@ RSpec.describe "Overlay", type: :request do
     expect(response.body).to include('@keyframes overlay-toast')
     expect(response.body).to include('id="overlay_layer_wos_brain"')
     expect(response.body).to include('data-overlay-layer="wos_brain"')
-    expect(response.body).to include("Waiting for WOSBrain")
+    expect(response.body).to include('id="overlay_layer_d2r_run"')
+    expect(response.body).to include('id="d2r_event_feed"')
+    expect(response.body).not_to include("Waiting for WOSBrain")
+    expect(response.body).not_to include("No board recognized yet")
+  end
+
+  context "with persisted D2R events" do
+    let(:state) do
+      {
+        "area" => "Catacombs Level 2",
+        "difficulty" => "Hell",
+        "terror_zones" => [ "Dry Hills", "Halls of the Dead" ],
+        "events" => [
+          {
+            "type" => "d2r.boss.slain",
+            "at" => "2026-11-22T10:00:00Z",
+            "message" => "Boss slain"
+          }
+        ]
+      }
+    end
+
+    it "server-renders the latest event on page load" do
+      get overlay_path
+
+      expect(response.body).to include("Boss slain")
+      expect(response.body).to include("10:00:00")
+      expect(response.body).to include('data-d2r-run-target="difficulty"')
+      expect(response.body).to include('data-d2r-run-target="terrorZones"')
+    end
   end
 
   context "with persisted WOS state" do

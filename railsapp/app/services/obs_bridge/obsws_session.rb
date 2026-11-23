@@ -92,6 +92,11 @@ module ObsBridge
           request_data.fetch("inputSettings"),
           request_data.fetch("overlay", true)
         )
+      when "PressInputPropertiesButton"
+        @req.press_input_properties_button(
+          request_data.fetch("inputName"),
+          request_data.fetch("propertyName")
+        )
       when "SetSceneItemEnabled"
         @req.set_scene_item_enabled(
           request_data.fetch("sceneName"),

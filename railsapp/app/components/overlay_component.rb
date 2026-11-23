@@ -1,14 +1,15 @@
 # frozen_string_literal: true
 
 class OverlayComponent < ApplicationComponent
-  def initialize(layers:, wos_state: nil)
+  def initialize(layers:, wos_state: nil, d2r_state: nil)
     @layers = layers
     @wos_state = wos_state
+    @d2r_state = d2r_state
   end
 
   private
 
-  attr_reader :layers, :wos_state
+  attr_reader :layers, :wos_state, :d2r_state
 
   def stream_names
     layers.map(&:stream).uniq
@@ -25,7 +26,7 @@ class OverlayComponent < ApplicationComponent
   def render_layer(layer)
     case layer.key
     when "d2r_run"
-      render D2rRunOverlayComponent.new
+      render D2rRunOverlayComponent.new(state: d2r_state)
     when "wos_brain"
       render WosOverlayLayerComponent.new(state: wos_state)
     else

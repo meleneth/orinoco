@@ -40,9 +40,9 @@ class AffordanceConfig < ApplicationRecord
         "scenes" => [],
         "screenshot_source_name" => "",
         "interval_seconds" => 0.5,
-        "image_width" => 640,
-        "image_height" => 400,
-        "jpeg_quality" => 70
+        "image_width" => 1920,
+        "image_height" => 1200,
+        "jpeg_quality" => 90
       }
     when "tank_game"
       {

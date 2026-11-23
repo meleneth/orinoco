@@ -61,6 +61,7 @@ Shortcuts:
   wosprojection | wosp
   d2rcapture | d2rc
   d2rprocessor | d2rp
+  d2rprojection | d2rproj
   tailwind | tw
   server | s
   generate | g
@@ -108,6 +109,9 @@ d2rcapture | d2rc)
   ;;
 d2rprocessor | d2rp)
   run_rails runner "D2rObserverProcessorWorker.new.run" "$@"
+  ;;
+d2rprojection | d2rproj)
+  run_rails runner "D2rRunProjectionWorker.new.run" "$@"
   ;;
 tailwind | tw)
   run_rails tailwindcss:build "$@"

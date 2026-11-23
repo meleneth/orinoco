@@ -29,13 +29,17 @@ services:
     ports:
     - "${GOAWS_WEB_PORT}:4100"
   obs-bridge-worker:
+    network_mode: host
     environment:
-      - DATABASE_URL=${ORINOCO_DB_DATABASE_URL}
+      - DATABASE_URL=postgres://${ORINOCO_DB_POSTGRES_USER}:${ORINOCO_DB_POSTGRES_PASSWORD}@localhost:${ORINOCO_DB_POSTGRES_PORT}/${ORINOCO_DB_POSTGRES_DB}
       - RAILS_ENV=development
       - RAILS_MAX_THREADS=5
       - RAILS_MIN_THREADS=5
-      - SCOREBOARD_REDIS_URL=${SCOREBOARD_REDIS_URL}
-      - EVENT_PIPELINE_GOAWS_URL=${EVENT_PIPELINE_GOAWS_URL}
+      - SCOREBOARD_REDIS_URL=redis://localhost:${SCOREBOARD_REDIS_PORT}/0
+      - EVENT_PIPELINE_GOAWS_URL=http://localhost:${GOAWS_WEB_PORT}
+      - OBS_HOST=localhost
+      - OBS_BRIDGE_DEFAULT_ENABLED=true
+      - OBS_WEBSOCKET_CONFIG_PATH=/run/secrets/obs-websocket.json
     depends_on:
       orinoco-db:
         condition: service_healthy
@@ -43,6 +47,7 @@ services:
     volumes:
       - ./railsapp:/rails
       - bundle:/usr/local/bundle
+      - ${OBS_WEBSOCKET_CONFIG:-/dev/null}:/run/secrets/obs-websocket.json:ro
   twitch-bridge-worker:
     environment:
       - DATABASE_URL=${ORINOCO_DB_DATABASE_URL}
@@ -181,6 +186,21 @@ services:
       - ./railsapp:/rails
       - bundle:/usr/local/bundle
   d2r-observer-processor-worker:
+    environment:
+      - DATABASE_URL=${ORINOCO_DB_DATABASE_URL}
+      - RAILS_ENV=development
+      - RAILS_MAX_THREADS=5
+      - RAILS_MIN_THREADS=5
+      - SCOREBOARD_REDIS_URL=${SCOREBOARD_REDIS_URL}
+      - EVENT_PIPELINE_GOAWS_URL=${EVENT_PIPELINE_GOAWS_URL}
+    depends_on:
+      orinoco-db:
+        condition: service_healthy
+        restart: true
+    volumes:
+      - ./railsapp:/rails
+      - bundle:/usr/local/bundle
+  d2r-run-projection-worker:
     environment:
       - DATABASE_URL=${ORINOCO_DB_DATABASE_URL}
       - RAILS_ENV=development

@@ -152,6 +152,44 @@ So the same system:
 
 No separate frontend nonsense.
 
+### Development OBS and D2R setup
+
+OBS must have its WebSocket server enabled on port `4455`. On Linux, `./dc_dev`
+automatically finds the native or Flatpak OBS WebSocket configuration, mounts it
+read-only into the OBS bridge, and runs that bridge on the host network so it can
+reach OBS at `localhost` without copying the password into an env file. The dev
+override enables the bridge at worker startup; other environments retain the
+shared default-off lifecycle unless they opt in.
+
+Bootstrap the stack and its canonical OBS scene/source with:
+
+```sh
+./dc_dev up -d
+./dc_dev exec -T railsapp bin/rails tailwindcss:build
+./dc_dev exec -T railsapp bin/rails runner script/interaction_demo_setup.rb
+```
+
+The setup job is idempotent. It creates or updates the `Orinoco` scene and
+`OrinocoWebView` browser source at `http://127.0.0.1:31050/overlay`. When the
+`d2r_observer` affordance is enabled, its capture worker also runs this setup
+automatically after the OBS bridge connects and ensures the canonical source is
+placed in the `Game` scene (override with `D2R_OVERLAY_SCENE_NAME`). The overlay
+base URL can be overridden with `ORINOCO_OVERLAY_BASE_URL`.
+
+If the browser source is present but transparent, verify that
+`railsapp/app/assets/builds/tailwind.css` exists. Re-run the Tailwind build and
+refresh the browser source; the first minified build can take about a minute.
+
+The D2R path uses three shared workers: capture, classify/process, and run
+projection. They are defined in the shared Compose service layer; development
+only supplies its environment, host OBS transport, and bind mounts. The D2R
+affordance and its `[Game] Game Capture` source are configured on Basic Setup.
+The observer requests a 1920x1200, quality-90 source image by default. That resolution keeps
+the top-right automap information legible while the fast screen classifier
+still fingerprints a small internal thumbnail. With the automap information
+visible, confirmed HUD rows publish current area, difficulty, and terror-zone
+events into the normal D2R event pipeline and `/overlay` projection.
+
 ---
 
 ## Design Rules (these will get broken if not written down)

@@ -4,7 +4,8 @@ require "time"
 
 module D2r
   class StateTracker
-    IMMEDIATE_SCREEN_STATES = %w[death_screen loading_screen].freeze
+    IMMEDIATE_SCREEN_STATES = %w[loading_screen].freeze
+    HIGH_RISK_SCREEN_STATES = %w[boss_visible boss_dead death_screen].freeze
     DOMAIN_EVENTS = {
       "area_banner" => "d2r.area.banner.visible",
       "boss_visible" => "d2r.boss.engaged",
@@ -66,7 +67,12 @@ module D2r
       if group == "screen" && IMMEDIATE_SCREEN_STATES.include?(state) && signal.fetch("confidence") >= @immediate_confidence
         return state
       end
-      state if history.count(state) >= @confirmations
+      required_confirmations = if group == "screen" && HIGH_RISK_SCREEN_STATES.include?(state)
+        @window_size
+      else
+        @confirmations
+      end
+      state if history.count(state) >= required_confirmations
     end
 
     def domain_events(group:, previous:, current:, payload:)

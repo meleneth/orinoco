@@ -38,6 +38,10 @@ module D2r
         state["level"] = Integer(payload.fetch("level"))
       when "d2r.area.changed"
         state["area"] = payload.fetch("area").to_s
+      when "d2r.difficulty.changed"
+        state["difficulty"] = payload.fetch("difficulty").to_s
+      when "d2r.terror_zones.changed"
+        state["terror_zones"] = Array(payload.fetch("terror_zones")).map(&:to_s)
       when "d2r.state.changed"
         state["screen"] = payload["current"] if payload["group"] == "screen"
       end
@@ -56,7 +60,8 @@ module D2r
 
     def initial_state
       { "game" => nil, "previous_run_kind" => nil, "previous_run" => nil, "run" => nil,
-        "level" => nil, "area" => nil, "screen" => nil, "events" => [] }
+        "level" => nil, "area" => nil, "difficulty" => nil, "terror_zones" => [],
+        "screen" => nil, "events" => [] }
     end
 
     def start_game(state, payload, at)
@@ -67,6 +72,8 @@ module D2r
                         "started_at" => at, "ended_at" => nil }
       state["run"] = nil
       state["area"] = nil
+      state["difficulty"] = nil
+      state["terror_zones"] = []
       state["screen"] = nil
     end
 
@@ -104,7 +111,7 @@ module D2r
       step = run && run["step"]
       return unless step
 
-      elapsed = [Time.iso8601(at) - Time.iso8601(step.fetch("started_at")), 0].max
+      elapsed = [ Time.iso8601(at) - Time.iso8601(step.fetch("started_at")), 0 ].max
       run["steps"] << step.merge("ended_at" => at, "seconds" => elapsed.round(3))
       run["step"] = nil
     end
@@ -117,10 +124,12 @@ module D2r
       case type
       when "d2r.game.started" then "Game started"
       when "d2r.game.ended" then "Game ended"
-      when "d2r.run.selected" then "Run: #{'#{payload.fetch("kind")}'}"
-      when "d2r.run.step" then "Step: #{'#{payload.fetch("name")}'}"
-      when "d2r.level.changed" then "Level #{'#{payload.fetch("level")}'}"
-      when "d2r.area.changed" then "Entered #{'#{payload.fetch("area")}'}"
+      when "d2r.run.selected" then "Run: #{payload.fetch("kind")}"
+      when "d2r.run.step" then "Step: #{payload.fetch("name")}"
+      when "d2r.level.changed" then "Level #{payload.fetch("level")}"
+      when "d2r.area.changed" then "Entered #{payload.fetch("area")}"
+      when "d2r.difficulty.changed" then "Difficulty: #{payload.fetch("difficulty")}"
+      when "d2r.terror_zones.changed" then "Terror zones: #{Array(payload.fetch("terror_zones")).join(" · ")}"
       else
         type.delete_prefix("d2r.").tr(".", " ").capitalize
       end

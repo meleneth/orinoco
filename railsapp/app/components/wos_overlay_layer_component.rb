@@ -5,6 +5,10 @@ class WosOverlayLayerComponent < ApplicationComponent
     @state = state || {}
   end
 
+  def render?
+    recognition.present?
+  end
+
   private
 
   attr_reader :state
@@ -37,11 +41,7 @@ class WosOverlayLayerComponent < ApplicationComponent
     word_rows.select { |row| row["state"] == "solved" || row["correct_word"].present? || row["text"].present? }.first(8)
   end
 
-  def status_text
-    return "Waiting for WOSBrain" if recognition.empty?
-
-    "WOSBrain"
-  end
+  def status_text = "WOSBrain"
 
   def updated_at
     state["recognized_at"] || screenshot["captureCompletedAt"]

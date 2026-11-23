@@ -44,3 +44,5 @@ services:
     profiles: ["workers"]
   d2r-observer-processor-worker:
     profiles: ["workers"]
+  d2r-run-projection-worker:
+    profiles: ["workers"]

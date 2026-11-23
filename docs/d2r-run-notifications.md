@@ -12,10 +12,14 @@ Event envelope timestamps (`occurred_at`) determine event order/durations, not p
 - `d2r.game.ended`: `{}`. Closes the active run step.
 - `d2r.level.changed`: `{ "level": 85 }`. Sticky character level until replaced.
 - `d2r.area.changed`: `{ "area": "Tower Cellar Level 1" }`. Sticky current area until replaced or new game starts.
+- `d2r.difficulty.changed`: `{ "difficulty": "Hell" }`. Sticky game difficulty read from the automap information HUD.
+- `d2r.terror_zones.changed`: `{ "terror_zones": ["Dry Hills", "Halls of the Dead"] }`. Sticky terror-zone list; the purple strength/element modifier is excluded.
 - `d2r.run.selected`: `{ "kind": "countess" }`. Defines the run category for the active game.
 - `d2r.run.step`: `{ "name": "tower" }`. Ends the previous step and begins this one.
 
-Detected screen events (boss, loading, player death, area banner) populate the five-event visible feed. Bare state changes update sticky screen state without spamming the feed. The overlay displays recent events newest-first with timestamps, character level, area, game elapsed time, current run/step, completed splits, and deltas against the immediately preceding game if the run kind matches. Run step names should remain stable across attempts.
+Detected screen events (boss, loading, player death, area banner) and confirmed HUD changes populate the five-event visible feed. Bare state changes update sticky screen state without spamming the feed. Like the chat browser source, the event feed is server-rendered and updated over Turbo Streams; each update replaces the feed with the projection's newest five messages so a long-running overlay cannot accumulate stale DOM nodes. The JSON endpoint remains the source for sticky run/timer fields. The overlay displays recent events newest-first with timestamps, character level, area, difficulty, terror zones, game elapsed time, current run/step, completed splits, and deltas against the immediately preceding game if the run kind matches. Run step names should remain stable across attempts.
+
+The decorative D2R HUD font is not reliably recognized by stock Tesseract. `D2r::HudReader` instead segments right-aligned gold and purple rows by color and compares normalized line geometry with confirmed reference crops under `spec/fixtures/files/d2r/hud`. When a previously unseen label appears, add a confirmed reference capture and a holdout example before claiming support for it.
 
 Only the five displayed events are retained in this projection; it is not a durable event-history store. Prior game splits are retained for the comparison, not an unlimited history. A genuine elapsed timer requires a `game.started` event from a future game-boundary recognizer or other trusted producer. At present, the classifier recognizes loading/screens, but not authoritative new-game boundaries, levels, or named steps.
 

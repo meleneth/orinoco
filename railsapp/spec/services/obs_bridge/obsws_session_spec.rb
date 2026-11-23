@@ -158,4 +158,15 @@ RSpec.describe ObsBridge::ObswsSession do
 
     expect(result).to eq("currentProgramSceneName" => "Gameplay")
   end
+
+  it "refreshes a browser source without cache" do
+    allow(req).to receive(:press_input_properties_button).with("OrinocoWebView", "refreshnocache")
+
+    session.apply_request(
+      "requestType" => "PressInputPropertiesButton",
+      "requestData" => { "inputName" => "OrinocoWebView", "propertyName" => "refreshnocache" }
+    )
+
+    expect(req).to have_received(:press_input_properties_button).with("OrinocoWebView", "refreshnocache")
+  end
 end

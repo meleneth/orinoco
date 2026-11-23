@@ -27,14 +27,15 @@ class ObsBridgeWorker
       session_runner: build_session_runner,
       event_publisher: obs_event_publisher,
       result_publisher: obs_result_publisher,
-      event_types: ["media_input_playback_ended"]
+      event_types: [ "media_input_playback_ended" ]
     )
   end
 
   def build_session_runner
     ObsBridge::ObswsSessionRunner.new(
       host: obs_host,
-      port: obs_port
+      port: obs_port,
+      password: obs_password
     )
   end
 
@@ -131,6 +132,18 @@ class ObsBridgeWorker
     return obs_config.port if obs_config
 
     config.obs_bridge.obs_port
+  end
+
+  def obs_password
+    return ENV["OBS_PASSWORD"] if ENV["OBS_PASSWORD"].present?
+
+    path = ENV["OBS_WEBSOCKET_CONFIG_PATH"].to_s
+    return if path.empty? || !File.file?(path)
+
+    JSON.parse(File.read(path))["server_password"].presence
+  rescue JSON::ParserError, SystemCallError => e
+    Rails.logger.warn("[obs-bridge/config] could not read websocket credentials: #{e.class}: #{e.message}")
+    nil
   end
 
   def redis

@@ -1,3 +1,4 @@
+<%= helpers.turbo_stream_from :d2r_events %>
 <div class="absolute right-6 top-6 w-96 rounded-lg border border-slate-700 bg-slate-950/85 p-4 text-slate-100 shadow-lg backdrop-blur" data-controller="d2r-run" data-d2r-run-url-value="/d2r/run">
   <div class="flex items-center justify-between">
     <h2 class="font-semibold uppercase tracking-wider text-cyan-300">D2R Run</h2>
@@ -6,11 +7,13 @@
   <div class="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
     <span class="text-slate-400">Level</span><span data-d2r-run-target="level">?</span>
     <span class="text-slate-400">Area</span><span data-d2r-run-target="area">Unknown area</span>
+    <span class="text-slate-400">Difficulty</span><span data-d2r-run-target="difficulty">?</span>
+    <span class="text-slate-400">Terror</span><span data-d2r-run-target="terrorZones">No active zones</span>
     <span class="text-slate-400">Run</span><span data-d2r-run-target="run">Unclassified run</span>
     <span class="text-slate-400">Step</span><span class="font-mono" data-d2r-run-target="step">No active step</span>
   </div>
   <h3 class="mt-4 border-t border-slate-700 pt-3 text-xs font-semibold uppercase text-slate-400">Recent events</h3>
-  <ol class="mt-2 space-y-1 text-sm" data-d2r-run-target="events"></ol>
+  <%= render D2rEventFeedComponent.new(events: state.fetch("events", [])) %>
   <h3 class="mt-4 border-t border-slate-700 pt-3 text-xs font-semibold uppercase text-slate-400">Run splits</h3>
   <ol class="mt-2 space-y-1 font-mono text-xs" data-d2r-run-target="splits"></ol>
 </div>

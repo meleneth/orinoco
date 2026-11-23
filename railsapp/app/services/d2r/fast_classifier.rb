@@ -35,7 +35,8 @@ module D2r
       end.sort_by { |candidate| candidate.fetch("distance") }
       best = candidates.first
       second = candidates.fetch(1, best)
-      state = best.fetch("distance") <= config.fetch("max_distance") ? best.fetch("state") : "unknown"
+      max_distance = config.fetch("max_distances", {}).fetch(best.fetch("state"), config.fetch("max_distance"))
+      state = best.fetch("distance") <= max_distance ? best.fetch("state") : "unknown"
       margin = second.fetch("distance") - best.fetch("distance")
       confidence = ((1.0 - best.fetch("distance")) * 0.8) + ([ margin, 0.0 ].max * 0.2)
       best.merge("state" => state, "confidence" => confidence.clamp(0.0, 1.0).round(4), "margin" => margin.round(4))

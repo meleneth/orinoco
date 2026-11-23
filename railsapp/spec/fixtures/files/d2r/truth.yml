@@ -2,6 +2,10 @@ version: 1
 fixtures:
   - { file: gameplay_idle_train.jpg, split: train, signals: { screen: gameplay, left_panel: none, right_panel: none, tooltip: none } }
   - { file: gameplay_idle_holdout.jpg, split: holdout, signals: { screen: gameplay, left_panel: none, right_panel: none, tooltip: none } }
+  - { file: gameplay_cata2_train.jpg, split: train, signals: { screen: gameplay, left_panel: none, right_panel: none, tooltip: none } }
+  - { file: gameplay_cata2_holdout.jpg, split: holdout, signals: { screen: gameplay, left_panel: none, right_panel: none, tooltip: none } }
+  - { file: character_select_train.jpg, split: train, signals: { screen: character_select, left_panel: none, right_panel: none, tooltip: none } }
+  - { file: character_select_holdout.jpg, split: holdout, signals: { screen: character_select, left_panel: none, right_panel: none, tooltip: none } }
   - { file: inventory_open_train.jpg, split: train, signals: { screen: gameplay, left_panel: none, right_panel: inventory, tooltip: none } }
   - { file: inventory_open_holdout.jpg, split: holdout, signals: { screen: gameplay, left_panel: stash_other, right_panel: inventory, tooltip: magic } }
   - { file: item_tooltip_white_train.jpg, split: train, signals: { screen: gameplay, left_panel: stash_other, right_panel: inventory, tooltip: white } }

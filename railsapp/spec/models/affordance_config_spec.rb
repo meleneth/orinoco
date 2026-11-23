@@ -42,7 +42,7 @@ RSpec.describe AffordanceConfig, type: :model do
       expect(config).not_to be_enabled
       expect(config.screenshot_source_name).to eq("")
       expect(config.config).to include(
-        "interval_seconds" => 0.5, "image_width" => 640, "image_height" => 400, "jpeg_quality" => 70
+        "interval_seconds" => 0.5, "image_width" => 1920, "image_height" => 1200, "jpeg_quality" => 90
       )
 
       config.update!(config: config.config.merge("interval_seconds" => 0.01, "jpeg_quality" => 999))
