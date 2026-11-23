@@ -70,7 +70,7 @@ RSpec.describe D2r::RunArchive do
     ])
     drop = LootDrop.find_by!(name: "Harlequin Crest")
     expect(drop.d2r_run).to eq(run)
-    expect(drop.season.name).to eq("Season 1")
+    expect(drop.season.name).to eq("Ladder Season 16")
     expect(drop.season.game_definition).to have_attributes(
       name: "Diablo II: Resurrected", publisher: "Blizzard Entertainment",
       year: 2021, link: "https://diablo2.blizzard.com/"

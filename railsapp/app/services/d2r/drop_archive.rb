@@ -12,7 +12,7 @@ module D2r
       year: 2021,
       link: "https://diablo2.blizzard.com/"
     }.freeze
-    DEFAULT_SEASON_NAME = "Season 1"
+    DEFAULT_SEASON_NAME = "Ladder Season 16"
 
     def call(event, run:)
       at = Time.iso8601(event.occurred_at)
