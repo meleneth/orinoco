@@ -54,6 +54,19 @@ RSpec.describe D2r::RunArchive do
     expect(D2rRun.first.current_step).to eq({})
   end
 
+  it "archives rune and unique sightings in the inferred game record" do
+    state["run"]["confidence"] = 0.9
+    state["run"]["evidence"] = [ "Forgotten Tower", "Tower Cellar Level 1" ]
+    archive.call(event("d2r.game.started", "10:00:00", { "game_id" => "detected-game" }), state)
+    sighting = event("d2r.loot.rune.sighted", "10:00:10", { "name" => "Ist Rune" })
+    2.times { archive.call(sighting, state) }
+    archive.call(event("d2r.loot.unique.sighted", "10:00:11", { "name" => "Harlequin Crest" }), state)
+    run = D2rRun.first
+    expect(run.run_confidence).to eq(0.9)
+    expect(run.run_evidence).to include("Forgotten Tower")
+    expect(run.loot_sightings.map { |loot| loot.fetch("name") }).to eq([ "Ist Rune", "Harlequin Crest" ])
+  end
+
   it "does not create a record from unconfirmed detector chatter" do
     archive.call(event("d2r.area.changed", "10:00:00", { "area" => "Moo Moo Farm" }), { "game" => nil })
     expect(D2rRun.count).to eq(0)
