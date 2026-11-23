@@ -40,7 +40,7 @@ module D2r
           screen: state["screen"],
           terror_zones: state["terror_zones"] || [],
           steps: state.dig("run", "steps").presence || run.steps,
-          current_step: state.dig("run", "step").presence || run.current_step,
+          current_step: event.type == "d2r.game.ended" ? {} : (state.dig("run", "step").presence || run.current_step),
           last_event_at: at
         } : {}
         # In the absence of an explicit run-step classifier, detected area
