@@ -28,7 +28,7 @@ module D2r
         evidence = state["run"]["evidence"] ||= []
         token = "Rune sighted at Tower Cellar Level 5: #{event.payload["name"]}"
         evidence << token unless evidence.include?(token)
-        state["run"]["confidence"] = 1.0
+        state["run"]["confidence"] = 0.995
         return
       end
       return unless event.type == "d2r.area.changed"
