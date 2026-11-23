@@ -94,7 +94,9 @@ export default class extends Controller {
         const button = document.createElement("button")
         button.type = "button"
         button.className = "w-full rounded border border-slate-700 p-2 text-left hover:border-cyan-600"
-        button.textContent = `${new Date(run.started_at).toLocaleString()} · ${run.run_kind || "Unclassified"} · ${run.area || "Unknown area"} · ${this.format(run.duration_seconds)}`
+        const runes = (run.loot_sightings || []).filter(sighting => sighting.kind === "rune")
+        const uniques = (run.loot_sightings || []).filter(sighting => sighting.kind === "unique")
+        button.textContent = `${new Date(run.started_at).toLocaleString()} · ${run.run_kind || "Unclassified"} · ${run.area || "Unknown area"} · ${this.format(run.duration_seconds)} · ${runes.length} runes · ${uniques.length} uniques`
         button.addEventListener("click", () => this.showHistoryRun(run))
         item.append(button)
         return item
@@ -120,10 +122,16 @@ export default class extends Controller {
       `Started: ${new Date(run.started_at).toLocaleString()}`,
       `Ended: ${run.ended_at ? new Date(run.ended_at).toLocaleString() : "In progress"}`,
       `Run: ${run.run_kind || "Unclassified"}${run.repeated ? " (repeat)" : ""}`,
+      `Confidence: ${run.run_confidence == null ? "Not classified" : `${Math.round(run.run_confidence * 100)}%`}`,
+      `Evidence: ${(run.run_evidence || []).join(" → ") || "None"}`,
       `Level: ${run.character_level ?? "?"} · Difficulty: ${run.difficulty || "?"}`,
       `Area: ${run.area || "Unknown"}`,
       "Splits:",
       ...(run.steps || []).map(step => `  ${step.name}: ${this.format(step.seconds || 0)}`),
+      "Rune sightings:",
+      ...(run.loot_sightings || []).filter(loot => loot.kind === "rune").map(loot => `  ${new Date(loot.at).toLocaleTimeString()} ${loot.name} (sighted)`),
+      "Unique item candidates:",
+      ...(run.loot_sightings || []).filter(loot => loot.kind === "unique").map(loot => `  ${new Date(loot.at).toLocaleTimeString()} ${loot.name} (unverified)`),
       "Detection events:",
       ...(run.events || []).slice().reverse().map(e => `  ${new Date(e.at).toLocaleTimeString()} ${e.type}`)
     ]
