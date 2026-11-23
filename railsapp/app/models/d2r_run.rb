@@ -10,6 +10,8 @@ class D2rRun < ApplicationRecord
     {
       id: id, game_id: game_id, started_at: started_at, ended_at: ended_at,
       run_started_at: run_started_at, run_kind: run_kind, repeated: repeated,
+      run_confidence: run_confidence, run_evidence: run_evidence,
+      loot_sightings: loot_sightings,
       character_level: character_level, area: area, difficulty: difficulty,
       terror_zones: terror_zones, steps: steps, current_step: current_step,
       events: include_events ? events : [], screen: screen,
