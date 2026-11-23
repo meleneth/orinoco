@@ -39,10 +39,25 @@ module D2r
           difficulty: state["difficulty"],
           screen: state["screen"],
           terror_zones: state["terror_zones"] || [],
-          steps: state.dig("run", "steps") || [],
-          current_step: state.dig("run", "step") || {},
+          steps: state.dig("run", "steps").presence || run.steps,
+          current_step: state.dig("run", "step").presence || run.current_step,
           last_event_at: at
         }
+        # In the absence of an explicit run-step classifier, detected area
+        # transitions form useful, deterministic splits automatically.
+        if state.dig("run", "step").blank? && state.dig("run", "steps").blank?
+          current = run.current_step.presence
+          if event.type == "d2r.area.changed" && event.payload["area"].present?
+            name = event.payload.fetch("area").to_s
+            if current.nil? || current["name"] != name
+              changes[:steps] = run.steps + (current ? [finish_step(current, at)] : [])
+              changes[:current_step] = { "name" => name, "started_at" => at.utc.iso8601(6) }
+            end
+          elsif event.type == "d2r.game.ended" && current
+            changes[:steps] = run.steps + [finish_step(current, at)]
+            changes[:current_step] = {}
+          end
+        end
         changes[:ended_at] = Time.iso8601(game.fetch("ended_at")) if game["ended_at"]
 
         unless %w[d2r.state.changed d2r.loading.started d2r.loading.finished].include?(event.type)
@@ -60,6 +75,11 @@ module D2r
     end
 
     private
+
+    def finish_step(step, at)
+      seconds = [ at - Time.iso8601(step.fetch("started_at")), 0 ].max
+      step.merge("ended_at" => at.utc.iso8601(6), "seconds" => seconds.round(3))
+    end
 
     def parse_time(value)
       Time.iso8601(value) if value
