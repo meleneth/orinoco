@@ -6,7 +6,7 @@ module VisualObserver
       ALL = %w[
         gameplay_idle area_banner waypoint_or_portal character_sheet skill_tree
         inventory_open item_tooltip_white item_tooltip_magic item_tooltip_rune
-        stash_runes stash_other loading_screen boss_visible boss_dead death_screen
+        stash_runes stash_other loading_screen character_select character_creation boss_visible boss_dead death_screen
       ].freeze
 
       PROMPTS = {
@@ -22,6 +22,8 @@ module VisualObserver
         "stash_runes" => "Open the rune stash tab with the full grid visible.",
         "stash_other" => "Open a non-rune stash tab.",
         "loading_screen" => "Prepare for the next natural loading transition.",
+        "character_select" => "Return to the character selection roster. Capture the full roster UI, not the in-game character sheet.",
+        "character_creation" => "Open the new-character creation screen with class selection and naming controls visible. Do not create a character just to capture this.",
         "boss_visible" => "Show Andariel or another target boss alive, if convenient.",
         "boss_dead" => "Show the boss aftermath or corpse, if it occurs naturally.",
         "death_screen" => "Show the death screen only if it occurred naturally."
@@ -35,6 +37,8 @@ module VisualObserver
         "item_tooltip" => [ %w[item_tooltip_white item_tooltip_magic item_tooltip_rune], %w[inventory_open gameplay_idle] ],
         "rune_stash" => [ %w[stash_runes], %w[stash_other] ],
         "loading_screen" => [ %w[loading_screen], %w[gameplay_idle] ],
+        "character_select" => [ %w[character_select], %w[character_creation gameplay_idle] ],
+        "character_creation" => [ %w[character_creation], %w[character_select gameplay_idle] ],
         "boss_state" => [ %w[boss_visible boss_dead], %w[gameplay_idle] ],
         "death_screen" => [ %w[death_screen], %w[gameplay_idle] ]
       }.freeze

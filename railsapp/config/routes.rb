@@ -21,6 +21,7 @@ Rails.application.routes.draw do
   get  "clip_show/get_scenes"
   get  "clip_show" => "clip_show#get_scenes", as: :clip_show
   get  "overlay" => "overlay#show", as: :overlay
+  get  "d2r/run" => "d2r_runs#show", as: :d2r_run
   get  "wos_brain" => "wos_brain#show", as: :wos_brain
   post "wos_brain/start" => "wos_brain#start", as: :start_wos_brain
   post "wos_brain/stop" => "wos_brain#stop", as: :stop_wos_brain

@@ -22,7 +22,7 @@ command_publisher = InteractionDemo::ObsCommandPublisher.new(
   topology:
 )
 
-external_host = ENV.fetch("INTERACTION_DEMO_HOST", "localhost")
+external_host = ENV.fetch("INTERACTION_DEMO_HOST", "127.0.0.1")
 external_port = ENV.fetch("ORINOCO_WEB_PORT", "31050")
 external_base_url = "http://#{external_host}:#{external_port}"
 

@@ -86,3 +86,8 @@ services:
     command: ["bundle", "exec", "rails", "runner", "D2rObserverProcessorWorker.new.run"]
     environment: *railsapp_environment
     depends_on: *railsapp_depends_on
+  d2r-run-projection-worker:
+    image: orinoco/railsapp
+    command: ["bundle", "exec", "rails", "runner", "D2rRunProjectionWorker.new.run"]
+    environment: *railsapp_environment
+    depends_on: *railsapp_depends_on

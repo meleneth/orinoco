@@ -1,0 +1,37 @@
+# frozen_string_literal: true
+
+module D2r
+  class HudTracker
+    EVENT_TYPES = {
+      "area" => "d2r.area.changed",
+      "difficulty" => "d2r.difficulty.changed",
+      "terror_zones" => "d2r.terror_zones.changed"
+    }.freeze
+
+    def initialize(confirmations: 2)
+      @confirmations = Integer(confirmations)
+      @candidates = {}
+      @candidate_counts = Hash.new(0)
+      @stable = {}
+    end
+
+    def observe(reading, observed_at:)
+      EVENT_TYPES.filter_map do |field, type|
+        value = reading[field]
+        next if value.nil? || (value.respond_to?(:empty?) && value.empty?)
+
+        if @candidates[field] == value
+          @candidate_counts[field] += 1
+        else
+          @candidates[field] = value
+          @candidate_counts[field] = 1
+        end
+        next if @candidate_counts[field] < @confirmations || @stable[field] == value
+
+        previous = @stable[field]
+        @stable[field] = value
+        { "type" => type, "payload" => { field => value, "previous" => previous, "observed_at" => observed_at } }
+      end
+    end
+  end
+end

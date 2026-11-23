@@ -31,6 +31,8 @@ RSpec.describe D2r::ScreenshotEventHandler do
     ])
   end
   let(:gate) { double("gate", complete!: nil) }
+  let(:hud_reader) { double("hud_reader", call: {}) }
+  let(:hud_tracker) { double("hud_tracker", observe: []) }
   let(:config) { double("config", enabled?: true, screenshot_source_name: "D2R") }
   let(:context) { D2rHandlerContext.new }
   let(:event) do
@@ -45,7 +47,7 @@ RSpec.describe D2r::ScreenshotEventHandler do
   end
 
   it "classifies matching frames and publishes only tracker changes" do
-    handler = described_class.new(config_reader: -> { config }, classifier:, tracker:, gate:)
+    handler = described_class.new(config_reader: -> { config }, classifier:, tracker:, hud_reader:, hud_tracker:, gate:)
 
     expect(handler.call(event, context)).to eq(:changed)
     expect(context.published.map { |published| published.fetch(:type) }).to eq([ "d2r.player.died" ])
@@ -54,9 +56,23 @@ RSpec.describe D2r::ScreenshotEventHandler do
     expect(gate).to have_received(:complete!).with("req-1")
   end
 
+  it "publishes confirmed HUD changes through the same event pipeline" do
+    reading = { "area" => "Catacombs Level 2", "difficulty" => "Hell", "terror_zones" => [ "Dry Hills" ] }
+    allow(hud_reader).to receive(:call).and_return(reading)
+    allow(hud_tracker).to receive(:observe).and_return([
+      { "type" => "d2r.area.changed", "payload" => { "area" => "Catacombs Level 2" } }
+    ])
+    allow(tracker).to receive(:observe).and_return([])
+    handler = described_class.new(config_reader: -> { config }, classifier:, tracker:, hud_reader:, hud_tracker:, gate:)
+
+    expect(handler.call(event, context)).to eq(:changed)
+    expect(context.published.first).to include(type: "d2r.area.changed")
+    expect(hud_tracker).to have_received(:observe).with(reading, observed_at: event.occurred_at)
+  end
+
   it "ignores frames from another source" do
     other = Orinoco::Pipeline::Event.build("obs.screenshot.captured", { "sourceName" => "WOS" })
-    handler = described_class.new(config_reader: -> { config }, classifier:, tracker:, gate:)
+    handler = described_class.new(config_reader: -> { config }, classifier:, tracker:, hud_reader:, hud_tracker:, gate:)
 
     expect(handler.call(other, context)).to eq(:ignored_source)
     expect(classifier).not_to have_received(:call)
@@ -65,7 +81,7 @@ RSpec.describe D2r::ScreenshotEventHandler do
 
   it "does no work while the affordance is disabled" do
     disabled = double("config", enabled?: false)
-    handler = described_class.new(config_reader: -> { disabled }, classifier:, tracker:, gate:)
+    handler = described_class.new(config_reader: -> { disabled }, classifier:, tracker:, hud_reader:, hud_tracker:, gate:)
 
     expect(handler.call(event, context)).to eq(:disabled)
     expect(classifier).not_to have_received(:call)

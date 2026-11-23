@@ -3,16 +3,21 @@
 require "base64"
 require "tempfile"
 require_relative "fast_classifier"
+require_relative "hud_reader"
+require_relative "hud_tracker"
 require_relative "state_tracker"
 
 module D2r
   class ScreenshotEventHandler
     DATA_URI_PATTERN = %r{\Adata:image/(?<format>[a-zA-Z0-9.+-]+);base64,(?<data>.+)\z}m
 
-    def initialize(config_reader:, classifier: FastClassifier.new, tracker: StateTracker.new, gate: nil)
+    def initialize(config_reader:, classifier: FastClassifier.new, tracker: StateTracker.new,
+      hud_reader: HudReader.new, hud_tracker: HudTracker.new, gate: nil)
       @config_reader = config_reader
       @classifier = classifier
       @tracker = tracker
+      @hud_reader = hud_reader
+      @hud_tracker = hud_tracker
       @gate = gate
     end
 
@@ -24,8 +29,11 @@ module D2r
       return :missing_source if source_name.empty?
       return :ignored_source unless event.payload_value("sourceName").to_s == source_name
 
-      classification = with_screenshot_file(event.payload) { |path| @classifier.call(path).to_h }
+      classification, hud = with_screenshot_file(event.payload) do |path|
+        [ @classifier.call(path).to_h, @hud_reader.call(path) ]
+      end
       events = @tracker.observe(classification, observed_at: event.occurred_at)
+      events.concat(@hud_tracker.observe(hud, observed_at: event.occurred_at))
       events.each do |change|
         context.publish(
           change.fetch("type"),
