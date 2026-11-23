@@ -16,7 +16,9 @@ module D2r
     MIN_GOLD_PIXELS = 5
 
     def call(path)
-      image = Vips::Image.new_from_file(path.to_s, access: :sequential)
+      # OCR writes the full crop first, then color verification revisits word
+      # regions within it. Random access is required for that second pass.
+      image = Vips::Image.new_from_file(path.to_s, access: :random)
       return [] if image.bands < 3
 
       top = (image.height * 0.20).round
