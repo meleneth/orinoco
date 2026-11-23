@@ -24,12 +24,10 @@ module D2r
           record.started_at = Time.iso8601(game.fetch("started_at"))
         end
         run.lock!
-        # A repeated SQS delivery must never rewrite a finished run or
-        # roll the archive backwards when old events arrive late.
-        return run if run.last_event_at && at < run.last_event_at
-        return run if run.ended_at && event.type != "d2r.game.ended"
-
-        changes = {
+        # SQS can deliver old observations after newer ones. Keep immutable
+        # loot/event evidence even when it is too old to update sticky state.
+        fresh = run.last_event_at.nil? || at >= run.last_event_at
+        changes = fresh ? {
           started_at: Time.iso8601(game.fetch("started_at")),
           run_started_at: parse_time(state.dig("run", "started_at")),
           run_kind: state.dig("run", "kind"),
@@ -44,10 +42,10 @@ module D2r
           steps: state.dig("run", "steps").presence || run.steps,
           current_step: state.dig("run", "step").presence || run.current_step,
           last_event_at: at
-        }
+        } : {}
         # In the absence of an explicit run-step classifier, detected area
         # transitions form useful, deterministic splits automatically.
-        if state.dig("run", "step").blank? && state.dig("run", "steps").blank?
+        if fresh && state.dig("run", "step").blank? && state.dig("run", "steps").blank?
           current = run.current_step.presence
           if event.type == "d2r.area.changed" && event.payload["area"].present?
             name = event.payload.fetch("area").to_s
@@ -60,7 +58,7 @@ module D2r
             changes[:current_step] = {}
           end
         end
-        changes[:ended_at] = Time.iso8601(game.fetch("ended_at")) if game["ended_at"]
+        changes[:ended_at] = Time.iso8601(game.fetch("ended_at")) if fresh && game["ended_at"]
 
         unless %w[d2r.state.changed d2r.loading.started d2r.loading.finished].include?(event.type)
           entry = { "type" => event.type, "at" => at.utc.iso8601(6),
