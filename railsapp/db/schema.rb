@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_23_105000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_23_112000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -30,6 +30,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_105000) do
     t.datetime "last_event_at"
     t.datetime "run_started_at"
     t.string "run_kind"
+    t.float "run_confidence"
+    t.jsonb "run_evidence", default: [], null: false
+    t.jsonb "loot_sightings", default: [], null: false
     t.boolean "repeated", default: false, null: false
     t.integer "character_level"
     t.string "area"
@@ -42,6 +45,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_105000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["game_id"], name: "index_d2r_runs_on_game_id", unique: true
+    t.index ["loot_sightings"], name: "index_d2r_runs_on_loot_sightings", using: :gin
     t.index ["started_at"], name: "index_d2r_runs_on_started_at"
     t.index ["run_kind", "started_at"], name: "index_d2r_runs_on_run_kind_and_started_at"
   end
