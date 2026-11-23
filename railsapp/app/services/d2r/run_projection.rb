@@ -2,6 +2,7 @@
 
 require "json"
 require "time"
+require_relative "run_inference"
 
 module D2r
   # Redis-backed read model. All timestamps come from the event envelope so replay
@@ -38,12 +39,16 @@ module D2r
         state["level"] = Integer(payload.fetch("level"))
       when "d2r.area.changed"
         state["area"] = payload.fetch("area").to_s
+        D2r::RunInference.new.observe(state, event)
       when "d2r.difficulty.changed"
         state["difficulty"] = payload.fetch("difficulty").to_s
       when "d2r.terror_zones.changed"
         state["terror_zones"] = Array(payload.fetch("terror_zones")).map(&:to_s)
       when "d2r.state.changed"
         state["screen"] = payload["current"] if payload["group"] == "screen"
+      when "d2r.loot.rune.sighted", "d2r.loot.unique.sighted"
+        # The complete observation is archived; only the latest five events
+        # remain in this ephemeral overlay read model.
       end
 
       if display_event?(type)
@@ -60,6 +65,7 @@ module D2r
 
     def initial_state
       { "game" => nil, "previous_run_kind" => nil, "previous_run" => nil, "run" => nil,
+        "visited_areas" => [],
         "level" => nil, "area" => nil, "difficulty" => nil, "terror_zones" => [],
         "screen" => nil, "events" => [] }
     end
@@ -71,6 +77,7 @@ module D2r
       state["game"] = { "id" => payload.fetch("game_id").to_s,
                         "started_at" => at, "ended_at" => nil }
       state["run"] = nil
+      state["visited_areas"] = []
       state["area"] = nil
       state["difficulty"] = nil
       state["terror_zones"] = []
@@ -131,6 +138,8 @@ module D2r
       when "d2r.run.step" then "Step: #{payload.fetch("name")}"
       when "d2r.level.changed" then "Level #{payload.fetch("level")}"
       when "d2r.area.changed" then "Entered #{payload.fetch("area")}"
+      when "d2r.loot.rune.sighted" then "Rune spotted: #{payload.fetch("name")}"
+      when "d2r.loot.unique.sighted" then "Unique spotted: #{payload.fetch("name")}"
       else
         type.delete_prefix("d2r.").tr(".", " ").capitalize
       end
