@@ -5,6 +5,8 @@ require "tempfile"
 require_relative "fast_classifier"
 require_relative "hud_reader"
 require_relative "hud_tracker"
+require_relative "loot_tracker"
+require_relative "ground_label_reader"
 require_relative "state_tracker"
 
 module D2r
@@ -12,12 +14,15 @@ module D2r
     DATA_URI_PATTERN = %r{\Adata:image/(?<format>[a-zA-Z0-9.+-]+);base64,(?<data>.+)\z}m
 
     def initialize(config_reader:, classifier: FastClassifier.new, tracker: StateTracker.new,
-      hud_reader: HudReader.new, hud_tracker: HudTracker.new, gate: nil)
+      hud_reader: HudReader.new, hud_tracker: HudTracker.new,
+      ground_label_reader: GroundLabelReader.new, loot_tracker: LootTracker.new, gate: nil)
       @config_reader = config_reader
       @classifier = classifier
       @tracker = tracker
       @hud_reader = hud_reader
       @hud_tracker = hud_tracker
+      @ground_label_reader = ground_label_reader
+      @loot_tracker = loot_tracker
       @gate = gate
     end
 
@@ -29,11 +34,13 @@ module D2r
       return :missing_source if source_name.empty?
       return :ignored_source unless event.payload_value("sourceName").to_s == source_name
 
-      classification, hud = with_screenshot_file(event.payload) do |path|
-        [ @classifier.call(path).to_h, @hud_reader.call(path) ]
+      classification, hud, loot = with_screenshot_file(event.payload) do |path|
+        result = @classifier.call(path).to_h
+        [ result, @hud_reader.call(path), @ground_label_reader.call(path) ]
       end
       events = @tracker.observe(classification, observed_at: event.occurred_at)
       events.concat(@hud_tracker.observe(hud, observed_at: event.occurred_at))
+      events.concat(@loot_tracker.observe(loot, observed_at: event.occurred_at))
       events.each do |change|
         context.publish(
           change.fetch("type"),
