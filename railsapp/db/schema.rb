@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_13_123000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_23_105000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -21,6 +21,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_13_123000) do
     t.string "name", null: false
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_affordance_configs_on_name", unique: true
+  end
+
+  create_table "d2r_runs", force: :cascade do |t|
+    t.string "game_id", null: false
+    t.datetime "started_at", null: false
+    t.datetime "ended_at"
+    t.datetime "last_event_at"
+    t.datetime "run_started_at"
+    t.string "run_kind"
+    t.boolean "repeated", default: false, null: false
+    t.integer "character_level"
+    t.string "area"
+    t.string "difficulty"
+    t.string "screen"
+    t.jsonb "terror_zones", default: [], null: false
+    t.jsonb "steps", default: [], null: false
+    t.jsonb "current_step", default: {}, null: false
+    t.jsonb "events", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["game_id"], name: "index_d2r_runs_on_game_id", unique: true
+    t.index ["started_at"], name: "index_d2r_runs_on_started_at"
+    t.index ["run_kind", "started_at"], name: "index_d2r_runs_on_run_kind_and_started_at"
   end
 
   create_table "diorama_edges", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
