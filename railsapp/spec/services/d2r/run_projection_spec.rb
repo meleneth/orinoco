@@ -82,6 +82,22 @@ RSpec.describe D2r::RunProjection do
     expect(state["events"]).to be_empty
   end
 
+  it "derives live area splits and repeat comparisons from detected areas" do
+    emit("d2r.game.started", { "game_id" => "one" }, "10:00:00")
+    emit("d2r.area.changed", { "area" => "Black Marsh" }, "10:00:01")
+    emit("d2r.area.changed", { "area" => "Forgotten Tower" }, "10:00:11")
+    state = emit("d2r.area.changed", { "area" => "Tower Cellar Level 1" }, "10:00:21")
+    expect(state.dig("run", "steps").map { |step| [step["name"], step["seconds"]] }).to eq([
+      [ "Black Marsh", 10.0 ], [ "Forgotten Tower", 10.0 ]
+    ])
+    emit("d2r.game.ended", {}, "10:00:31")
+    emit("d2r.game.started", { "game_id" => "two" }, "10:01:00")
+    emit("d2r.area.changed", { "area" => "Black Marsh" }, "10:01:01")
+    state = emit("d2r.area.changed", { "area" => "Forgotten Tower" }, "10:01:10")
+    expect(state.dig("run", "repeated")).to eq(true)
+    expect(state.dig("run", "previous_steps").map { |step| step["seconds"] }).to eq([10.0, 10.0, 10.0])
+  end
+
   it "infers a Countess run and renders named loot notifications" do
     emit("d2r.game.started", { "game_id" => "one" }, "10:00:00")
     emit("d2r.area.changed", { "area" => "Black Marsh" }, "10:00:01")
