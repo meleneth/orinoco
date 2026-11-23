@@ -1,48 +1,95 @@
 # frozen_string_literal: true
 
+require "csv"
 require "open3"
 require "tempfile"
 require "vips"
+require_relative "loot_tracker"
 
 module D2r
-  # A deliberately conservative candidate extractor. OCR is evidence, not a
-  # confirmed pickup: the tracker emits "sighted" only after repeated frames.
-  # The gameplay capture is scanned at its native resolution, preserving
-  # 1920x1200 glyph detail.
+  # Reads *visible ground labels*, not inventory ownership or guaranteed drops.
+  # OCR and label color are imperfect; consumers must retain the observation's
+  # evidence/confidence and never treat a sighting as a pickup.
   class GroundLabelReader
     RUNE_PATTERN = /\b(#{Regexp.union(LootTracker::RUNES).source})\s+Rune\b/i
-    # D2R unique item text is gold. Arbitrary yellow text is not proof of a
-    # unique, so emit candidate names only after spatial/color filtering.
-    MIN_CHARS = 3
+    MIN_WORD_CONFIDENCE = 40.0
+    MIN_GOLD_PIXELS = 5
 
     def call(path)
-      image = Vips::Image.new_from_file(path.to_s)
-      return [] unless image.bands >= 3
+      image = Vips::Image.new_from_file(path.to_s, access: :sequential)
+      return [] if image.bands < 3
 
-      # Item labels normally occupy the middle/lower gameplay viewport.
       top = (image.height * 0.20).round
       height = (image.height * 0.72).round.clamp(1, image.height - top)
       crop = image.crop(0, top, image.width, height)
-      Tempfile.create(["d2r-ground-label-", ".png"]) do |file|
+      Tempfile.create([ "d2r-ground-label-", ".png" ]) do |file|
         crop.write_to_file(file.path)
-        text, status = Open3.capture2("tesseract", file.path, "stdout", "--psm", "11", "-l", "eng",
-                                     err: File::NULL)
+        tsv, status = Open3.capture2(
+          "tesseract", file.path, "stdout", "--psm", "11", "-l", "eng", "tsv",
+          err: File::NULL
+        )
         return [] unless status.success?
 
-        lines = text.lines.map(&:strip).reject(&:empty?)
-        lines.flat_map do |line|
-          runes = line.scan(RUNE_PATTERN).flatten.map do |match|
-            name = LootTracker::RUNES.find { |rune| rune.casecmp?(match) }
-            { "kind" => "rune", "name" => "#{name} Rune" } if name
-          end.compact
-          # Unique names require a separate color-aware recognizer and labeled
-          # captures. Never infer uniqueness solely from ordinary OCR text.
-          runes
+        lines = CSV.parse(tsv, headers: true, col_sep: "\t").filter_map do |row|
+          next unless row["level"] == "5" && row["conf"].to_f >= MIN_WORD_CONFIDENCE
+          word = row["text"].to_s.strip
+          next if word.empty?
+
+          {
+            group: %w[page_num block_num par_num line_num].map { |key| row[key] },
+            text: word,
+            left: row["left"].to_i,
+            top: row["top"].to_i,
+            width: row["width"].to_i,
+            height: row["height"].to_i
+          }
+        end.group_by { |word| word.fetch(:group) }
+
+        lines.flat_map do |_, words|
+          label = words.map { |word| word.fetch(:text) }.join(" ").strip
+          next [] if label.empty?
+
+          rune_names = label.scan(RUNE_PATTERN).flatten.filter_map do |match|
+            rune = LootTracker::RUNES.find { |name| name.casecmp?(match) }
+            { "kind" => "rune", "name" => "#{rune} Rune", "confidence" => "candidate" } if rune
+          end
+          next rune_names unless rune_names.empty?
+
+          # Unique-item labels use gold foreground in D2R. Exclude HUD-style
+          # phrases and single-word speculative detections. This is a candidate
+          # requiring multiple matching screenshot confirmations downstream.
+          next [] if words.length < 2 || label.length < 5
+          next [] if label.match?(/\b(?:Difficulty|Level|Experience|Life|Mana|Gold|Rune)\b/i)
+
+          if words.count { |word| gold_word?(crop, word) } >= 2
+            [ { "kind" => "unique", "name" => label, "confidence" => "candidate" } ]
+          else
+            []
+          end
         end.uniq
       end
-    rescue Vips::Error, Errno::ENOENT => e
+    rescue Vips::Error, Errno::ENOENT, CSV::MalformedCSVError => e
       Rails.logger.warn("[d2r-ground-label] extraction failed: #{e.class}: #{e.message}") if defined?(Rails)
       []
+    end
+
+    private
+
+    def gold_word?(image, word)
+      x0 = word.fetch(:left).clamp(0, image.width - 1)
+      y0 = word.fetch(:top).clamp(0, image.height - 1)
+      width = word.fetch(:width).clamp(1, image.width - x0)
+      height = word.fetch(:height).clamp(1, image.height - y0)
+      region = image.crop(x0, y0, width, height)
+      pixels = region[0..2].cast("uchar").write_to_memory.unpack("C*")
+      golden = 0
+      pixels.each_slice(3) do |red, green, blue|
+        next unless red >= 110 && green >= 85 && blue >= 25
+        next unless red > (green * 1.07) && green > (blue * 1.28)
+        next unless red < (green * 1.8)
+        golden += 1
+      end
+      golden >= MIN_GOLD_PIXELS
     end
   end
 end
