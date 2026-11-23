@@ -74,6 +74,7 @@ RSpec.describe D2r::ScreenshotEventHandler do
   end
 
   it "emits confirmed rune and unique sightings through the same event stream" do
+    classification["signals"]["screen"]["state"] = "gameplay"
     allow(ground_label_reader).to receive(:call).and_return([
       { "kind" => "rune", "name" => "Ist Rune" },
       { "kind" => "unique", "name" => "Harlequin Crest" }
@@ -90,6 +91,17 @@ RSpec.describe D2r::ScreenshotEventHandler do
     expect(context.published.map { |item| item.fetch(:type) }).to eq([
       "d2r.loot.rune.sighted", "d2r.loot.unique.sighted"
     ])
+    expect(ground_label_reader).to have_received(:call)
+  end
+
+  it "does not treat inventory or stash labels as ground drops" do
+    classification["signals"]["screen"]["state"] = "gameplay"
+    classification["signals"]["right_panel"] = { "state" => "inventory" }
+    handler = described_class.new(config_reader: -> { config }, classifier:, tracker:, hud_reader:, hud_area_reader:,
+      hud_tracker:, ground_label_reader:, loot_tracker:, gate:)
+    handler.call(event, context)
+    expect(ground_label_reader).not_to have_received(:call)
+    expect(loot_tracker).to have_received(:observe).with([], observed_at: event.occurred_at)
   end
 
   it "ignores frames from another source" do
