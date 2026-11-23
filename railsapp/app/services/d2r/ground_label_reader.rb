@@ -58,10 +58,11 @@ module D2r
           # Unique-item labels use gold foreground in D2R. Exclude HUD-style
           # phrases and single-word speculative detections. This is a candidate
           # requiring multiple matching screenshot confirmations downstream.
-          next [] if words.length < 2 || label.length < 5
+          next [] if label.length < (words.length == 1 ? 8 : 5)
           next [] if label.match?(/\b(?:Difficulty|Level|Experience|Life|Mana|Gold|Rune)\b/i)
 
-          if words.count { |word| gold_word?(crop, word) } >= 2
+          required_gold_words = words.length == 1 ? 1 : 2
+          if words.count { |word| gold_word?(crop, word) } >= required_gold_words
             [ { "kind" => "unique", "name" => label, "confidence" => "candidate" } ]
           else
             []
