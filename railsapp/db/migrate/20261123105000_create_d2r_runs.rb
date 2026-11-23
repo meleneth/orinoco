@@ -6,6 +6,7 @@ class CreateD2rRuns < ActiveRecord::Migration[8.1]
       t.string :game_id, null: false
       t.datetime :started_at, null: false
       t.datetime :ended_at
+      t.datetime :last_event_at
       t.datetime :run_started_at
       t.string :run_kind
       t.boolean :repeated, null: false, default: false
