@@ -32,6 +32,7 @@ RSpec.describe D2r::ScreenshotEventHandler do
   end
   let(:gate) { double("gate", complete!: nil) }
   let(:hud_reader) { double("hud_reader", call: {}) }
+  let(:hud_area_reader) { double("hud_area_reader", call: nil) }
   let(:hud_tracker) { double("hud_tracker", observe: []) }
   let(:ground_label_reader) { double("ground_label_reader", call: []) }
   let(:loot_tracker) { double("loot_tracker", observe: []) }
@@ -49,7 +50,7 @@ RSpec.describe D2r::ScreenshotEventHandler do
   end
 
   it "classifies matching frames and publishes only tracker changes" do
-    handler = described_class.new(config_reader: -> { config }, classifier:, tracker:, hud_reader:, hud_tracker:, ground_label_reader:, loot_tracker:, gate:)
+    handler = described_class.new(config_reader: -> { config }, classifier:, tracker:, hud_reader:, hud_area_reader:, hud_tracker:, ground_label_reader:, loot_tracker:, gate:)
 
     expect(handler.call(event, context)).to eq(:changed)
     expect(context.published.map { |published| published.fetch(:type) }).to eq([ "d2r.player.died" ])
@@ -65,7 +66,7 @@ RSpec.describe D2r::ScreenshotEventHandler do
       { "type" => "d2r.area.changed", "payload" => { "area" => "Catacombs Level 2" } }
     ])
     allow(tracker).to receive(:observe).and_return([])
-    handler = described_class.new(config_reader: -> { config }, classifier:, tracker:, hud_reader:, hud_tracker:, ground_label_reader:, loot_tracker:, gate:)
+    handler = described_class.new(config_reader: -> { config }, classifier:, tracker:, hud_reader:, hud_area_reader:, hud_tracker:, ground_label_reader:, loot_tracker:, gate:)
 
     expect(handler.call(event, context)).to eq(:changed)
     expect(context.published.first).to include(type: "d2r.area.changed")
@@ -82,7 +83,7 @@ RSpec.describe D2r::ScreenshotEventHandler do
       { "type" => "d2r.loot.unique.sighted", "payload" => { "name" => "Harlequin Crest" } }
     ])
     allow(tracker).to receive(:observe).and_return([])
-    handler = described_class.new(config_reader: -> { config }, classifier:, tracker:, hud_reader:,
+    handler = described_class.new(config_reader: -> { config }, classifier:, tracker:, hud_reader:, hud_area_reader:,
       hud_tracker:, ground_label_reader:, loot_tracker:, gate:)
 
     expect(handler.call(event, context)).to eq(:changed)
@@ -93,7 +94,7 @@ RSpec.describe D2r::ScreenshotEventHandler do
 
   it "ignores frames from another source" do
     other = Orinoco::Pipeline::Event.build("obs.screenshot.captured", { "sourceName" => "WOS" })
-    handler = described_class.new(config_reader: -> { config }, classifier:, tracker:, hud_reader:, hud_tracker:, ground_label_reader:, loot_tracker:, gate:)
+    handler = described_class.new(config_reader: -> { config }, classifier:, tracker:, hud_reader:, hud_area_reader:, hud_tracker:, ground_label_reader:, loot_tracker:, gate:)
 
     expect(handler.call(other, context)).to eq(:ignored_source)
     expect(classifier).not_to have_received(:call)
@@ -102,7 +103,7 @@ RSpec.describe D2r::ScreenshotEventHandler do
 
   it "does no work while the affordance is disabled" do
     disabled = double("config", enabled?: false)
-    handler = described_class.new(config_reader: -> { disabled }, classifier:, tracker:, hud_reader:, hud_tracker:, ground_label_reader:, loot_tracker:, gate:)
+    handler = described_class.new(config_reader: -> { disabled }, classifier:, tracker:, hud_reader:, hud_area_reader:, hud_tracker:, ground_label_reader:, loot_tracker:, gate:)
 
     expect(handler.call(event, context)).to eq(:disabled)
     expect(classifier).not_to have_received(:call)
