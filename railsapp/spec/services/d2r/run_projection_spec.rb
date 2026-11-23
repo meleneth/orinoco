@@ -82,6 +82,18 @@ RSpec.describe D2r::RunProjection do
     expect(state["events"]).to be_empty
   end
 
+  it "infers a Countess run and renders named loot notifications" do
+    emit("d2r.game.started", { "game_id" => "one" }, "10:00:00")
+    emit("d2r.area.changed", { "area" => "Black Marsh" }, "10:00:01")
+    state = emit("d2r.area.changed", { "area" => "Forgotten Tower" }, "10:00:02")
+    expect(state.dig("run", "kind")).to eq("countess")
+    expect(state.dig("run", "confidence")).to eq(0.75)
+    state = emit("d2r.loot.rune.sighted", { "name" => "Ist Rune" }, "10:00:03")
+    expect(state.dig("events", 0, "message")).to eq("Rune spotted: Ist Rune")
+    state = emit("d2r.loot.unique.sighted", { "name" => "Harlequin Crest" }, "10:00:04")
+    expect(state.dig("events", 0, "message")).to eq("Unique spotted: Harlequin Crest")
+  end
+
   it "ignores classifier chatter in the visible feed" do
     state = emit("d2r.state.changed", { "group" => "screen", "current" => "gameplay" }, "10:00:00")
     state = emit("d2r.loading.started", {}, "10:00:01")
