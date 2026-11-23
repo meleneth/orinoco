@@ -47,6 +47,7 @@ module D2r
       when "d2r.state.changed"
         state["screen"] = payload["current"] if payload["group"] == "screen"
       when "d2r.loot.rune.sighted", "d2r.loot.unique.sighted"
+        D2r::RunInference.new.observe(state, event)
         # The complete observation is archived; only the latest five events
         # remain in this ephemeral overlay read model.
       end
