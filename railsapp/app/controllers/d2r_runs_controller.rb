@@ -10,7 +10,7 @@ class D2rRunsController < ApplicationController
     runs = runs.where(run_kind: params[:kind]) if params[:kind].present?
     render json: {
       page: page, limit: limit, total: runs.count,
-      runs: runs.offset((page - 1) * limit).limit(limit).map(&:as_history_json)
+      runs: runs.offset((page - 1) * limit).limit(limit).map { |run| run.as_history_json(include_events: false) }
     }
   end
 
