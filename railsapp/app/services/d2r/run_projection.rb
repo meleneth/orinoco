@@ -29,6 +29,7 @@ module D2r
       when "d2r.game.started"
         start_game(state, payload, at)
       when "d2r.game.ended"
+        finish_area_step(state, at)
         finish_step(state, at)
         state["game"]["ended_at"] = at if state["game"]
       when "d2r.run.selected"
@@ -39,7 +40,9 @@ module D2r
         state["level"] = Integer(payload.fetch("level"))
       when "d2r.area.changed"
         state["area"] = payload.fetch("area").to_s
+        track_area_step(state, at)
         D2r::RunInference.new.observe(state, event)
+        sync_inferred_steps(state)
       when "d2r.difficulty.changed"
         state["difficulty"] = payload.fetch("difficulty").to_s
       when "d2r.terror_zones.changed"
@@ -66,7 +69,7 @@ module D2r
 
     def initial_state
       { "game" => nil, "previous_run_kind" => nil, "previous_run" => nil, "run" => nil,
-        "visited_areas" => [],
+        "visited_areas" => [], "area_steps" => [], "area_step" => nil,
         "level" => nil, "area" => nil, "difficulty" => nil, "terror_zones" => [],
         "screen" => nil, "events" => [] }
     end
@@ -79,10 +82,45 @@ module D2r
                         "started_at" => at, "ended_at" => nil }
       state["run"] = nil
       state["visited_areas"] = []
+      state["area_steps"] = []
+      state["area_step"] = nil
       state["area"] = nil
       state["difficulty"] = nil
       state["terror_zones"] = []
       state["screen"] = nil
+    end
+
+    def track_area_step(state, at)
+      return unless state["game"] && !state.dig("game", "ended_at")
+
+      area = state["area"]
+      return if area.nil? || state.dig("area_step", "name") == area
+
+      finish_area_step(state, at)
+      state["area_step"] = { "name" => area, "started_at" => at }
+    end
+
+    def finish_area_step(state, at)
+      step = state["area_step"]
+      return unless step
+
+      state["area_steps"] ||= []
+      state["area_steps"] << completed_step(step, at)
+      state["area_step"] = nil
+      sync_inferred_steps(state)
+    end
+
+    def sync_inferred_steps(state)
+      run = state["run"]
+      return unless run && run["inferred"]
+
+      run["steps"] = Array(state["area_steps"]).dup
+      run["step"] = state["area_step"]
+    end
+
+    def completed_step(step, at)
+      elapsed = [ Time.iso8601(at) - Time.iso8601(step.fetch("started_at")), 0 ].max
+      step.merge("ended_at" => at, "seconds" => elapsed.round(3))
     end
 
     def choose_run(state, payload, at)
@@ -119,8 +157,7 @@ module D2r
       step = run && run["step"]
       return unless step
 
-      elapsed = [ Time.iso8601(at) - Time.iso8601(step.fetch("started_at")), 0 ].max
-      run["steps"] << step.merge("ended_at" => at, "seconds" => elapsed.round(3))
+      run["steps"] << completed_step(step, at)
       run["step"] = nil
     end
 
