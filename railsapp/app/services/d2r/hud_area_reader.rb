@@ -26,7 +26,7 @@ module D2r
       width = image.width - left
       height = (image.height * 0.16).round.clamp(1, image.height)
       roi = image.crop(left, 0, width, height).resize(2.0)
-      Tempfile.create(["d2r-area-", ".png"]) do |file|
+      Tempfile.create([ "d2r-area-", ".png" ]) do |file|
         roi.write_to_file(file.path)
         output, status = Open3.capture2(
           "tesseract", file.path, "stdout", "-l", "eng", "--psm", "6",
@@ -42,14 +42,55 @@ module D2r
     end
 
     def self.parse(value)
-      text = value.to_s.gsub(/\s+/, " ").strip.downcase
-      return nil if text.empty?
+      lines = value.to_s.lines.filter_map do |line|
+        normalized = normalize_text(line)
+        normalized unless normalized.empty?
+      end
+      return nil if lines.empty?
+
+      # The area heading is the first OCR line. Later lines contain difficulty,
+      # monster modifiers, and terror-zone names; considering those as area
+      # candidates can turn the terror-zone list into a false area change.
+      heading = lines.first
 
       # Prefer longest names so a complete 'Level 5' cannot match a shorter
       # prefix of the same label.
-      AREA_NAMES.sort_by { |area| -area.length }.find do |area|
-        text.include?(area.downcase)
+      areas = AREA_NAMES.sort_by { |area| -area.length }
+      exact = areas.find do |area|
+        target = normalize_text(area)
+        heading.include?(target)
       end
+      return exact if exact
+
+      areas.filter_map do |area|
+        target = normalize_text(area)
+        next if (heading.length - target.length).abs > 3
+
+        distance = edit_distance(heading, target)
+        next unless distance <= [ 1, (target.length * 0.12).ceil ].max
+
+        [ area, distance ]
+      end.min_by(&:last)&.first
+    end
+
+    def self.normalize_text(value)
+      value.to_s.downcase.tr("@®", "oo").gsub(/[^a-z0-9]+/, " ").strip.gsub(/\s+/, " ")
+    end
+
+    def self.edit_distance(left, right)
+      previous = (0..right.length).to_a
+      left.each_char.with_index(1) do |left_char, row|
+        current = [ row ]
+        right.each_char.with_index(1) do |right_char, column|
+          current[column] = [
+            current[column - 1] + 1,
+            previous[column] + 1,
+            previous[column - 1] + (left_char == right_char ? 0 : 1)
+          ].min
+        end
+        previous = current
+      end
+      previous.last
     end
   end
 end
