@@ -104,7 +104,17 @@ export default class extends Controller {
     }
   }
 
-  showHistoryRun(run) {
+  async showHistoryRun(summary) {
+    this.historyDetailsTarget.textContent = "Loading run details..."
+    let run
+    try {
+      const response = await fetch(`${this.historyUrlValue}/${summary.id}`, { cache: "no-store" })
+      if (!response.ok) throw new Error(`Run detail HTTP ${response.status}`)
+      run = await response.json()
+    } catch (error) {
+      this.historyDetailsTarget.textContent = `Unable to load run details: ${error.message}`
+      return
+    }
     const details = [
       `Game: ${run.game_id}`,
       `Started: ${new Date(run.started_at).toLocaleString()}`,
