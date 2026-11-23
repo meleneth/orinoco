@@ -39,10 +39,11 @@ module D2r
       classification, hud, loot = with_screenshot_file(event.payload) do |path|
         result = @classifier.call(path).to_h
         hud_reading = @hud_reader.call(path)
-        if hud_reading["area"].nil?
-          inferred_area = @hud_area_reader.call(path)
-          hud_reading["area"] = inferred_area if inferred_area
-        end
+        # Bitmap references are approximate and can map an unseen Tower label
+        # to the nearest Catacombs fixture. A known OCR area is stronger direct
+        # evidence and must override that nearest-reference guess.
+        inferred_area = @hud_area_reader.call(path)
+        hud_reading["area"] = inferred_area if inferred_area
         screen = result.dig("signals", "screen", "state")
         left_panel = result.dig("signals", "left_panel", "state")
         right_panel = result.dig("signals", "right_panel", "state")

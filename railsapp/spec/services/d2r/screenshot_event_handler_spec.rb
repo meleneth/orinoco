@@ -73,6 +73,21 @@ RSpec.describe D2r::ScreenshotEventHandler do
     expect(hud_tracker).to have_received(:observe).with(reading, observed_at: event.occurred_at)
   end
 
+  it "prefers a known OCR area over an approximate bitmap match" do
+    allow(hud_reader).to receive(:call).and_return({ "area" => "Catacombs Level 3", "difficulty" => "Hell" })
+    allow(hud_area_reader).to receive(:call).and_return("Tower Cellar Level 2")
+    allow(tracker).to receive(:observe).and_return([])
+    handler = described_class.new(config_reader: -> { config }, classifier:, tracker:, hud_reader:, hud_area_reader:,
+      hud_tracker:, ground_label_reader:, loot_tracker:, gate:)
+
+    handler.call(event, context)
+
+    expect(hud_tracker).to have_received(:observe).with(
+      { "area" => "Tower Cellar Level 2", "difficulty" => "Hell" },
+      observed_at: event.occurred_at
+    )
+  end
+
   it "emits confirmed rune and unique sightings through the same event stream" do
     classification["signals"]["screen"]["state"] = "gameplay"
     allow(ground_label_reader).to receive(:call).and_return([
