@@ -38,10 +38,10 @@ module D2r
 
       classification, hud, loot = with_screenshot_file(event.payload) do |path|
         result = @classifier.call(path).to_h
-        hud_reading = @hud_reader.call(path)
-        # Bitmap references are approximate and can map an unseen Tower label
-        # to the nearest Catacombs fixture. A known OCR area is stronger direct
-        # evidence and must override that nearest-reference guess.
+        hud_reading = @hud_reader.call(path).except("area")
+        # Bitmap references are approximate and can map any unseen/blank label
+        # to the nearest Catacombs fixture. Require a known OCR heading for
+        # area changes; bitmap features still supply difficulty/terror zones.
         inferred_area = @hud_area_reader.call(path)
         hud_reading["area"] = inferred_area if inferred_area
         screen = result.dig("signals", "screen", "state")

@@ -62,6 +62,7 @@ RSpec.describe D2r::ScreenshotEventHandler do
   it "publishes confirmed HUD changes through the same event pipeline" do
     reading = { "area" => "Catacombs Level 2", "difficulty" => "Hell", "terror_zones" => [ "Dry Hills" ] }
     allow(hud_reader).to receive(:call).and_return(reading)
+    allow(hud_area_reader).to receive(:call).and_return("Catacombs Level 2")
     allow(hud_tracker).to receive(:observe).and_return([
       { "type" => "d2r.area.changed", "payload" => { "area" => "Catacombs Level 2" } }
     ])
@@ -71,6 +72,19 @@ RSpec.describe D2r::ScreenshotEventHandler do
     expect(handler.call(event, context)).to eq(:changed)
     expect(context.published.first).to include(type: "d2r.area.changed")
     expect(hud_tracker).to have_received(:observe).with(reading, observed_at: event.occurred_at)
+  end
+
+  it "does not publish an approximate bitmap area when OCR sees no heading" do
+    allow(hud_reader).to receive(:call).and_return({ "area" => "Catacombs Level 3", "difficulty" => "Hell" })
+    allow(tracker).to receive(:observe).and_return([])
+    handler = described_class.new(config_reader: -> { config }, classifier:, tracker:, hud_reader:, hud_area_reader:,
+      hud_tracker:, ground_label_reader:, loot_tracker:, gate:)
+
+    handler.call(event, context)
+
+    expect(hud_tracker).to have_received(:observe).with(
+      { "difficulty" => "Hell" }, observed_at: event.occurred_at
+    )
   end
 
   it "prefers a known OCR area over an approximate bitmap match" do
