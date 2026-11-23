@@ -23,6 +23,7 @@ module D2r
 
         @visible[key] = true
         kind, name = key.split(":", 2)
+        name = "#{name} Rune" if kind == "rune"
         original = labels.find { |label| normalize(label) == key }
         type = kind == "rune" ? "d2r.loot.rune.sighted" : "d2r.loot.unique.sighted"
         { "type" => type, "payload" => { "name" => name, "observed_at" => observed_at, "source" => "ground_label", "confidence" => original.fetch("confidence", "candidate") } }

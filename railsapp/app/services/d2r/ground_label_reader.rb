@@ -47,6 +47,10 @@ module D2r
       lines.flat_map do |_, words|
         label = words.map { |word| word.fetch(:text) }.join(" ").strip
         next [] if label.empty?
+        # Gold chat/system text shares the unique-item palette. Reject it
+        # before rune parsing as well, otherwise a chat line mentioning loot
+        # could be persisted as a ground drop.
+        next [] if chat_or_system_label?(label)
 
         rune_names = label.scan(RUNE_PATTERN).flatten.filter_map do |match|
           rune = LootTracker::RUNES.find { |name| name.casecmp?(match) }
@@ -76,6 +80,17 @@ module D2r
 
     def normalize_unique_label(label)
       label.sub(/\bHEL\z/i, "Helm")
+    end
+
+    def chat_or_system_label?(label)
+      label.match?(/\A\s*\[?Game\]?(?:\s|$)/i) ||
+        label.match?(/\bsays\b/i) ||
+        label.match?(/\A\s*:/) ||
+        label.match?(/\b(?:I\s+)?(?:am\s+)?overburdened\b/i) ||
+        label.match?(/\b(?:can't\s+)?carry\s+anymore\b/i) ||
+        label.match?(/\b(?:need\s+)?(?:a|the)\s+key\b/i) ||
+        label.match?(/\bnot\s+in\s+town\b/i) ||
+        label.match?(/\b(?:sisters\s+succumbed|call\s+of\s+anguish)\b/i)
     end
 
     def gold_word?(image, word)
