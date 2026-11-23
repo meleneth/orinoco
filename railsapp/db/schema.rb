@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_23_112000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_23_123000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -95,6 +95,33 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_112000) do
     t.index ["slug"], name: "index_dioramas_on_slug", unique: true
   end
 
+  create_table "game_definitions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "link", null: false
+    t.string "name", null: false
+    t.string "publisher", null: false
+    t.datetime "updated_at", null: false
+    t.integer "year", null: false
+    t.index ["name", "publisher", "year"], name: "index_game_definitions_on_name_and_publisher_and_year", unique: true
+  end
+
+  create_table "loot_drops", force: :cascade do |t|
+    t.string "confidence", null: false
+    t.datetime "created_at", null: false
+    t.bigint "d2r_run_id", null: false
+    t.string "event_fingerprint", null: false
+    t.string "kind", null: false
+    t.jsonb "metadata", default: {}, null: false
+    t.string "name", null: false
+    t.datetime "observed_at", null: false
+    t.bigint "season_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["d2r_run_id"], name: "index_loot_drops_on_d2r_run_id"
+    t.index ["event_fingerprint"], name: "index_loot_drops_on_event_fingerprint", unique: true
+    t.index ["season_id", "observed_at"], name: "index_loot_drops_on_season_id_and_observed_at"
+    t.index ["season_id"], name: "index_loot_drops_on_season_id"
+  end
+
   create_table "obs_configs", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "host"
@@ -113,6 +140,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_112000) do
     t.index ["word"], name: "index_official_wos_words_on_word", unique: true
   end
 
+  create_table "seasons", force: :cascade do |t|
+    t.boolean "active", default: false, null: false
+    t.datetime "created_at", null: false
+    t.bigint "game_definition_id", null: false
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
+    t.index ["game_definition_id", "name"], name: "index_seasons_on_game_definition_id_and_name", unique: true
+    t.index ["game_definition_id"], name: "index_seasons_on_active_game", unique: true, where: "active"
+    t.index ["game_definition_id"], name: "index_seasons_on_game_definition_id"
+  end
+
   create_table "twitch_configs", force: :cascade do |t|
     t.string "channel_name"
     t.datetime "created_at", null: false
@@ -123,4 +161,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_112000) do
   add_foreign_key "diorama_edges", "diorama_nodes", column: "to_node_id", on_delete: :cascade
   add_foreign_key "diorama_edges", "dioramas", on_delete: :cascade
   add_foreign_key "diorama_nodes", "dioramas", on_delete: :cascade
+  add_foreign_key "loot_drops", "d2r_runs"
+  add_foreign_key "loot_drops", "seasons"
+  add_foreign_key "seasons", "game_definitions"
 end

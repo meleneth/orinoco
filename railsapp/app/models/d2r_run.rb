@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class D2rRun < ApplicationRecord
+  has_many :loot_drops, dependent: :restrict_with_exception
+
   validates :game_id, presence: true, uniqueness: true
   validates :started_at, presence: true
 

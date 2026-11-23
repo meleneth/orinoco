@@ -16,7 +16,7 @@ WORKDIR /rails
 
 # Install base packages
 RUN apt-get update -qq && \
-  apt-get install --no-install-recommends -y curl git libffi-dev libjemalloc2 libvips postgresql-client tesseract-ocr tesseract-ocr-eng && \
+  apt-get install --no-install-recommends -y ca-certificates curl git libffi-dev libjemalloc2 libvips postgresql-client tesseract-ocr tesseract-ocr-eng && \
   ln -s /usr/lib/$(uname -m)-linux-gnu/libjemalloc.so.2 /usr/local/lib/libjemalloc.so && \
   rm -rf /var/lib/apt/lists /var/cache/apt/archives
 

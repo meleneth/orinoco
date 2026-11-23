@@ -3,12 +3,17 @@
 require "digest"
 require "json"
 require "time"
+require_relative "drop_archive"
 
 module D2r
   # Durable history fed by the SAME detector event stream as the live Redis
   # projection. The game_id is a natural key for SQS redelivery/idempotency.
   class RunArchive
     EVENT_LIMIT = 1000
+
+    def initialize(drop_archive: DropArchive.new)
+      @drop_archive = drop_archive
+    end
 
     def call(event, state)
       game = state["game"]
@@ -50,11 +55,11 @@ module D2r
           if event.type == "d2r.area.changed" && event.payload["area"].present?
             name = event.payload.fetch("area").to_s
             if current.nil? || current["name"] != name
-              changes[:steps] = run.steps + (current ? [finish_step(current, at)] : [])
+              changes[:steps] = run.steps + (current ? [ finish_step(current, at) ] : [])
               changes[:current_step] = { "name" => name, "started_at" => at.utc.iso8601(6) }
             end
           elsif event.type == "d2r.game.ended" && current
-            changes[:steps] = run.steps + [finish_step(current, at)]
+            changes[:steps] = run.steps + [ finish_step(current, at) ]
             changes[:current_step] = {}
           end
         end
@@ -67,7 +72,7 @@ module D2r
           entry["id"] = Digest::SHA256.hexdigest(JSON.generate(entry))
           existing = run.events
           changes[:events] = (existing.any? { |old| old["id"] == entry["id"] } ?
-            existing : (existing + [entry]).last(EVENT_LIMIT))
+            existing : (existing + [ entry ]).last(EVENT_LIMIT))
         end
         if %w[d2r.loot.rune.sighted d2r.loot.unique.sighted].include?(event.type)
           sighting = {
@@ -78,9 +83,10 @@ module D2r
           }
           sightings = run.loot_sightings
           changes[:loot_sightings] = (sightings.any? { |old| old == sighting } ?
-            sightings : sightings + [sighting])
+            sightings : sightings + [ sighting ])
         end
         run.update!(changes)
+        @drop_archive.call(event, run:) if %w[d2r.loot.rune.sighted d2r.loot.unique.sighted].include?(event.type)
         run
       end
     end

@@ -65,6 +65,17 @@ RSpec.describe D2r::RunArchive do
     expect(run.run_confidence).to eq(0.9)
     expect(run.run_evidence).to include("Forgotten Tower")
     expect(run.loot_sightings.map { |loot| loot.fetch("name") }).to eq([ "Ist Rune", "Harlequin Crest" ])
+    expect(LootDrop.order(:observed_at).pluck(:kind, :name)).to eq([
+      [ "rune", "Ist Rune" ], [ "unique", "Harlequin Crest" ]
+    ])
+    drop = LootDrop.find_by!(name: "Harlequin Crest")
+    expect(drop.d2r_run).to eq(run)
+    expect(drop.season.name).to eq("Season 1")
+    expect(drop.season.game_definition).to have_attributes(
+      name: "Diablo II: Resurrected", publisher: "Blizzard Entertainment",
+      year: 2021, link: "https://diablo2.blizzard.com/"
+    )
+    expect(LootDrop.count).to eq(2)
   end
 
   it "does not create a record from unconfirmed detector chatter" do
