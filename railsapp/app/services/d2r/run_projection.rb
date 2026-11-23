@@ -75,6 +75,7 @@ module D2r
     end
 
     def start_game(state, payload, at)
+      finish_area_step(state, at)
       finish_step(state, at)
       state["previous_run_kind"] = state.dig("run", "kind")
       state["previous_run"] = state["run"]
