@@ -18,6 +18,7 @@ RSpec.describe D2r::HudAreaReader do
     TEXT
 
     expect(described_class.parse(text)).to eq("Tower Cellar Level 5")
+    expect(described_class.parse("TewerR CELLAR LEVEL 5")).to eq("Tower Cellar Level 5")
   end
 
   it "does not confuse a listed terror zone for the current area" do

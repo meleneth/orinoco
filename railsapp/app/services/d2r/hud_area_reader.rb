@@ -24,12 +24,15 @@ module D2r
       image = Vips::Image.new_from_file(path.to_s)
       left = (image.width * 0.79).round.clamp(0, image.width - 1)
       width = image.width - left
-      height = (image.height * 0.16).round.clamp(1, image.height)
+      # Only the first physical HUD line is the current area. Cropping the
+      # larger text block lets difficulty modifiers or terror-zone names move
+      # into the first OCR line whenever the area heading is absent.
+      height = (image.height * 0.05).round.clamp(1, image.height)
       roi = image.crop(left, 0, width, height).resize(2.0)
       Tempfile.create([ "d2r-area-", ".png" ]) do |file|
         roi.write_to_file(file.path)
         output, status = Open3.capture2(
-          "tesseract", file.path, "stdout", "-l", "eng", "--psm", "6",
+          "tesseract", file.path, "stdout", "-l", "eng", "--psm", "7",
           err: File::NULL
         )
         return nil unless status.success?
