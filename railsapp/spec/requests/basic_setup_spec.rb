@@ -5,7 +5,7 @@ require "rails_helper"
 RSpec.describe "Basic setup", type: :request do
   before do
     allow_any_instance_of(BasicSetupController).to receive(:wos_source_options).and_return(
-      ["Browser", "Display Capture"]
+      [ "Browser", "Display Capture" ]
     )
   end
 
@@ -21,6 +21,8 @@ RSpec.describe "Basic setup", type: :request do
       expect(response.body).to include("Screenshot source")
       expect(response.body).to include("Display Capture")
       expect(response.body).to include("Auto")
+      expect(response.body).to include("D2R Observer")
+      expect(response.body).to include("Enable D2R Observer affordance")
       expect(response.body).to include("TankGame")
       expect(response.body).to include("Enable TankGame affordance")
     end
@@ -40,6 +42,10 @@ RSpec.describe "Basic setup", type: :request do
           enabled: "1",
           screenshot_source_name: "Browser"
         },
+        d2r_observer_affordance: {
+          enabled: "1",
+          screenshot_source_name: "Display Capture"
+        },
         tank_game_affordance: {
           enabled: "0"
         }
@@ -51,6 +57,8 @@ RSpec.describe "Basic setup", type: :request do
       expect(TwitchConfig.first.channel_name).to eq("orinoco_channel")
       expect(AffordanceConfig.fetch!(:wos_brain)).to be_enabled
       expect(AffordanceConfig.fetch!(:wos_brain).screenshot_source_name).to eq("Browser")
+      expect(AffordanceConfig.fetch!(:d2r_observer)).to be_enabled
+      expect(AffordanceConfig.fetch!(:d2r_observer).screenshot_source_name).to eq("Display Capture")
       expect(AffordanceConfig.fetch!(:tank_game)).not_to be_enabled
     end
 

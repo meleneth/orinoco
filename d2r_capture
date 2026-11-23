@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+repo_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+obs_config="${OBS_WEBSOCKET_CONFIG:-}"
+
+if [[ -z "$obs_config" ]]; then
+  flatpak_config="$HOME/.var/app/com.obsproject.Studio/config/obs-studio/plugin_config/obs-websocket/config.json"
+  native_config="${XDG_CONFIG_HOME:-$HOME/.config}/obs-studio/plugin_config/obs-websocket/config.json"
+  if [[ -f "$flatpak_config" ]]; then
+    obs_config="$flatpak_config"
+  elif [[ -f "$native_config" ]]; then
+    obs_config="$native_config"
+  else
+    echo "OBS WebSocket config not found; set OBS_WEBSOCKET_CONFIG to its config.json path" >&2
+    exit 2
+  fi
+fi
+
+if [[ ! -f "$obs_config" ]]; then
+  echo "OBS WebSocket config does not exist: $obs_config" >&2
+  exit 2
+fi
+
+exec docker run --rm --network host -i \
+  -v "$repo_dir/railsapp:/rails" \
+  -v "$obs_config:/run/secrets/obs-websocket.json:ro" \
+  -w /rails \
+  -e RAILS_ENV=development \
+  -e OBS_HOST=localhost \
+  orinoco/railsapp \
+  bin/rails runner script/d2r_capture.rb "$@"

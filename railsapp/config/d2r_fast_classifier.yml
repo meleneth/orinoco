@@ -1,0 +1,116 @@
+---
+version: 1
+hash_columns: 16
+hash_rows: 10
+groups:
+  screen:
+    roi: full
+    max_distance: 0.28
+    templates:
+      gameplay:
+      - 7f88fd649864e924ef9ebf0fbfceded0a4c8dc24
+      - 9c9fbf3fcf0fcf07fe07fe0ff60fc33be518dc2c
+      - 7dc8f3bcdb35dd13e96fe94cf98cf893e468dc25
+      - e94de9bc0eb39933a92b792c2f9cb613a4a89ca5
+      - e9cce9b80e979819a909790c2f0cb613a4a89ca5
+      - edece9bce0b5c613f32fd30c678cb613a4a8bca5
+      - e9cce9bce095c613e32fcb2cb68cb693a4e8bca5
+      - e9ecf1fcaeb5a613c72f8fecb68cb613a4889c25
+      - cd80e1b0f4c8a66026f0bff096c0c3c0a7c8bca4
+      - 7d6cdee4ecb1e0f9f8f9f0fde07de1f9e038dc25
+      - cce0f060b470a0f060e8e1f221fee1faa518bc2c
+      character_select:
+      - 6f0cce3c7c3c7d1c859c80cc76dc76cc74cc748c
+      area_banner:
+      - 7f51ff44f690f690ff00ff00fe0aded3e558dc2c
+      loading_screen:
+      - ff6fffffff27df27df27ff27de17faa7fffff7af
+      boss_visible:
+      - 197058b5fd99ff837f1b3f1a3f460f35e5bcd824
+      boss_dead:
+      - a731e321ff31df02cfa6af247f0cff77e518dc2c
+      death_screen:
+      - dceffe5f3f0f3703f781ef41ffc1ff63c9e8d8ec
+    max_distances:
+      character_select: 0.1
+      loading_screen: 0.05
+      death_screen: 0.07
+      boss_dead: 0.1
+      area_banner: 0.15
+      boss_visible: 0.18
+      gameplay: 0.22
+  left_panel:
+    roi: left_panel
+    max_distance: 0.28
+    templates:
+      none:
+      - bfff9fbee7ee78f2ddb6df3ffb9fe37db247f25b
+      - a9effbdffddffc0ffc1ffffffff7fec7dac9cea7
+      - 3b3f6937f1ef3bbe7137713d713671a53faf3b9f
+      - bff6bfb4fdb3f9eeddd5ffd8ff3192b59ef4fff9
+      - bf7ebddff67bad1feba1fcd0ffc8fe0cff00ff00
+      - bfffbff97f6dbfddb8dffb6ffeeffebfff6ffeff
+      - fffffffffff6ff6fff4fff6fff6fff4fff6ffff2
+      - ab518bf2ffe67fdefff73fe78fdf8fff0f7fa77f
+      - aa0fee03fef7ef9ff89df87fe27fcffff7ffffff
+      - b5fef5f66f9f4799839bf6dffe7ffb3afffdffff
+      stash_other:
+      - 5f7c7b3846674e6b53b9d3a94ca94efd4f434b43
+      - 5f7c7b3846774e6b53b9d3a94ca94efd4f434b43
+      - 5f787ef0436a4b1b4f4bd26b466b4cab4f834b6f
+      stash_runes:
+      - 5f7c6e384f9b7cb35e03677174a14d994d934b83
+      - 5f7c6e384f9a7cb35c83cf2b587958bb4f834b43
+      character:
+      - 5e757e505dca4e4a4a4bcd4b4dda49db49e74e4b
+      waypoint:
+      - 5a4e6e5849aa4b9a4f3adf1a5f9a4f3a5f9a4a52
+  right_panel:
+    roi: right_panel
+    max_distance: 0.28
+    templates:
+      none:
+      - '06522580e8c8e4642d643ed8b17c837c8ae88e81'
+      - bffe3ffe1fff07ff02ff10ff03ff077f2bff3e9f
+      - 63c3efc1edc1e6c16bd95b990bc80fd80dd091c8
+      - 190024009f10c742e8407440f6108600c008c402
+      - 7003f400b400fa00f110f709f909f968fb68f799
+      - cc1bb25b8169d69136c901292287239c236cc69e
+      - ffffffffb1ff497f4d7f2d7f6d7f8d7f497f79ff
+      - fc037c83160f060702150e16236cc27c71f7be9f
+      - ed4ff12f343f3ab390d810e433e067e11ffffedf
+      - d7ff07ff07ff02ff003f100f9007a807c417e61f
+      inventory:
+      - 65257be1198da8a52a9d69b565d165c12da57d9d
+      - 1125f9e1188d7a1d363d6b1d6dd165c12da52d9d
+      - c1257fe1198d28a5260767276dd165a12da52d9d
+      - a125ffe1198d28a52a9d69b569d165c12da52d9d
+      - b125ffe1198d28a5aa9d69b569d165c12da56d9d
+      - a125ffe1998da8a5aa9d69b569d165c12da52d9d
+      skill_tree:
+      - f125ffa1b24dbd05ae85adc5adc5eac5ef459f8d
+  tooltip:
+    roi: tooltip_zone
+    max_distance: 0.28
+    templates:
+      none:
+      - bd729a33dcf2f4ba6d8fefdfb793dfa7bbc7dec9
+      - cf1fef8fe387e703f683ff03fe07fe87f307cf07
+      - ce3e563e3e9e771ec7cec58ec3cec44ed24e764e
+      - fb55d951d59bdf19f905f5a6e9a6aca6eda679cd
+      - a4d5e2d1ca5bcf59b305f3a6cda68da68fa6334d
+      - bad5a6d1a65bbf19c305f3a6cba68b26ca26320d
+      - f098f66cb664a620867036f897f8b7e093e0db60
+      - df71e4f8e67cb07cd87cf878f87cf03ee47ee0bc
+      - a628d078a0f8a0f920f460f8f0f1b0f024fff0ff
+      - fdc2fea6f658d398cf04ff80fb80ff00ffc5be45
+      - fffffb53fb12ff33ff13ff13ff33ff33ff33fb13
+      - fe98f688ffc1ffc1ffc97f893f8d3f8d3fa73f32
+      - e331ff90f710d783cda3cf938f92af967f8e7f8d
+      - ff473707bf8337813781fe80ef00ede0ede0ff60
+      white:
+      - aed5ae919a1197999d192d95bb96ada6adae334d
+      magic:
+      - aed5ae519a52970d9d0c2da4bb86ada6ada6330d
+      rune:
+      - a495e2d1ca5bcf99f305fba6cba6c3a663a6b30d

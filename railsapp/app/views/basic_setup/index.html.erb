@@ -7,7 +7,7 @@
           <%= tag.p "OBS and Twitch bridge configuration", class: cx("mt-1", "text-sm", "text-gray-600", "dark:text-gray-400") %>
         <% end %>
 
-        <% errors = @obs_config.errors.full_messages + @twitch_config.errors.full_messages + @wos_brain_config.errors.full_messages + @tank_game_config.errors.full_messages %>
+        <% errors = @obs_config.errors.full_messages + @twitch_config.errors.full_messages + @wos_brain_config.errors.full_messages + @d2r_observer_config.errors.full_messages + @tank_game_config.errors.full_messages %>
         <% if errors.any? %>
           <%= tag.div class: cx(
             "rounded-md border p-4",
@@ -64,6 +64,45 @@
                   "dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100",
                   "dark:placeholder:text-gray-500 dark:focus:border-blue-400 dark:focus:ring-blue-400"
                 ) %>
+              <% end %>
+            <% end %>
+          </section>
+
+          <section class="space-y-4 border-t border-gray-200 pt-6 dark:border-gray-700">
+            <div>
+              <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100">D2R Observer</h2>
+              <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Fast visual state-change events from Diablo II: Resurrected.</p>
+            </div>
+
+            <%= fields_for :d2r_observer_affordance, @d2r_observer_config do |d2r_form| %>
+              <%= tag.div class: cx("flex items-center gap-3") do %>
+                <%= d2r_form.check_box :enabled, class: cx(
+                  "h-4 w-4 rounded border-gray-300 text-blue-600",
+                  "focus:ring-2 focus:ring-blue-500",
+                  "dark:border-gray-600 dark:bg-gray-900 dark:focus:ring-blue-400"
+                ) %>
+                <%= d2r_form.label :enabled, "Enable D2R Observer affordance", class: cx(
+                  "text-sm", "font-medium",
+                  "text-gray-700", "dark:text-gray-300"
+                ) %>
+              <% end %>
+
+              <%= tag.div class: cx("space-y-2") do %>
+                <%= d2r_form.label :screenshot_source_name, "Screenshot source", class: cx(
+                  "block", "text-sm", "font-medium",
+                  "text-gray-700", "dark:text-gray-300"
+                ) %>
+                <% d2r_source_options = (@wos_source_options + [@d2r_observer_config.screenshot_source_name]).reject(&:blank?).uniq.sort %>
+                <%= d2r_form.select :screenshot_source_name,
+                  options_for_select(d2r_source_options, @d2r_observer_config.screenshot_source_name),
+                  { include_blank: "Select an OBS source" },
+                  class: cx(
+                    "block w-full rounded-md border px-3 py-2 shadow-sm",
+                    "border-gray-300 bg-white text-gray-900",
+                    "focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500",
+                    "dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100",
+                    "dark:focus:border-blue-400 dark:focus:ring-blue-400"
+                  ) %>
               <% end %>
             <% end %>
           </section>

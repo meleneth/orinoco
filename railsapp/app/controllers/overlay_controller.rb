@@ -7,7 +7,8 @@ class OverlayController < ApplicationController
   def show
     render OverlayComponent.new(
       layers: Overlay::LayerRegistry.layers,
-      wos_state: wos_state_store.read
+      wos_state: wos_state_store.read,
+      d2r_state: D2r::RunProjection.new(redis: redis).snapshot
     )
   end
 

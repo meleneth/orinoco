@@ -1,0 +1,36 @@
+version: 1
+fixtures:
+  - { file: gameplay_idle_train.jpg, split: train, signals: { screen: gameplay, left_panel: none, right_panel: none, tooltip: none } }
+  - { file: gameplay_idle_holdout.jpg, split: holdout, signals: { screen: gameplay, left_panel: none, right_panel: none, tooltip: none } }
+  - { file: gameplay_cata2_train.jpg, split: train, signals: { screen: gameplay, left_panel: none, right_panel: none, tooltip: none } }
+  - { file: gameplay_cata2_holdout.jpg, split: holdout, signals: { screen: gameplay, left_panel: none, right_panel: none, tooltip: none } }
+  - { file: character_select_train.jpg, split: train, signals: { screen: character_select, left_panel: none, right_panel: none, tooltip: none } }
+  - { file: character_select_holdout.jpg, split: holdout, signals: { screen: character_select, left_panel: none, right_panel: none, tooltip: none } }
+  - { file: inventory_open_train.jpg, split: train, signals: { screen: gameplay, left_panel: none, right_panel: inventory, tooltip: none } }
+  - { file: inventory_open_holdout.jpg, split: holdout, signals: { screen: gameplay, left_panel: stash_other, right_panel: inventory, tooltip: magic } }
+  - { file: item_tooltip_white_train.jpg, split: train, signals: { screen: gameplay, left_panel: stash_other, right_panel: inventory, tooltip: white } }
+  - { file: item_tooltip_white_holdout.jpg, split: holdout, signals: { screen: gameplay, left_panel: stash_other, right_panel: inventory, tooltip: white } }
+  - { file: item_tooltip_magic_train.jpg, split: train, signals: { screen: gameplay, left_panel: stash_other, right_panel: inventory, tooltip: magic } }
+  - { file: item_tooltip_magic_holdout.jpg, split: holdout, signals: { screen: gameplay, left_panel: stash_other, right_panel: inventory, tooltip: magic } }
+  - { file: item_tooltip_rune_train.jpg, split: train, signals: { screen: gameplay, left_panel: stash_runes, right_panel: inventory, tooltip: rune } }
+  - { file: item_tooltip_rune_holdout.jpg, split: holdout, signals: { screen: gameplay, left_panel: stash_runes, right_panel: inventory, tooltip: rune } }
+  - { file: stash_runes_train.jpg, split: train, signals: { screen: gameplay, left_panel: stash_runes, right_panel: inventory, tooltip: none } }
+  - { file: stash_runes_holdout.jpg, split: holdout, signals: { screen: gameplay, left_panel: stash_runes, right_panel: inventory, tooltip: rune } }
+  - { file: stash_other_train.jpg, split: train, signals: { screen: gameplay, left_panel: stash_other, right_panel: inventory, tooltip: none } }
+  - { file: stash_other_holdout.jpg, split: holdout, signals: { screen: gameplay, left_panel: stash_other, right_panel: inventory, tooltip: white } }
+  - { file: character_sheet_train.jpg, split: train, signals: { screen: gameplay, left_panel: character, right_panel: none, tooltip: none } }
+  - { file: character_sheet_holdout.jpg, split: holdout, signals: { screen: gameplay, left_panel: character, right_panel: none, tooltip: none } }
+  - { file: skill_tree_train.jpg, split: train, signals: { screen: gameplay, left_panel: none, right_panel: skill_tree, tooltip: none } }
+  - { file: skill_tree_holdout.jpg, split: holdout, signals: { screen: gameplay, left_panel: none, right_panel: skill_tree, tooltip: none } }
+  - { file: waypoint_train.jpg, split: train, signals: { screen: gameplay, left_panel: waypoint, right_panel: none, tooltip: none } }
+  - { file: waypoint_holdout.jpg, split: holdout, signals: { screen: gameplay, left_panel: waypoint, right_panel: none, tooltip: none } }
+  - { file: area_banner_train.jpg, split: train, signals: { screen: area_banner, left_panel: none, right_panel: none, tooltip: none } }
+  - { file: area_banner_holdout.jpg, split: holdout, signals: { screen: area_banner, left_panel: none, right_panel: none, tooltip: none } }
+  - { file: loading_screen_train.jpg, split: train, signals: { screen: loading_screen, left_panel: none, right_panel: none, tooltip: none } }
+  - { file: loading_screen_holdout.jpg, split: holdout, signals: { screen: loading_screen, left_panel: none, right_panel: none, tooltip: none } }
+  - { file: boss_visible_train.jpg, split: train, signals: { screen: boss_visible, left_panel: none, right_panel: none, tooltip: none } }
+  - { file: boss_visible_holdout.jpg, split: holdout, signals: { screen: boss_visible, left_panel: none, right_panel: none, tooltip: none } }
+  - { file: boss_dead_train.jpg, split: train, signals: { screen: boss_dead, left_panel: none, right_panel: none, tooltip: none } }
+  - { file: boss_dead_holdout.jpg, split: holdout, signals: { screen: boss_dead, left_panel: none, right_panel: none, tooltip: none } }
+  - { file: death_screen_train.jpg, split: train, signals: { screen: death_screen, left_panel: none, right_panel: none, tooltip: none } }
+  - { file: death_screen_holdout.jpg, split: holdout, signals: { screen: death_screen, left_panel: none, right_panel: none, tooltip: none } }

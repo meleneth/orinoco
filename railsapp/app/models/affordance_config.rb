@@ -34,6 +34,16 @@ class AffordanceConfig < ApplicationRecord
         "manual_ruleset" => "base",
         "screenshot_source_name" => ""
       }
+    when "d2r_observer"
+      {
+        "enabled" => false,
+        "scenes" => [],
+        "screenshot_source_name" => "",
+        "interval_seconds" => 0.5,
+        "image_width" => 1920,
+        "image_height" => 1200,
+        "jpeg_quality" => 90
+      }
     when "tank_game"
       {
         "enabled" => true,
@@ -126,18 +136,41 @@ class AffordanceConfig < ApplicationRecord
     when "clip_show"
       self.enabled = false if config["enabled"].nil?
       self.scenes = config["scenes"]
-    when "wos_brain"
+    when "wos_brain", "d2r_observer"
       self.enabled = false if config["enabled"].nil?
       self.scenes = config["scenes"]
-      self.config = config.merge(
-        "ruleset_mode" => normalize_ruleset_mode(config["ruleset_mode"]),
-        "manual_ruleset" => normalize_manual_ruleset(config["manual_ruleset"]),
-        "screenshot_source_name" => config["screenshot_source_name"].to_s.strip
-      )
+      normalized = { "screenshot_source_name" => config["screenshot_source_name"].to_s.strip }
+      if name == "wos_brain"
+        normalized.merge!(
+          "ruleset_mode" => normalize_ruleset_mode(config["ruleset_mode"]),
+          "manual_ruleset" => normalize_manual_ruleset(config["manual_ruleset"])
+        )
+      else
+        defaults = self.class.default_config_for(:d2r_observer)
+        normalized.merge!(
+          "interval_seconds" => bounded_float(config["interval_seconds"], default: defaults["interval_seconds"], min: 0.2, max: 10.0),
+          "image_width" => bounded_integer(config["image_width"], default: defaults["image_width"], min: 160, max: 1920),
+          "image_height" => bounded_integer(config["image_height"], default: defaults["image_height"], min: 100, max: 1200),
+          "jpeg_quality" => bounded_integer(config["jpeg_quality"], default: defaults["jpeg_quality"], min: 1, max: 100)
+        )
+      end
+      self.config = config.merge(normalized)
     when "tank_game"
       defaults = self.class.default_config_for(:tank_game)
       self.config = defaults.merge(config)
       self.enabled = defaults["enabled"] if config["enabled"].nil?
     end
+  end
+
+  def bounded_float(value, default:, min:, max:)
+    Float(value || default).clamp(min, max)
+  rescue ArgumentError, TypeError
+    default
+  end
+
+  def bounded_integer(value, default:, min:, max:)
+    Integer(value || default).clamp(min, max)
+  rescue ArgumentError, TypeError
+    default
   end
 end

@@ -4,3 +4,6 @@ obsbridge: foreman run --env .env.dev.orinoco bin/rails runner "ObsBridgeWorker.
 wosbrain: foreman run --env .env.dev.orinoco bin/rails runner "WosBrainProcessorWorker.new.run"
 wosprojection: foreman run --env .env.dev.orinoco bin/rails runner "WosBrainProjectionWorker.new.run"
 woscapture: foreman run --env .env.dev.orinoco bin/rails runner "WosBrainCaptureWorker.new.run"
+d2rcapture: foreman run --env .env.dev.orinoco bin/rails runner "D2rObserverCaptureWorker.new.run"
+d2rprocessor: foreman run --env .env.dev.orinoco bin/rails runner "D2rObserverProcessorWorker.new.run"
+d2rprojection: foreman run --env .env.dev.orinoco bin/rails runner "D2rRunProjectionWorker.new.run"

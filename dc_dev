@@ -11,6 +11,18 @@ COMPOSE_FILE="compose/development-compose.yml"
 if [[ "$OSTYPE" != "msys" && "$OSTYPE" != "win32" ]]; then
 	export HOST_UID=$(id -u)
 	export HOST_GID=$(id -g)
+
+	if [[ -z "${OBS_WEBSOCKET_CONFIG:-}" ]]; then
+		flatpak_obs_config="$HOME/.var/app/com.obsproject.Studio/config/obs-studio/plugin_config/obs-websocket/config.json"
+		native_obs_config="${XDG_CONFIG_HOME:-$HOME/.config}/obs-studio/plugin_config/obs-websocket/config.json"
+		if [[ -f "$flatpak_obs_config" ]]; then
+			export OBS_WEBSOCKET_CONFIG="$flatpak_obs_config"
+		elif [[ -f "$native_obs_config" ]]; then
+			export OBS_WEBSOCKET_CONFIG="$native_obs_config"
+		else
+			export OBS_WEBSOCKET_CONFIG="/dev/null"
+		fi
+	fi
 fi
 
 exec docker compose --env-file development.env -f development-compose.yml -f development-overrides.yml "$@"

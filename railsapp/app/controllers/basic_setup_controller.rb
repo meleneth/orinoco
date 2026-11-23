@@ -11,10 +11,11 @@ class BasicSetupController < ApplicationController
     @obs_config.assign_attributes(obs_config_params)
     @twitch_config.assign_attributes(twitch_config_params)
     @wos_brain_config.assign_attributes(wos_brain_affordance_params)
+    @d2r_observer_config.assign_attributes(d2r_observer_affordance_params)
     @tank_game_config.assign_attributes(tank_game_affordance_params)
     auto_select_wos_source if params[:auto_wos_source].present?
 
-    if [ @obs_config, @twitch_config, @wos_brain_config, @tank_game_config ].map(&:save).all?
+    if [ @obs_config, @twitch_config, @wos_brain_config, @d2r_observer_config, @tank_game_config ].map(&:save).all?
       redirect_to basic_setup_index_path, notice: "Basic setup saved."
     else
       render :index, status: :unprocessable_entity
@@ -27,6 +28,7 @@ class BasicSetupController < ApplicationController
     @obs_config = ObsConfig.first_or_initialize
     @twitch_config = TwitchConfig.first_or_initialize
     @wos_brain_config = AffordanceConfig.fetch!(:wos_brain)
+    @d2r_observer_config = AffordanceConfig.fetch!(:d2r_observer)
     @tank_game_config = AffordanceConfig.fetch!(:tank_game)
     @wos_source_options = wos_source_options
   end
@@ -66,5 +68,9 @@ class BasicSetupController < ApplicationController
 
   def tank_game_affordance_params
     params.fetch(:tank_game_affordance, ActionController::Parameters.new).permit(:enabled)
+  end
+
+  def d2r_observer_affordance_params
+    params.fetch(:d2r_observer_affordance, ActionController::Parameters.new).permit(:enabled, :screenshot_source_name)
   end
 end

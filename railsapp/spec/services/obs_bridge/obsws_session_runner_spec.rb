@@ -14,13 +14,14 @@ RSpec.describe ObsBridge::ObswsSessionRunner do
       end
     end
 
-    attr_reader :closed
+    attr_reader :closed, :password
 
-    def initialize(host:, port:)
+    def initialize(host:, port:, password: nil)
       self.class.reset! unless self.class.instances
       self.class.instances << self
       @host = host
       @port = port
+      @password = password
       @closed = false
     end
 
@@ -32,7 +33,7 @@ RSpec.describe ObsBridge::ObswsSessionRunner do
   end
 
   class FailingRequestsClient
-    def initialize(host:, port:)
+    def initialize(host:, port:, password: nil)
       @host = host
       @port = port
     end
@@ -50,13 +51,14 @@ RSpec.describe ObsBridge::ObswsSessionRunner do
       end
     end
 
-    attr_reader :closed
+    attr_reader :closed, :password
 
-    def initialize(host:, port:)
+    def initialize(host:, port:, password: nil)
       self.class.reset! unless self.class.instances
       self.class.instances << self
       @host = host
       @port = port
+      @password = password
       @closed = false
     end
 
@@ -110,5 +112,21 @@ RSpec.describe ObsBridge::ObswsSessionRunner do
       ObsBridge::ObswsSessionRunner::ConnectionError,
       /missing-obs-host:4455: SocketError: getaddrinfo/
     )
+  end
+
+
+  it "passes a configured password to both OBS clients" do
+    runner = described_class.new(
+      host: "localhost",
+      port: 4455,
+      password: "secret",
+      requests_client_class: FakeRequestsClient,
+      events_client_class: FakeEventsClient
+    )
+
+    runner.run { |_session| }
+
+    expect(FakeRequestsClient.instances.first.password).to eq("secret")
+    expect(FakeEventsClient.instances.first.password).to eq("secret")
   end
 end
