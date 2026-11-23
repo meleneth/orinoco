@@ -22,6 +22,15 @@ module D2r
 
     def observe(state, event)
       return unless state["game"] && !state.dig("game", "ended_at")
+      if event.type == "d2r.loot.rune.sighted"
+        return unless state.dig("run", "kind") == "countess"
+        return unless state["area"] == "Tower Cellar Level 5"
+        evidence = state["run"]["evidence"] ||= []
+        token = "Rune sighted at Tower Cellar Level 5: #{event.payload["name"]}"
+        evidence << token unless evidence.include?(token)
+        state["run"]["confidence"] = 1.0
+        return
+      end
       return unless event.type == "d2r.area.changed"
 
       area = event.payload["area"].to_s
