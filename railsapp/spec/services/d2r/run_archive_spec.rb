@@ -38,6 +38,22 @@ RSpec.describe D2r::RunArchive do
     expect(D2rRun.first.ended_at).to be_present
   end
 
+  it "builds step timings from detected area changes without manual run selection" do
+    state["run"] = nil
+    archive.call(event("d2r.game.started", "10:00:00", { "game_id" => "detected-game" }), state)
+    state["area"] = "Black Marsh"
+    archive.call(event("d2r.area.changed", "10:00:05", { "area" => "Black Marsh" }), state)
+    state["area"] = "Forgotten Tower"
+    archive.call(event("d2r.area.changed", "10:00:20", { "area" => "Forgotten Tower" }), state)
+    game["ended_at"] = "2026-11-23T10:00:30Z"
+    archive.call(event("d2r.game.ended", "10:00:30"), state)
+
+    expect(D2rRun.first.steps.map { |step| [ step.fetch("name"), step.fetch("seconds") ] }).to eq([
+      [ "Black Marsh", 15.0 ], [ "Forgotten Tower", 10.0 ]
+    ])
+    expect(D2rRun.first.current_step).to eq({})
+  end
+
   it "does not create a record from unconfirmed detector chatter" do
     archive.call(event("d2r.area.changed", "10:00:00", { "area" => "Moo Moo Farm" }), { "game" => nil })
     expect(D2rRun.count).to eq(0)
