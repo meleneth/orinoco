@@ -150,3 +150,22 @@ Open a Postgres CLI:
 ```bash
 ./dc_dev exec orinoco-db psql -U orinoco-db-development-user -d orinoco-db_development
 ```
+
+## Quiet operational logs
+
+GoAWS defaults to `warn` using its native `-loglevel` flag. Routine empty
+polls and informational broker traffic should not flood Compose logs.
+Warnings and errors remain enabled. To temporarily investigate broker traffic:
+
+```bash
+GOAWS_LOG_LEVEL=debug ./dc_dev up -d --no-deps --force-recreate goaws
+# Restore normal logging:
+./dc_dev up -d --no-deps --force-recreate goaws
+```
+
+Recreating GoAWS can discard its in-memory queues and messages. Do this
+when the event pipeline is idle, not during a run you want to preserve.
+OBS command receipt logging is also disabled by default; set
+`ORINOCO_LOG_LEVEL=debug` in the OBS worker container environment to enable it.
+Failures and retry warnings remain visible. Follow the stack with
+`./dc_dev logs -f --tail=100`.
