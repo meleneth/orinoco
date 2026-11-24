@@ -25,7 +25,7 @@ class D2rRunsController < ApplicationController
       format.turbo_stream do
         render turbo_stream: turbo_stream.replace(
           "d2r_live_projection",
-          renderable: D2rLiveProjectionComponent.new(state: state)
+          D2rLiveProjectionComponent.new(state: state).render_in(view_context)
         )
       end
       format.html { render json: state }
