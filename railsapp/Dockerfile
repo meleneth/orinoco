@@ -51,7 +51,8 @@ COPY app/assets/tailwind/ app/assets/tailwind/
 COPY app/views/ app/views/
 COPY app/components/ app/components/
 COPY app/javascript/ app/javascript/
-RUN mkdir -p app/assets/builds && \
+ARG TAILWIND_CACHE_BUST=0
+RUN echo "Tailwind cache generation: ${TAILWIND_CACHE_BUST}" && mkdir -p app/assets/builds && \
   bundle exec tailwindcss -i app/assets/tailwind/application.css -o app/assets/builds/tailwind.css --minify && \
   test -s app/assets/builds/tailwind.css
 
