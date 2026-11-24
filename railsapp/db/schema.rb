@@ -24,30 +24,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_125000) do
   end
 
   create_table "d2r_runs", force: :cascade do |t|
-    t.string "game_id", null: false
-    t.datetime "started_at", null: false
+    t.string "area"
+    t.integer "character_level"
+    t.datetime "created_at", null: false
+    t.jsonb "current_step", default: {}, null: false
+    t.string "difficulty"
     t.datetime "ended_at"
+    t.jsonb "events", default: [], null: false
+    t.string "game_id", null: false
     t.datetime "last_event_at"
-    t.datetime "run_started_at"
-    t.string "run_kind"
-    t.float "run_confidence"
-    t.jsonb "run_evidence", default: [], null: false
     t.jsonb "loot_sightings", default: [], null: false
     t.boolean "repeated", default: false, null: false
-    t.integer "character_level"
-    t.string "area"
-    t.string "difficulty"
+    t.float "run_confidence"
+    t.jsonb "run_evidence", default: [], null: false
+    t.string "run_kind"
+    t.datetime "run_started_at"
     t.string "screen"
-    t.jsonb "terror_zones", default: [], null: false
+    t.datetime "started_at", null: false
     t.jsonb "steps", default: [], null: false
-    t.jsonb "current_step", default: {}, null: false
-    t.jsonb "events", default: [], null: false
-    t.datetime "created_at", null: false
+    t.jsonb "terror_zones", default: [], null: false
     t.datetime "updated_at", null: false
     t.index ["game_id"], name: "index_d2r_runs_on_game_id", unique: true
     t.index ["loot_sightings"], name: "index_d2r_runs_on_loot_sightings", using: :gin
-    t.index ["started_at"], name: "index_d2r_runs_on_started_at"
     t.index ["run_kind", "started_at"], name: "index_d2r_runs_on_run_kind_and_started_at"
+    t.index ["started_at"], name: "index_d2r_runs_on_started_at"
   end
 
   create_table "diorama_edges", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
