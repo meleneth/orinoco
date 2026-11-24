@@ -17,7 +17,7 @@ module D2r
     end
 
     def snapshot
-      JSON.parse(@redis.get(KEY) || "{}").then { |stored| initial_state.merge(stored) }
+      JSON.parse(@redis.get(KEY) || "{}").then { |stored| initial_state.merge(stored).tap { |state| state["events"].reject! { |item| item["type"] == "d2r.character.observed" } } }
     end
 
     def call(event)
@@ -41,6 +41,7 @@ module D2r
         observe_character(state, payload)
       when "d2r.level.changed"
         state["level"] = Integer(payload.fetch("level"))
+        state["character"]["level"] = state["level"] if state["character"]
       when "d2r.area.changed"
         state["area"] = payload.fetch("area").to_s
         track_area_step(state, at)
@@ -189,7 +190,7 @@ module D2r
     def display_event?(type)
       !%w[
         d2r.state.changed d2r.loading.started d2r.loading.finished
-        d2r.difficulty.changed d2r.terror_zones.changed
+        d2r.difficulty.changed d2r.terror_zones.changed d2r.character.observed
       ].include?(type) && type.start_with?("d2r.")
     end
 
