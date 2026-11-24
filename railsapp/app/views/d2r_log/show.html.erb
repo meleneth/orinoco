@@ -9,7 +9,7 @@
     </div>
     <div class="text-right">
       <div class="font-mono text-xl"><%= distance_of_time_in_words(@run.started_at, @run.ended_at || Time.current) %></div>
-      <div class="text-xs text-slate-400"><%= @run.ended_at ? "Finished" : "In progress" %><%= @run.repeated? ? " · Repeat run" : "" %></div>
+      <div class="text-xs text-slate-400"><%= @run.outcome.humanize %> · Game <%= @run.ended_at ? "ended" : "open" %><%= @run.repeated? ? " · Repeat run" : "" %></div>
     </div>
   </header>
   <div class="grid gap-6 lg:grid-cols-2">
