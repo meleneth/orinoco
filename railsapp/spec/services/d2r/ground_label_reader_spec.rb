@@ -49,4 +49,34 @@ RSpec.describe D2r::GroundLabelReader do
       expect(reader.send(:chat_or_system_label?, label)).to be(true), label
     end
   end
+  it "never interprets lower-left chat as a ground unique even without chat prefixes" do
+    tsv = <<~TSV
+      level\tpage_num\tblock_num\tpar_num\tline_num\tword_num\tleft\ttop\twidth\theight\tconf\ttext
+      5\t1\t1\t1\t1\t1\t10\t65\t40\t12\t95\tHarlequin
+    TSV
+    status = instance_double(Process::Status, success?: true)
+    allow(Open3).to receive(:capture2).and_return([ tsv, status ])
+
+    Tempfile.create([ "chat-no-prefix", ".png" ]) do |file|
+      Vips::Image.black(100, 100).new_from_image([ 150, 120, 40 ]).write_to_file(file.path)
+      expect(described_class.new.call(file.path)).to be_empty
+    end
+  end
+
+  it "still recognizes candidate ground labels outside the excluded chat rectangle" do
+    tsv = <<~TSV
+      level\tpage_num\tblock_num\tpar_num\tline_num\tword_num\tleft\ttop\twidth\theight\tconf\ttext
+      5\t1\t1\t1\t1\t1\t72\t65\t25\t12\t95\tHarlequin
+    TSV
+    status = instance_double(Process::Status, success?: true)
+    allow(Open3).to receive(:capture2).and_return([ tsv, status ])
+
+    Tempfile.create([ "ground-right", ".png" ]) do |file|
+      Vips::Image.black(100, 100).new_from_image([ 150, 120, 40 ]).write_to_file(file.path)
+      expect(described_class.new.call(file.path)).to eq([
+        { "kind" => "unique", "name" => "Harlequin", "confidence" => "candidate" }
+      ])
+    end
+  end
+
 end
