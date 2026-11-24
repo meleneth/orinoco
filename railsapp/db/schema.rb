@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_23_125000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_24_020000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -23,11 +23,77 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_125000) do
     t.index ["name"], name: "index_affordance_configs_on_name", unique: true
   end
 
+  create_table "d2r_act_milestones", force: :cascade do |t|
+    t.integer "act", null: false
+    t.datetime "created_at", null: false
+    t.bigint "d2r_character_id", null: false
+    t.string "difficulty", null: false
+    t.jsonb "evidence", default: {}, null: false
+    t.datetime "observed_at", null: false
+    t.string "status", null: false
+    t.datetime "updated_at", null: false
+    t.index ["d2r_character_id", "difficulty", "act"], name: "idx_d2r_act_milestones_character_difficulty_act", unique: true
+    t.index ["d2r_character_id"], name: "index_d2r_act_milestones_on_d2r_character_id"
+  end
+
+  create_table "d2r_activities", force: :cascade do |t|
+    t.string "boundary_key", null: false
+    t.float "confidence"
+    t.datetime "created_at", null: false
+    t.bigint "d2r_character_id"
+    t.bigint "d2r_run_id", null: false
+    t.datetime "ended_at"
+    t.jsonb "evidence", default: [], null: false
+    t.string "kind", null: false
+    t.datetime "started_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["boundary_key"], name: "index_d2r_activities_on_boundary_key", unique: true
+    t.index ["d2r_character_id"], name: "index_d2r_activities_on_d2r_character_id"
+    t.index ["d2r_run_id", "kind", "started_at"], name: "idx_d2r_activities_run_kind_started"
+    t.index ["d2r_run_id"], name: "index_d2r_activities_on_d2r_run_id"
+  end
+
+  create_table "d2r_character_observations", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "d2r_character_id", null: false
+    t.bigint "d2r_run_id"
+    t.jsonb "data", default: {}, null: false
+    t.string "fingerprint", null: false
+    t.string "kind", null: false
+    t.datetime "observed_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["d2r_character_id", "observed_at"], name: "idx_on_d2r_character_id_observed_at_787ca19b05"
+    t.index ["d2r_character_id"], name: "index_d2r_character_observations_on_d2r_character_id"
+    t.index ["d2r_run_id"], name: "index_d2r_character_observations_on_d2r_run_id"
+    t.index ["fingerprint"], name: "index_d2r_character_observations_on_fingerprint", unique: true
+  end
+
+  create_table "d2r_characters", force: :cascade do |t|
+    t.string "character_class", null: false
+    t.datetime "created_at", null: false
+    t.boolean "expansion"
+    t.bigint "experience"
+    t.datetime "first_seen_at", null: false
+    t.boolean "hardcore"
+    t.string "identity_key", null: false
+    t.boolean "ladder"
+    t.datetime "last_seen_at", null: false
+    t.integer "level"
+    t.string "name", null: false
+    t.datetime "observed_created_at"
+    t.string "season"
+    t.jsonb "stats", default: {}, null: false
+    t.datetime "updated_at", null: false
+    t.index ["identity_key"], name: "index_d2r_characters_on_identity_key", unique: true
+    t.index ["name", "character_class"], name: "index_d2r_characters_on_name_and_character_class"
+  end
+
   create_table "d2r_runs", force: :cascade do |t|
     t.string "area"
     t.integer "character_level"
     t.datetime "created_at", null: false
     t.jsonb "current_step", default: {}, null: false
+    t.bigint "d2r_character_id"
     t.string "difficulty"
     t.datetime "ended_at"
     t.jsonb "events", default: [], null: false
@@ -44,10 +110,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_125000) do
     t.jsonb "steps", default: [], null: false
     t.jsonb "terror_zones", default: [], null: false
     t.datetime "updated_at", null: false
+    t.index ["d2r_character_id"], name: "index_d2r_runs_on_d2r_character_id"
     t.index ["game_id"], name: "index_d2r_runs_on_game_id", unique: true
     t.index ["loot_sightings"], name: "index_d2r_runs_on_loot_sightings", using: :gin
     t.index ["run_kind", "started_at"], name: "index_d2r_runs_on_run_kind_and_started_at"
     t.index ["started_at"], name: "index_d2r_runs_on_started_at"
+  end
+
+  create_table "d2r_time_intervals", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "d2r_character_id"
+    t.bigint "d2r_run_id"
+    t.datetime "ended_at", null: false
+    t.jsonb "evidence", default: {}, null: false
+    t.string "fingerprint", null: false
+    t.string "kind", null: false
+    t.decimal "seconds", precision: 14, scale: 3, null: false
+    t.datetime "started_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["d2r_character_id", "started_at"], name: "idx_d2r_time_intervals_character_started"
+    t.index ["d2r_character_id"], name: "index_d2r_time_intervals_on_d2r_character_id"
+    t.index ["d2r_run_id", "started_at"], name: "idx_d2r_time_intervals_run_started"
+    t.index ["d2r_run_id"], name: "index_d2r_time_intervals_on_d2r_run_id"
+    t.index ["fingerprint"], name: "index_d2r_time_intervals_on_fingerprint", unique: true
   end
 
   create_table "diorama_edges", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -157,6 +242,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_125000) do
     t.datetime "updated_at", null: false
   end
 
+  add_foreign_key "d2r_act_milestones", "d2r_characters"
+  add_foreign_key "d2r_activities", "d2r_characters"
+  add_foreign_key "d2r_activities", "d2r_runs"
+  add_foreign_key "d2r_character_observations", "d2r_characters"
+  add_foreign_key "d2r_character_observations", "d2r_runs"
+  add_foreign_key "d2r_runs", "d2r_characters"
+  add_foreign_key "d2r_time_intervals", "d2r_characters"
+  add_foreign_key "d2r_time_intervals", "d2r_runs"
   add_foreign_key "diorama_edges", "diorama_nodes", column: "from_node_id", on_delete: :cascade
   add_foreign_key "diorama_edges", "diorama_nodes", column: "to_node_id", on_delete: :cascade
   add_foreign_key "diorama_edges", "dioramas", on_delete: :cascade

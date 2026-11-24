@@ -3,6 +3,8 @@
 class D2rRun < ApplicationRecord
   belongs_to :d2r_character, optional: true
   has_many :loot_drops, dependent: :restrict_with_exception
+  has_many :d2r_activities, dependent: :restrict_with_exception
+  has_many :d2r_time_intervals, dependent: :restrict_with_exception
 
   validates :game_id, presence: true, uniqueness: true
   validates :started_at, presence: true
