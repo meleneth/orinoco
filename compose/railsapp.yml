@@ -16,7 +16,13 @@ services:
     build:
       context: "./railsapp"
       network: ${ORINOCO_BUILD_NETWORK:-default}
-    depends_on: &railsapp_depends_on
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:3000/up"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 120s
+    depends_on:
       orinoco-db:
         condition: service_healthy
         restart: true
@@ -29,65 +35,68 @@ services:
     image: orinoco/railsapp
     command: ["bundle", "exec", "rails", "runner", "ObsBridgeWorker.new.run"]
     environment: *railsapp_environment
-    depends_on: *railsapp_depends_on
+    depends_on: &railsapp_worker_depends_on
+      railsapp:
+        condition: service_healthy
+        restart: true
   twitch-bridge-worker:
     image: orinoco/railsapp
     command: ["bundle", "exec", "rails", "runner", "TwitchBridgeWorker.new.run"]
     environment: *railsapp_environment
-    depends_on: *railsapp_depends_on
+    depends_on: *railsapp_worker_depends_on
   seven-tv-bridge-worker:
     image: orinoco/railsapp
     command: ["bundle", "exec", "rails", "runner", "SevenTvBridgeWorker.new.run"]
     environment: *railsapp_environment
-    depends_on: *railsapp_depends_on
+    depends_on: *railsapp_worker_depends_on
   twitch-chat-projection-worker:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     image: orinoco/railsapp
     command: ["bundle", "exec", "rails", "runner", "TwitchChatProjectionWorker.new.run"]
     environment: *railsapp_environment
-    depends_on: *railsapp_depends_on
+    depends_on: *railsapp_worker_depends_on
   clip-show-processor-worker:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     image: orinoco/railsapp
     command: ["bundle", "exec", "rails", "runner", "ClipShowProcessorWorker.new.run"]
     environment: *railsapp_environment
-    depends_on: *railsapp_depends_on
+    depends_on: *railsapp_worker_depends_on
   tank-game-processor-worker:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     image: orinoco/railsapp
     command: ["bundle", "exec", "rails", "runner", "TankGameProcessorWorker.new.run"]
     environment: *railsapp_environment
-    depends_on: *railsapp_depends_on
+    depends_on: *railsapp_worker_depends_on
   wos-brain-capture-worker:
     image: orinoco/railsapp
     command: ["bundle", "exec", "rails", "runner", "WosBrainCaptureWorker.new.run"]
     environment: *railsapp_environment
-    depends_on: *railsapp_depends_on
+    depends_on: *railsapp_worker_depends_on
   wos-brain-processor-worker:
     image: orinoco/railsapp
     command: ["bundle", "exec", "rails", "runner", "WosBrainProcessorWorker.new.run"]
     environment: *railsapp_environment
-    depends_on: *railsapp_depends_on
+    depends_on: *railsapp_worker_depends_on
   wos-brain-projection-worker:
     image: orinoco/railsapp
     command: ["bundle", "exec", "rails", "runner", "WosBrainProjectionWorker.new.run"]
     environment: *railsapp_environment
-    depends_on: *railsapp_depends_on
+    depends_on: *railsapp_worker_depends_on
   d2r-observer-capture-worker:
     image: orinoco/railsapp
     command: ["bundle", "exec", "rails", "runner", "D2rObserverCaptureWorker.new.run"]
     environment: *railsapp_environment
-    depends_on: *railsapp_depends_on
+    depends_on: *railsapp_worker_depends_on
   d2r-observer-processor-worker:
     image: orinoco/railsapp
     command: ["bundle", "exec", "rails", "runner", "D2rObserverProcessorWorker.new.run"]
     environment: *railsapp_environment
-    depends_on: *railsapp_depends_on
+    depends_on: *railsapp_worker_depends_on
   d2r-run-projection-worker:
     image: orinoco/railsapp
     command: ["bundle", "exec", "rails", "runner", "D2rRunProjectionWorker.new.run"]
     environment: *railsapp_environment
-    depends_on: *railsapp_depends_on
+    depends_on: *railsapp_worker_depends_on
