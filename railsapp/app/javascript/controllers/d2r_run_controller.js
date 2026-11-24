@@ -3,31 +3,70 @@ import { Controller } from "@hotwired/stimulus"
 // The projection stores timestamps, not a ticking Redis counter. The browser
 // renders elapsed time from server-origin event timestamps.
 export default class extends Controller {
-  static targets = ["elapsed", "level", "area", "difficulty", "terrorZones", "run", "step", "splits", "historyToggle", "historyPanel", "historyPage", "historyList", "historyDetails"]
+  static targets = ["state", "stream", "elapsed", "level", "area", "difficulty", "terrorZones", "run", "step", "splits", "historyToggle", "historyPanel", "historyPage", "historyList", "historyDetails"]
   static values = { url: String, historyUrl: String }
 
   connect() {
     this.historyPageNumber = 1
     this.historyTotal = 0
-    this.tick()
-    this.refresh()
-    this.poll = setInterval(() => this.refresh(), 1000)
+    this.revision = 0
+    this.active = true
+    this.readState()
     this.clock = setInterval(() => this.tick(), 250)
+    this.connectionObserver = new MutationObserver(() => this.connectionChanged())
+    this.connectionObserver.observe(this.streamTarget, { attributes: true, attributeFilter: ["connected"] })
+    this.connectionChanged()
   }
 
   disconnect() {
-    clearInterval(this.poll)
+    this.active = false
     clearInterval(this.clock)
+    this.connectionObserver?.disconnect()
+    this.syncRequest?.abort()
+  }
+
+  stateTargetConnected() {
+    if (this.active) this.readState()
+  }
+
+  readState() {
+    if (!this.hasStateTarget) return
+    this.revision += 1
+    this.state = JSON.parse(this.stateTarget.textContent)
+    this.render()
+  }
+
+  connectionChanged() {
+    if (this.streamTarget.hasAttribute("connected")) {
+      this.refresh()
+    } else {
+      this.syncRequest?.abort()
+    }
   }
 
   async refresh() {
+    this.syncRequest?.abort()
+    const request = new AbortController()
+    this.syncRequest = request
+    const revision = this.revision
     try {
-      const response = await fetch(this.urlValue, { cache: "no-store" })
+      const response = await fetch(this.urlValue, {
+        cache: "no-store",
+        headers: { Accept: "text/vnd.turbo-stream.html" },
+        signal: request.signal
+      })
       if (!response.ok) throw new Error(`D2R state HTTP ${response.status}`)
-      this.state = await response.json()
-      this.render()
+      const html = await response.text()
+      if (this.active && !request.signal.aborted && revision === this.revision) {
+        // Use the same server-rendered fragment as a normal live broadcast.
+        const template = document.createElement("template")
+        template.innerHTML = html
+        const fragment = template.content.querySelector("template")?.content
+        const target = this.element.querySelector("#d2r_live_projection")
+        if (fragment && target) target.replaceWith(fragment.cloneNode(true))
+      }
     } catch (error) {
-      console.warn("[d2r-run] projection unavailable", error)
+      if (error.name !== "AbortError") console.warn("[d2r-run] projection unavailable", error)
     }
   }
 
