@@ -49,7 +49,7 @@
             <td class="whitespace-nowrap px-4 py-3">
               <%= sightings.count { |s| s["kind"] == "rune" } %> runes · <%= sightings.count { |s| s["kind"] == "unique" } %> uniques
             </td>
-            <td class="px-4 py-3"><%= run.ended_at ? "Finished" : "In progress" %></td>
+            <td class="px-4 py-3"><span class="<%= run.outcome == "completed" ? "text-green-400" : run.outcome == "failed" ? "text-red-400" : "text-slate-300" %>"><%= run.outcome.humanize %></span></td>
           </tr>
         <% end %>
       </tbody>
