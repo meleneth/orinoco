@@ -133,6 +133,26 @@ RSpec.describe D2r::ScreenshotEventHandler do
     expect(loot_tracker).to have_received(:observe).with([], observed_at: event.occurred_at)
   end
 
+  it "publishes a menu-confirmed selected character before gameplay begins" do
+    classification["signals"]["screen"]["state"] = "character_select"
+    allow(tracker).to receive(:observe).and_return([])
+    menu_reader = double("menu reader", call: {
+      "name" => "REDACTED", "character_class" => "Sorceress", "level" => 1
+    })
+    handler = described_class.new(
+      config_reader: -> { config }, classifier:, tracker:, hud_reader:, hud_area_reader:, hud_tracker:,
+      ground_label_reader:, loot_tracker:, gate:, character_menu_reader: menu_reader
+    )
+
+    expect(handler.call(event, context)).to eq(:unchanged)
+    expect(handler.call(event, context)).to eq(:changed)
+    expect(context.published.sole).to include(
+      type: "d2r.character.selected",
+      payload: include("name" => "REDACTED", "character_class" => "Sorceress", "level" => 1)
+    )
+    expect(menu_reader).to have_received(:call).with(anything, screen: "character_select").twice
+  end
+
   it "ignores frames from another source" do
     other = Orinoco::Pipeline::Event.build("obs.screenshot.captured", { "sourceName" => "WOS" })
     handler = described_class.new(config_reader: -> { config }, classifier:, tracker:, hud_reader:, hud_area_reader:, hud_tracker:, ground_label_reader:, loot_tracker:, gate:)

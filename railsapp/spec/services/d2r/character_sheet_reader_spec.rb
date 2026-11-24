@@ -19,4 +19,28 @@ RSpec.describe D2r::CharacterSheetReader do
   it "does not invent values when a field is unreadable" do
     expect(described_class.parse_named_numbers("Strength ???", %w[strength vitality])).to be_empty
   end
+
+  it "normalizes D2R glyph substitutions in identity and compact experience text" do
+    text = "REDACTED\n| LeveL | S@RCERESS @ oF 500\n"
+
+    expect(described_class.parse_identity(text)).to eq(
+      "name" => "REDACTED", "level" => 1, "character_class" => "Sorceress"
+    )
+    expect(described_class.parse_experience(text)).to eq(
+      "experience" => 0, "experience_next_level" => 500
+    )
+  end
+
+  it "reads identity, experience, and stats independently from a progression fixture" do
+    path = Pathname(__dir__).join("../../fixtures/files/d2r/progression_character_sheet_holdout.jpg").expand_path
+
+    expect(described_class.new.call(path)).to include(
+      "name" => "REDACTED",
+      "character_class" => "Sorceress",
+      "level" => 1,
+      "experience" => 0,
+      "experience_next_level" => 500,
+      "stats" => include("strength" => 10, "mana" => 35, "fire_resistance" => 0)
+    )
+  end
 end

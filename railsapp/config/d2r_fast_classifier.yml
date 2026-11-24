@@ -17,12 +17,19 @@ groups:
       - e9cce9bce095c613e32fcb2cb68cb693a4e8bca5
       - e9ecf1fcaeb5a613c72f8fecb68cb613a4889c25
       - cd80e1b0f4c8a66026f0bff096c0c3c0a7c8bca4
+      - 6840f120a69ca6d42778bff297b0d734a778bcec
+      - ec40f130b698a6e0b76087f037b0b730e5189ca4
+      - fba2fde8f9e0b7ccee8ac703cb04d39ce398d8a4
       - 7d6cdee4ecb1e0f9f8f9f0fde07de1f9e038dc25
       - cce0f060b470a0f060e8e1f221fee1faa518bc2c
       character_select:
       - 6f0cce3c7c3c7d1c859c80cc76dc76cc74cc748c
+      - 6f0cce3c7e7c7e3c8d9c838c749c754c74cc768c
       character_creation:
       - f306ff16ddc1dae5d348f548ff04ff01ba6c9f4c
+      - f606ff16cde1dbc5d348f548ff04fb01be6c9f4c
+      game_creation:
+      - 6b246f336cd17d317d234f190b382b38276eeaae
       area_banner:
       - 7f51ff44f690f690ff00ff00fe0aded3e558dc2c
       loading_screen:
@@ -36,6 +43,7 @@ groups:
     max_distances:
       character_select: 0.1
       character_creation: 0.1
+      game_creation: 0.1
       loading_screen: 0.05
       death_screen: 0.07
       boss_dead: 0.1
@@ -50,8 +58,12 @@ groups:
       - bfff9fbee7ee78f2ddb6df3ffb9fe37db247f25b
       - a9effbdffddffc0ffc1ffffffff7fec7dac9cea7
       - 3b3f6937f1ef3bbe7137713d713671a53faf3b9f
+      - 3b3f693fb0f73bbe7137713d713c71a53f8c399f
       - bff63de7fa7e7cecf999f9d9fa46df46ee7fb7fa
+      - bf87bfe3fa7efcecf999f999fa46df46ef7fb7fb
+      - de582e3d3d6d3e5d3dcd2bad3afd312dc759c799
       - bff6bfb4fdb3f9eeddd5ffd8ff3192b59ef4fff9
+      - fff3ffe9fffcfdb3ebeff70fed9f6ed7fcb4f9c7
       - bf7ebddff67bad1feba1fcd0ffc8fe0cff00ff00
       - bfffbff97f6dbfddb8dffb6ffeeffebfff6ffeff
       - fffffffffff6ff6fff4fff6fff6fff4fff6ffff2
@@ -67,6 +79,9 @@ groups:
       - 5f7c6e384f9a7cb35c83cf2b587958bb4f834b43
       character:
       - 5e757e505dca4e4a4a4bcd4b4dda49db49e74e4b
+      - 5b7c7e504dca4e4b4e4bce4b4acb495b49674e6f
+      quest_log:
+      - 5f7d7e706b8a678e4f9fe38f6e6e48a747874b4f
       waypoint:
       - 5a4e6e5849aa4b9a4f3adf1a5f9a4f3a5f9a4a52
   right_panel:
@@ -77,8 +92,14 @@ groups:
       - '06522580e8c8e4642d643ed8b17c837c8ae88e81'
       - bffe3ffe1fff07ff02ff10ff03ff077f2bff3e9f
       - 63c3efc1edc1e6c16bd95b990bc80fd80dd091c8
+      - 63c96fc9ecd5e6c1f3c91bd9cf988dc80dd811d0
       - '027804f844ceb04ee6c6c692c582ed8800a1c2b2'
+      - '047804f864ceb04ee6c6c692e702a58800a1c2b2'
+      - 719998db1c1b5da35d235a175a0f570f7f006755
       - 190024009f10c742e8407440f6108600c008c402
+      - 889af0847f808eb09cc844b07d94f9922ce66690
+      - cc04f9047e081f80d825f430f801f90224264e0c
+      - 981cf70ce318316087e804a8021e021126f00748
       - 7003f400b400fa00f110f709f909f968fb68f799
       - cc1bb25b8169d69136c901292287239c236cc69e
       - ffffffffb1ff497f4d7f2d7f6d7f8d7f497f79ff
@@ -102,11 +123,17 @@ groups:
       - bd729a33dcf2f4ba6d8fefdfb793dfa7bbc7dec9
       - cf1fef8fe387e703f683ff03fe07fe87f307cf07
       - ce3e563e3e9e771ec7cec58ec3cec44ed24e764e
+      - ca3e583a7e2e7686c69ec596c786c58edace364e
       - ff8acde4cd66dd66d764d1ecd1a4e7e4bba4ff80
+      - ff8adde4cd66dd66d764d9ecd3a4e7e4ffe4ff80
+      - 4fb9666d64a855ba55bb75b14cf34f1c478cadbc
       - fb55d951d59bdf19f905f5a6e9a6aca6eda679cd
       - a4d5e2d1ca5bcf59b305f3a6cda68da68fa6334d
       - bad5a6d1a65bbf19c305f3a6cba68b26ca26320d
       - f098f66cb664a620867036f897f8b7e093e0db60
+      - f098a69eb26ab668a73a37e8bffc3ffdb6f0db98
+      - 9698b298b64cb670b720b6f8f5f8a2f00ef0339a
+      - fcf0fdf1dbc6b3e6976fe7c2c789c701e306cf9a
       - df71e4f8e67cb07cd87cf878f87cf03ee47ee0bc
       - a628d078a0f8a0f920f460f8f0f1b0f024fff0ff
       - fdc2fea6f658d398cf04ff80fb80ff00ffc5be45

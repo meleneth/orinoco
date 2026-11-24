@@ -6,8 +6,14 @@ fixtures:
   - { file: gameplay_cata2_holdout.jpg, split: holdout, signals: { screen: gameplay, left_panel: none, right_panel: none, tooltip: none } }
   - { file: character_select_train.jpg, split: train, signals: { screen: character_select, left_panel: none, right_panel: none, tooltip: none } }
   - { file: character_select_holdout.jpg, split: holdout, signals: { screen: character_select, left_panel: none, right_panel: none, tooltip: none } }
+  - { file: progression_character_select_train.jpg, split: train, signals: { screen: character_select, left_panel: none, right_panel: none, tooltip: none } }
+  - { file: progression_character_select_holdout.jpg, split: holdout, signals: { screen: character_select, left_panel: none, right_panel: none, tooltip: none } }
   - { file: character_creation_augmented_train.png, split: train, signals: { screen: character_creation, left_panel: none, right_panel: none, tooltip: none } }
   - { file: character_creation_augmented_holdout.png, split: holdout, signals: { screen: character_creation, left_panel: none, right_panel: none, tooltip: none } }
+  - { file: progression_character_creation_train.jpg, split: train, signals: { screen: character_creation, left_panel: none, right_panel: none, tooltip: none } }
+  - { file: progression_character_creation_holdout.jpg, split: holdout, signals: { screen: character_creation, left_panel: none, right_panel: none, tooltip: none } }
+  - { file: progression_game_creation_train.jpg, split: train, signals: { screen: game_creation, left_panel: none, right_panel: none, tooltip: none } }
+  - { file: progression_game_creation_holdout.jpg, split: holdout, signals: { screen: game_creation, left_panel: none, right_panel: none, tooltip: none } }
   - { file: inventory_open_train.jpg, split: train, signals: { screen: gameplay, left_panel: none, right_panel: inventory, tooltip: none } }
   - { file: inventory_open_holdout.jpg, split: holdout, signals: { screen: gameplay, left_panel: stash_other, right_panel: inventory, tooltip: magic } }
   - { file: item_tooltip_white_train.jpg, split: train, signals: { screen: gameplay, left_panel: stash_other, right_panel: inventory, tooltip: white } }
@@ -22,6 +28,13 @@ fixtures:
   - { file: stash_other_holdout.jpg, split: holdout, signals: { screen: gameplay, left_panel: stash_other, right_panel: inventory, tooltip: white } }
   - { file: character_sheet_train.jpg, split: train, signals: { screen: gameplay, left_panel: character, right_panel: none, tooltip: none } }
   - { file: character_sheet_holdout.jpg, split: holdout, signals: { screen: gameplay, left_panel: character, right_panel: none, tooltip: none } }
+  - { file: progression_character_sheet_train.jpg, split: train, signals: { screen: gameplay, left_panel: character, right_panel: none, tooltip: none } }
+  - { file: progression_character_sheet_holdout.jpg, split: holdout, signals: { screen: gameplay, left_panel: character, right_panel: none, tooltip: none } }
+  - { file: progression_quest_log_train.jpg, split: train, signals: { screen: gameplay, left_panel: quest_log, right_panel: none, tooltip: none } }
+  - { file: progression_quest_log_holdout.jpg, split: holdout, signals: { screen: gameplay, left_panel: quest_log, right_panel: none, tooltip: none } }
+  - { file: progression_gameplay_train.jpg, split: train, signals: { screen: gameplay, left_panel: none, right_panel: none, tooltip: none } }
+  - { file: progression_gameplay_holdout.jpg, split: holdout, signals: { screen: gameplay, left_panel: none, right_panel: none, tooltip: none } }
+  - { file: progression_gameplay_high_level_holdout.jpg, split: holdout, signals: { screen: gameplay, left_panel: none, right_panel: none, tooltip: none } }
   - { file: skill_tree_train.jpg, split: train, signals: { screen: gameplay, left_panel: none, right_panel: skill_tree, tooltip: none } }
   - { file: skill_tree_holdout.jpg, split: holdout, signals: { screen: gameplay, left_panel: none, right_panel: skill_tree, tooltip: none } }
   - { file: waypoint_train.jpg, split: train, signals: { screen: gameplay, left_panel: waypoint, right_panel: none, tooltip: none } }

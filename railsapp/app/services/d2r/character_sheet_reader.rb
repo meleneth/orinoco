@@ -36,7 +36,12 @@ module D2r
       return deep_copy(@cached_reading) if fingerprint == @cached_fingerprint
 
       reading = {}
-      merge_identity(reading, ocr(crop(image, REGIONS.fetch(:identity)), psm: 6))
+      identity_text = ocr(crop(image, REGIONS.fetch(:identity)), psm: 6)
+      merge_identity(reading, identity_text)
+      # D2R renders the compact "current of next" XP values on the same row
+      # as level and class. Parse that high-signal crop before the looser
+      # fallback region used by other layouts.
+      merge_experience(reading, identity_text)
       merge_experience(reading, ocr(crop(image, REGIONS.fetch(:experience)), psm: 6))
       merge_stats(reading, ocr(crop(image, REGIONS.fetch(:primary_attributes)), psm: 6), PRIMARY_STATS)
       merge_stats(reading, ocr(crop(image, REGIONS.fetch(:resources)), psm: 6), RESOURCE_STATS)
@@ -50,18 +55,18 @@ module D2r
     end
 
     def self.parse_identity(text)
-      lines = text.to_s.lines.map { |line| clean(line) }.reject(&:empty?)
+      lines = text.to_s.lines.map { |line| clean(normalize_letters(line)) }.reject(&:empty?)
       result = {}
       class_pattern = CLASSES.join("|")
       lines.each_with_index do |line, index|
-        match = line.match(/\bLevel\s+(\d{1,2})\s+(#{class_pattern})\b/i) ||
-          line.match(/\b(#{class_pattern})\s+Level\s+(\d{1,2})\b/i)
+        match = line.match(/\bLevel\s+([\d|Il]{1,2})\s+(#{class_pattern})\b/i) ||
+          line.match(/\b(#{class_pattern})\s+Level\s+([\d|Il]{1,2})\b/i)
         next unless match
 
-        if match[1].match?(/\A\d/)
-          level, character_class = match[1].to_i, match[2]
+        if match[1].match?(/\A[\d|Il]/)
+          level, character_class = normalize_number(match[1]), match[2]
         else
-          character_class, level = match[1], match[2].to_i
+          character_class, level = match[1], normalize_number(match[2])
         end
         next unless (1..99).cover?(level)
 
@@ -76,29 +81,43 @@ module D2r
     def self.parse_experience(text)
       result = {}
       normalized = text.to_s.gsub(",", "")
+        .gsub(/(?<![A-Za-z])[@O](?![A-Za-z])/i, "0")
       if (match = normalized.match(/(?:Current\s+)?Experience\D+(\d{1,12})/i))
         result["experience"] = match[1].to_i
       end
       if (match = normalized.match(/(?:Next\s+Level|Experience\s+Required)\D+(\d{1,12})/i))
         result["experience_next_level"] = match[1].to_i
       end
+      if (match = normalized.match(/(\d{1,12})\s+of\s+(\d{1,12})/i))
+        result["experience"] ||= match[1].to_i
+        result["experience_next_level"] ||= match[2].to_i
+      end
       result
     end
 
     def self.parse_named_numbers(text, names)
+      normalized = text.to_s.gsub(/(?<![A-Za-z])[@O©](?=\s*%)/i, "0")
       names.to_h do |name|
         label = name.tr("_", " ")
-        match = text.to_s.match(/\b#{Regexp.escape(label)}\b\D{0,12}(-?\d{1,7})/i)
+        match = normalized.match(/\b#{Regexp.escape(label)}\b\D{0,12}(-?\d{1,7})/i)
         [ name, match && match[1].to_i ]
       end.compact
     end
 
     def self.clean(value)
-      value.to_s.gsub(/[^A-Za-z0-9_ -]/, " ").strip.gsub(/\s+/, " ")
+      value.to_s.gsub(/[^A-Za-z0-9_| -]/, " ").strip.gsub(/\s+/, " ")
     end
 
     def self.valid_name?(value)
       value&.match?(/\A[A-Za-z][A-Za-z_-]{1,14}\z/)
+    end
+
+    def self.normalize_letters(value)
+      value.to_s.gsub(/(?<=[A-Za-z])[@®0](?=[A-Za-z])/i, "o")
+    end
+
+    def self.normalize_number(value)
+      value.to_s.tr("|Il", "111").to_i
     end
 
     private

@@ -61,7 +61,7 @@ module D2r
 
     def ocr(image, psm:)
       Tempfile.create([ "d2r-character-creation-", ".png" ]) do |file|
-        image.resize(2.0).sharpen.write_to_file(file.path)
+        image.colourspace("b-w").resize(2.0).sharpen.write_to_file(file.path)
         output, status = Open3.capture2(
           "tesseract", file.path, "stdout", "-l", "eng", "--psm", psm.to_s,
           err: File::NULL

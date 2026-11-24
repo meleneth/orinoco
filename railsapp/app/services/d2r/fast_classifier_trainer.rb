@@ -14,6 +14,7 @@ module D2r
     SCREEN_MAX_DISTANCES = {
       "character_select" => 0.10,
       "character_creation" => 0.10,
+      "game_creation" => 0.10,
       "loading_screen" => 0.05,
       "death_screen" => 0.07,
       "boss_dead" => 0.10,

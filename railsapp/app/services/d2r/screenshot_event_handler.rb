@@ -12,6 +12,7 @@ require_relative "state_tracker"
 require_relative "character_sheet_reader"
 require_relative "character_tracker"
 require_relative "character_creation_reader"
+require_relative "character_menu_reader"
 require_relative "character_menu_tracker"
 
 module D2r
@@ -20,7 +21,10 @@ module D2r
 
     def initialize(config_reader:, classifier: FastClassifier.new, tracker: StateTracker.new,
       hud_reader: HudReader.new, hud_area_reader: HudAreaReader.new, hud_tracker: HudTracker.new,
-      ground_label_reader: GroundLabelReader.new, loot_tracker: LootTracker.new, gate: nil, presence: nil, character_reader: nil, character_tracker: CharacterTracker.new)
+      ground_label_reader: GroundLabelReader.new, loot_tracker: LootTracker.new, gate: nil, presence: nil,
+      character_reader: nil, character_tracker: CharacterTracker.new,
+      character_creation_reader: CharacterCreationReader.new, character_menu_reader: CharacterMenuReader.new,
+      character_menu_tracker: CharacterMenuTracker.new)
       @config_reader = config_reader
       @classifier = classifier
       @tracker = tracker
@@ -33,8 +37,9 @@ module D2r
       @presence = presence
       @character_reader = character_reader
       @character_tracker = character_tracker
-      @character_creation_reader = CharacterCreationReader.new
-      @character_menu_tracker = CharacterMenuTracker.new
+      @character_creation_reader = character_creation_reader
+      @character_menu_reader = character_menu_reader
+      @character_menu_tracker = character_menu_tracker
     end
 
     def call(event, context)
@@ -60,8 +65,8 @@ module D2r
         left_panel = result.dig("signals", "left_panel", "state")
         right_panel = result.dig("signals", "right_panel", "state")
         tooltip = result.dig("signals", "tooltip", "state")
-        suppress_labels = %w[loading_screen character_select character_creation death_screen].include?(screen) ||
-          %w[stash_runes stash_other].include?(left_panel) || right_panel == "inventory" ||
+        suppress_labels = %w[loading_screen character_select character_creation game_creation death_screen].include?(screen) ||
+          %w[stash_runes stash_other quest_log].include?(left_panel) || right_panel == "inventory" ||
           (tooltip && tooltip != "none" && tooltip != "unknown")
         labels = if suppress_labels
           []
@@ -71,12 +76,14 @@ module D2r
         character_changes = if screen == "character_creation"
           @character_tracker.reset
           @character_menu_tracker.observe_creation(@character_creation_reader.call(path))
+        elsif %w[character_select game_creation].include?(screen)
+          @character_tracker.reset
+          @character_menu_tracker.observe_selected(@character_menu_reader.call(path, screen:))
         elsif @character_reader && left_panel == "character"
           @character_menu_tracker.reset
           @character_tracker.observe(@character_reader.call(path))
         else
-          @character_tracker.reset if %w[character_select character_creation game_creation].include?(screen)
-          @character_menu_tracker.reset unless screen == "character_creation"
+          @character_menu_tracker.reset unless %w[character_creation character_select game_creation].include?(screen)
           []
         end
         [ result, hud_reading, labels, character_changes ]

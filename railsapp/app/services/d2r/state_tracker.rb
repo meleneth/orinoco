@@ -13,7 +13,8 @@ module D2r
       "death_screen" => "d2r.player.died",
       "loading_screen" => "d2r.loading.started",
       "character_select" => "d2r.character.selection.visible",
-      "character_creation" => "d2r.character.creation.visible"
+      "character_creation" => "d2r.character.creation.visible",
+      "game_creation" => "d2r.game.creation.visible"
     }.freeze
 
     def initialize(window_size: 3, confirmations: 2, immediate_confidence: 0.9)

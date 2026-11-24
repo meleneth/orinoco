@@ -38,6 +38,16 @@ RSpec.describe D2r::StateTracker do
     expect(tracker.observe(classification(screen: "character_creation"))).to be_empty
   end
 
+  it "reports the create-game boundary and arms game lifecycle tracking" do
+    tracker = described_class.new
+    tracker.observe(classification(screen: "game_creation"))
+    events = tracker.observe(classification(screen: "game_creation"))
+
+    expect(events.map { |event| event.fetch("type") }).to include(
+      "d2r.state.changed", "d2r.game.creation.visible"
+    )
+  end
+
   it "requires three consecutive death frames even at high confidence" do
     tracker = described_class.new
 
