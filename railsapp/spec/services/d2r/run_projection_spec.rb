@@ -97,6 +97,16 @@ RSpec.describe D2r::RunProjection do
     expect(state["events"]).to be_empty
   end
 
+  it "keeps confirmed HUD state when a game-start event arrives after field events" do
+    emit("d2r.difficulty.changed", { "difficulty" => "Normal" }, "10:00:00")
+    state = emit("d2r.game.started", {
+      "game_id" => "one", "screen" => "gameplay", "area" => "Blood Moor", "difficulty" => "Normal"
+    }, "10:00:00")
+
+    expect(state).to include("screen" => "gameplay", "area" => "Blood Moor", "difficulty" => "Normal")
+    expect(state.dig("area_step", "name")).to eq("Blood Moor")
+  end
+
   it "derives live area splits and repeat comparisons from detected areas" do
     emit("d2r.game.started", { "game_id" => "one" }, "10:00:00")
     emit("d2r.area.changed", { "area" => "Black Marsh" }, "10:00:01")

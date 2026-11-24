@@ -88,10 +88,11 @@ module D2r
       state["visited_areas"] = []
       state["area_steps"] = []
       state["area_step"] = nil
-      state["area"] = nil
-      state["difficulty"] = nil
-      state["terror_zones"] = []
-      state["screen"] = nil
+      state["area"] = payload["area"]&.to_s
+      state["difficulty"] = payload["difficulty"]&.to_s
+      state["terror_zones"] = Array(payload["terror_zones"]).map(&:to_s)
+      state["screen"] = payload["screen"]&.to_s
+      track_area_step(state, at) if state["area"].present?
     end
 
     def observe_character(state, payload)

@@ -115,6 +115,23 @@ RSpec.describe D2r::ScreenshotEventHandler do
     )
   end
 
+  it "includes the confirmed screen and HUD state on a game boundary" do
+    classification["signals"]["screen"]["state"] = "gameplay"
+    allow(hud_area_reader).to receive(:call).and_return("Blood Moor")
+    allow(tracker).to receive(:observe).and_return([
+      { "type" => "d2r.game.started", "payload" => { "game_id" => "visual-1" } }
+    ])
+    handler = described_class.new(config_reader: -> { config }, classifier:, tracker:, hud_reader:, hud_area_reader:,
+      hud_tracker:, ground_label_reader:, loot_tracker:, gate:)
+
+    handler.call(event, context)
+
+    expect(context.published.first).to include(
+      type: "d2r.game.started",
+      payload: include("screen" => "gameplay", "area" => "Blood Moor", "difficulty" => "Normal")
+    )
+  end
+
   it "emits confirmed rune and unique sightings through the same event stream" do
     classification["signals"]["screen"]["state"] = "gameplay"
     allow(ground_label_reader).to receive(:call).and_return([

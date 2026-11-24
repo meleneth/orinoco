@@ -100,9 +100,16 @@ module D2r
       events.concat(@loot_tracker.observe(loot, observed_at: event.occurred_at))
       events.concat(character_changes || [])
       events.each do |change|
+        payload = change.fetch("payload")
+        if change.fetch("type") == "d2r.game.started"
+          payload = payload.merge(
+            hud.slice("area", "difficulty", "terror_zones"),
+            "screen" => classification.dig("signals", "screen", "state")
+          )
+        end
         context.publish(
           change.fetch("type"),
-          change.fetch("payload").merge(
+          payload.merge(
             "screenshot" => screenshot_metadata(event),
             "classification" => classification.fetch("signals")
           ),
