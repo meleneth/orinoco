@@ -1,0 +1,28 @@
+<% content_for :title, @character.name %>
+<section class="mx-auto max-w-6xl py-8">
+  <%= link_to "← Characters", d2r_characters_path, class: "text-cyan-300" %>
+  <h1 class="mt-4 text-3xl font-semibold text-cyan-300"><%= @character.name %></h1>
+  <p class="mb-4 text-slate-300"><%= @character.character_class %> · Level <%= @character.level || "?" %> · XP <%= @character.experience ? number_with_delimiter(@character.experience) : "Unknown" %></p>
+  <div class="mb-6 grid gap-3 md:grid-cols-3">
+    <% { "In game" => :game_seconds, "Town (included in game)" => :town_seconds, "Between games" => :outside_seconds }.each do |label, key| %>
+      <div class="rounded border border-slate-700 p-4"><div class="text-xs uppercase text-slate-400"><%= label %></div><div class="font-mono text-xl"><%= format("%d:%02d:%02d", @summary[key].to_i / 3600, @summary[key].to_i / 60 % 60, @summary[key].to_i % 60) %></div></div>
+    <% end %>
+  </div>
+  <p class="mb-4 text-xs text-slate-500">Totals include closed games only. <%= @summary[:unknown_games] %> games have no confirmed end; their elapsed time is excluded.</p>
+  <div class="grid gap-4 md:grid-cols-2">
+    <section class="rounded border border-slate-700 p-4"><h2 class="mb-3 font-semibold">Observed stats</h2>
+      <% @character.stats.each do |name, value| %><p><%= name.humanize %>: <%= value %></p><% end %>
+    </section>
+    <section class="rounded border border-slate-700 p-4"><h2 class="mb-3 font-semibold">Game time by activity</h2>
+      <% @summary[:activities].sort_by { |_, seconds| -seconds }.each do |kind, seconds| %><p><%= kind.humanize %>: <%= format("%d:%02d:%02d", seconds.to_i / 3600, seconds.to_i / 60 % 60, seconds.to_i % 60) %></p><% end %>
+    </section>
+    <section class="rounded border border-slate-700 p-4"><h2 class="mb-3 font-semibold">Observed act arrivals</h2>
+      <% @summary[:act_arrivals].each do |act, at| %><p><%= act %> · <%= at %></p><% end %>
+    </section>
+    <section class="rounded border border-slate-700 p-4"><h2 class="mb-3 font-semibold">Recent character observations</h2>
+      <% @observations.each do |observation| %><p class="border-b border-slate-800 py-2 text-sm"><%= l(observation.observed_at, format: :short) %> · Level <%= observation.data["level"] || "?" %> · XP <%= observation.data["experience"] || "?" %></p><% end %>
+    </section>
+  </div>
+  <h2 class="mb-3 mt-6 text-xl font-semibold">Games</h2>
+  <% @runs.limit(100).each do |run| %><p class="border-b border-slate-800 py-2 text-sm"><%= link_to l(run.started_at, format: :short), d2r_log_run_path(run), class: "text-cyan-300" %> · <%= run.run_kind&.humanize || "Unclassified" %> · <%= run.outcome.humanize %></p><% end %>
+</section>
