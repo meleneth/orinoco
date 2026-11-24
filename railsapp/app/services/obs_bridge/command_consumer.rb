@@ -25,7 +25,9 @@ module ObsBridge
       until stop.call
         receive_messages.each do |message|
           request = decode_message_body(message.body)
-          @logger.call("[obs-bridge/command-consumer] received #{command_label(request)}")
+          if ENV.fetch("ORINOCO_LOG_LEVEL", "info").downcase == "debug"
+            @logger.call("[obs-bridge/command-consumer] received #{command_label(request)}")
+          end
           if dispatch_command(request, dispatch)
             delete_message(message)
           elsif disposable_command?(request)
