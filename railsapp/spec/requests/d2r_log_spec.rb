@@ -19,7 +19,7 @@ RSpec.describe "D2R browser run log", type: :request do
   it "renders a navigable, newest-first run listing" do
     get "/d2r/log"
     expect(response).to have_http_status(:ok)
-    expect(response.body).to include("Diablo II", "Countess", "Andy", "browser-countess").or include("Diablo II", "Countess", "Andy")
+    expect(response.body).to include("Diablo II", "Countess", "Andy")
     expect(response.body.index("Countess")).to be < response.body.index("Andy")
   end
 
