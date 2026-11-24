@@ -9,6 +9,8 @@ require_relative "hud_tracker"
 require_relative "loot_tracker"
 require_relative "ground_label_reader"
 require_relative "state_tracker"
+require_relative "character_sheet_reader"
+require_relative "character_tracker"
 
 module D2r
   class ScreenshotEventHandler
@@ -16,7 +18,7 @@ module D2r
 
     def initialize(config_reader:, classifier: FastClassifier.new, tracker: StateTracker.new,
       hud_reader: HudReader.new, hud_area_reader: HudAreaReader.new, hud_tracker: HudTracker.new,
-      ground_label_reader: GroundLabelReader.new, loot_tracker: LootTracker.new, gate: nil, presence: nil)
+      ground_label_reader: GroundLabelReader.new, loot_tracker: LootTracker.new, gate: nil, presence: nil, character_reader: nil, character_tracker: CharacterTracker.new)
       @config_reader = config_reader
       @classifier = classifier
       @tracker = tracker
@@ -27,6 +29,8 @@ module D2r
       @loot_tracker = loot_tracker
       @gate = gate
       @presence = presence
+      @character_reader = character_reader
+      @character_tracker = character_tracker
     end
 
     def call(event, context)
@@ -37,7 +41,7 @@ module D2r
       return :missing_source if source_name.empty?
       return :ignored_source unless event.payload_value("sourceName").to_s == source_name
 
-      classification, hud, loot = with_screenshot_file(event.payload) do |path|
+      classification, hud, loot, character_changes = with_screenshot_file(event.payload) do |path|
         result = @classifier.call(path).to_h
         active = !@presence || @presence.observe(source_name, result)
         next [result, nil, nil] unless active
@@ -60,13 +64,20 @@ module D2r
         else
           @ground_label_reader.call(path)
         end
-        [ result, hud_reading, labels ]
+        character_changes = if @character_reader && left_panel == "character"
+          @character_tracker.observe(@character_reader.call(path))
+        else
+          @character_tracker.reset if %w[character_select character_creation game_creation].include?(screen)
+          []
+        end
+        [ result, hud_reading, labels, character_changes ]
       end
       return :standby if hud.nil?
 
       events = @tracker.observe(classification, observed_at: event.occurred_at)
       events.concat(@hud_tracker.observe(hud, observed_at: event.occurred_at))
       events.concat(@loot_tracker.observe(loot, observed_at: event.occurred_at))
+      events.concat(character_changes || [])
       events.each do |change|
         context.publish(
           change.fetch("type"),
