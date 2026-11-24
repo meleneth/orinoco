@@ -1,0 +1,65 @@
+<% content_for :title, "D2R Run Log" %>
+
+<section class="mx-auto max-w-7xl py-8">
+  <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-semibold text-cyan-300">Diablo II · Run Log</h1>
+      <p class="mt-2 text-sm text-slate-400">Games, inferred routes, splits, and observed loot from the D2R detection stream.</p>
+    </div>
+    <%= link_to "Live overlay", overlay_path, class: "rounded border border-cyan-700 px-3 py-2 text-sm text-cyan-300 hover:bg-slate-800" %>
+  </div>
+
+  <%= form_with url: d2r_log_path, method: :get, class: "mb-5 flex flex-wrap items-end gap-3", data: { turbo_frame: "_top" } do |form| %>
+    <div>
+      <%= form.label :kind, "Run type", class: "mb-1 block text-xs uppercase tracking-wide text-slate-400" %>
+      <%= form.select :kind, options_for_select([["All runs", ""]] + @kinds.map { |kind| [kind.titleize, kind] }, @kind), {}, class: "rounded border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100" %>
+    </div>
+    <%= form.submit "Filter", class: "rounded bg-cyan-800 px-4 py-2 text-sm font-medium text-white hover:bg-cyan-700" %>
+    <% if @kind.present? %>
+      <%= link_to "Clear", d2r_log_path, class: "px-2 py-2 text-sm text-slate-400 hover:text-white" %>
+    <% end %>
+  <% end %>
+
+  <p class="mb-3 text-sm text-slate-400"><%= @total %> games · Page <%= @page %> of <%= @pages %></p>
+  <div class="overflow-x-auto rounded-lg border border-slate-800 bg-slate-950">
+    <table class="min-w-full divide-y divide-slate-800 text-sm">
+      <thead class="bg-slate-900 text-left text-xs uppercase tracking-wide text-slate-400">
+        <tr>
+          <th class="px-4 py-3">Started</th><th class="px-4 py-3">Run</th>
+          <th class="px-4 py-3">Difficulty</th><th class="px-4 py-3">Area</th>
+          <th class="px-4 py-3">Duration</th><th class="px-4 py-3">Loot sightings</th>
+          <th class="px-4 py-3">Status</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-800">
+        <% @runs.each do |run| %>
+          <% sightings = run.loot_sightings || [] %>
+          <tr class="hover:bg-slate-900/70">
+            <td class="whitespace-nowrap px-4 py-3">
+              <%= link_to l(run.started_at, format: :long), d2r_log_run_path(run), class: "font-medium text-cyan-300 hover:underline" %>
+            </td>
+            <td class="px-4 py-3">
+              <%= run.run_kind.presence&.titleize || "Unclassified" %>
+              <% if run.repeated? %><span class="text-xs text-cyan-400">(repeat)</span><% end %>
+              <% if run.run_confidence %><div class="text-xs text-slate-500"><%= (run.run_confidence * 100).round %>% confidence</div><% end %>
+            </td>
+            <td class="px-4 py-3"><%= run.difficulty.presence || "?" %></td>
+            <td class="px-4 py-3"><%= run.area.presence || "Unknown" %></td>
+            <td class="whitespace-nowrap px-4 py-3 font-mono"><%= distance_of_time_in_words(run.started_at, run.ended_at || Time.current) %></td>
+            <td class="whitespace-nowrap px-4 py-3">
+              <%= sightings.count { |s| s["kind"] == "rune" } %> runes · <%= sightings.count { |s| s["kind"] == "unique" } %> uniques
+            </td>
+            <td class="px-4 py-3"><%= run.ended_at ? "Finished" : "In progress" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <% if @runs.empty? %>
+      <p class="p-8 text-center text-slate-400">No recorded games match this filter. Runs appear after confirmed game-start detection.</p>
+    <% end %>
+  </div>
+  <nav class="mt-5 flex justify-between gap-4 text-sm" aria-label="Run log pages">
+    <% if @page > 1 %><%= link_to "← Newer", d2r_log_path(page: @page - 1, kind: @kind.presence), class: "rounded border border-slate-700 px-4 py-2 text-cyan-300" %><% else %><span></span><% end %>
+    <% if @page < @pages %><%= link_to "Older →", d2r_log_path(page: @page + 1, kind: @kind.presence), class: "rounded border border-slate-700 px-4 py-2 text-cyan-300" %><% end %>
+  </nav>
+</section>
