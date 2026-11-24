@@ -2,6 +2,7 @@
 services:
   goaws:
     image: admiralpiett/goaws:v0.5.4
+    command: ["-config", "/etc/goaws/goaws.yaml", "-loglevel", "${GOAWS_LOG_LEVEL:-warn}"]
     ports:
     - "${GOAWS_WEB_PORT}:4100"
     volumes:
