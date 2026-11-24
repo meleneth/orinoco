@@ -70,14 +70,11 @@ module D2r
         left_panel = result.dig("signals", "left_panel", "state")
         right_panel = result.dig("signals", "right_panel", "state")
         tooltip = result.dig("signals", "tooltip", "state")
-        suppress_labels = %w[loading_screen character_select character_creation game_creation death_screen].include?(screen) ||
-          %w[stash_runes stash_other quest_log].include?(left_panel) || right_panel == "inventory" ||
-          (tooltip && tooltip != "none" && tooltip != "unknown")
-        labels = if suppress_labels
-          []
-        else
-          @ground_label_reader.call(path)
-        end
+        gameplay_screen = %w[gameplay area_banner boss_visible boss_dead].include?(screen)
+        ground_labels_visible = gameplay_screen &&
+          !%w[stash_runes stash_other quest_log].include?(left_panel) && right_panel != "inventory" &&
+          (!tooltip || %w[none unknown].include?(tooltip))
+        labels = ground_labels_visible ? @ground_label_reader.call(path) : []
         character_changes = if screen == "character_creation"
           @character_tracker.reset
           @character_menu_tracker.observe_creation(@character_creation_reader.call(path))
