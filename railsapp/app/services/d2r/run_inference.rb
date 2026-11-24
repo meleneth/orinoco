@@ -17,6 +17,9 @@ module D2r
       "diablo" => [ [ "River of Flame", "Chaos Sanctuary" ] ],
       "baal" => [ [ "Worldstone Keep Level 2", "Worldstone Keep Level 3", "Throne of Destruction", "Worldstone Chamber" ] ],
       "cows" => [ [ "Moo Moo Farm" ] ],
+      "tristram" => [["Tristram"]],
+      "tombs" => [["Tal Rasha\u0027s Tomb"]],
+      "pre_tristram" => [["Blood Moor", "Den of Evil", "Cold Plains", "Stony Field", "Dark Wood"]],
       "travincal" => [ [ "Travincal" ] ]
     }.freeze
 
@@ -84,6 +87,8 @@ module D2r
           else
             0.35
           end
+        when "pre_tristram"
+          observed.size >= 2 ? 0.80 : 0.70
         when "andariel"
           observed.include?("Catacombs Level 4") ? 0.98 : 0.65
         when "mephisto", "diablo", "baal"
