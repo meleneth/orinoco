@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+repo_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+source_name="${D2R_CAPTURE_SOURCE:-[Game] Game Capture}"
+frames="${D2R_CAPTURE_FRAMES:-5}"
+interval="${D2R_CAPTURE_INTERVAL:-0.5}"
+states="character_creation,character_select,game_creation,character_sheet,quest_log,gameplay_idle,unrelated_screen"
+
+usage() {
+  cat <<'USAGE'
+Usage: ./d2r_capture_campaign [--source NAME] [--states STATE,...]
+
+Interactively captures stable D2R fixture sessions through OBS. For each prompt:
+  1. Put D2R/OBS on the requested screen and leave it steady.
+  2. Press Enter to capture, s to skip an unavailable screen, or q to stop.
+
+Environment overrides:
+  D2R_CAPTURE_SOURCE    OBS source name (default: [Game] Game Capture)
+  D2R_CAPTURE_FRAMES    Frames per screen (default: 5)
+  D2R_CAPTURE_INTERVAL  Seconds between frames (default: 0.5)
+USAGE
+}
+
+while (($#)); do
+  case "$1" in
+    --source)
+      source_name="${2:?--source requires a value}"
+      shift 2
+      ;;
+    --states)
+      states="${2:?--states requires a value}"
+      shift 2
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $1" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+done
+
+cd "$repo_dir"
+
+echo "D2R capture campaign"
+echo "OBS source: $source_name"
+echo "States: $states"
+echo "Captures: railsapp/tmp/d2r-captures"
+echo
+
+./d2r_capture guide \
+  --source "$source_name" \
+  --states "$states" \
+  --frames "$frames" \
+  --interval "$interval"
+
+./d2r_capture validate railsapp/tmp/d2r-captures
+
+echo
+echo "Capture campaign complete. Send Codex the final validation JSON; it will"
+echo "inspect truth, promote train/holdout fixtures, and run recognizer regressions."
