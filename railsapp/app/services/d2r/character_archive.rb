@@ -7,7 +7,7 @@ require "time"
 module D2r
   class CharacterArchive
     def call(event, state)
-      return unless %w[d2r.character.selected d2r.character.created d2r.character.observed].include?(event.type)
+      return unless %w[d2r.character.selected d2r.character.created d2r.character.observed d2r.level.changed].include?(event.type)
       payload = event.payload
       at = Time.iso8601(event.occurred_at)
       projected = state.fetch("character", {})
@@ -32,7 +32,7 @@ module D2r
         D2rCharacterObservation.find_or_create_by!(fingerprint: fingerprint) do |observation|
           observation.d2r_character = character
           observation.d2r_run = run
-          observation.kind = event.type.delete_prefix("d2r.character.")
+          observation.kind = event.type.delete_prefix("d2r.character.").delete_prefix("d2r.")
           observation.observed_at = at
           observation.data = data
         end
