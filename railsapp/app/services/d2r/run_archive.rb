@@ -4,6 +4,8 @@ require "digest"
 require "json"
 require "time"
 require_relative "drop_archive"
+require_relative "activity_archive"
+require_relative "run_inference"
 
 module D2r
   # Durable history fed by the SAME detector event stream as the live Redis
@@ -29,6 +31,8 @@ module D2r
           record.started_at = Time.iso8601(game.fetch("started_at"))
         end
         run.lock!
+        # Do not extend a finished game with later menu observations.
+        return run if run.ended_at && at > run.ended_at
         # SQS can deliver old observations after newer ones. Keep immutable
         # loot/event evidence even when it is too old to update sticky state.
         fresh = run.last_event_at.nil? || at >= run.last_event_at
@@ -44,8 +48,8 @@ module D2r
           difficulty: state["difficulty"],
           screen: state["screen"],
           terror_zones: state["terror_zones"] || [],
-          steps: state.dig("run", "steps").presence || run.steps,
-          current_step: event.type == "d2r.game.ended" ? {} : (state.dig("run", "step").presence || run.current_step),
+          steps: state["area_steps"].presence || state.dig("run", "steps").presence || run.steps,
+          current_step: event.type == "d2r.game.ended" ? {} : (state["area_step"].presence || state.dig("run", "step").presence || run.current_step),
           last_event_at: at
         } : {}
         # In the absence of an explicit run-step classifier, detected area
@@ -86,6 +90,7 @@ module D2r
             sightings : sightings + [ sighting ])
         end
         run.update!(changes)
+        ActivityArchive.new.call(run) if fresh && (event.type == "d2r.area.changed" || event.type == "d2r.game.ended")
         @drop_archive.call(event, run:) if %w[d2r.loot.rune.sighted d2r.loot.unique.sighted].include?(event.type)
         run
       end
