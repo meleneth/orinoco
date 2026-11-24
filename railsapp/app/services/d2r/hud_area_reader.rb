@@ -10,7 +10,7 @@ module D2r
   # only accepts known game areas and HudTracker still requires two frames.
   class HudAreaReader
     AREA_NAMES = [
-      "Rogue Encampment", "Black Marsh", "Forgotten Tower",
+      "Rogue Encampment", "Lut Gholein", "Kurast Docks", "Pandemonium Fortress", "Harrogath", "Black Marsh", "Forgotten Tower",
       *(1..5).map { |level| "Tower Cellar Level #{level}" },
       "Catacombs Level 2", "Catacombs Level 3", "Catacombs Level 4",
       "Durance of Hate Level 2", "Durance of Hate Level 3",
