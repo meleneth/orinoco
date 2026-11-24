@@ -163,6 +163,23 @@ RSpec.describe D2r::ScreenshotEventHandler do
     expect(loot_tracker).to have_received(:observe).with([], observed_at: event.occurred_at)
   end
 
+  %w[game_creation character_select character_creation loading_screen death_screen unknown].each do |screen|
+    it "does not read ground loot on #{screen} frames" do
+      classification["signals"]["screen"]["state"] = screen
+      allow(tracker).to receive(:observe).and_return([])
+      handler = described_class.new(config_reader: -> { config }, classifier:, tracker:, hud_reader:, hud_area_reader:,
+        hud_tracker:, ground_label_reader:, loot_tracker:, gate:)
+
+      handler.call(event, context)
+
+      expect(ground_label_reader).not_to have_received(:call)
+      expect(loot_tracker).to have_received(:observe).with([], observed_at: event.occurred_at)
+      expect(context.published.map { |item| item.fetch(:type) }).not_to include(
+        "d2r.loot.rune.sighted", "d2r.loot.unique.sighted"
+      )
+    end
+  end
+
   it "publishes a menu-confirmed selected character before gameplay begins" do
     classification["signals"]["screen"]["state"] = "character_select"
     allow(tracker).to receive(:observe).and_return([])
