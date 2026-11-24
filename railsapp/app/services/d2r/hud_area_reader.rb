@@ -17,7 +17,12 @@ module D2r
       "River of Flame", "Chaos Sanctuary",
       "Worldstone Keep Level 2", "Worldstone Keep Level 3",
       "Throne of Destruction", "Worldstone Chamber",
-      "Moo Moo Farm", "Travincal"
+      "Moo Moo Farm", "Travincal", "Blood Moor", "Den of Evil", "Cold Plains", "Stony Field",
+      "Dark Wood", "Tristram", "Canyon of the Magi", "Tal Rasha\u0027s Tomb", "Tal Rasha\u0027s Chamber",
+      "Sewers Level 1", "Sewers Level 2", "Sewers Level 3", "Rocky Waste", "Dry Hills", "Far Oasis",
+      "Lost City", "Valley of Snakes", "Arcane Sanctuary", "Spider Forest", "Great Marsh", "Flayer Jungle",
+      "Lower Kurast", "Kurast Bazaar", "Upper Kurast", "Outer Steppes", "Plains of Despair",
+      "City of the Damned", "Bloody Foothills", "Frigid Highlands", "Arreat Summit"
     ].freeze
 
     def call(path)
