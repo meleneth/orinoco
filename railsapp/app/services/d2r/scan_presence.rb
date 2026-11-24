@@ -8,7 +8,7 @@ module D2r
   # Only the screenshot processor writes observations; the capture worker reads.
   class ScanPresence
     KEY_PREFIX = "orinoco:d2r:observer:presence:"
-    ACTIVE_STATES = %w[gameplay character_select character_creation loading_screen area_banner boss_visible boss_dead death_screen].freeze
+    ACTIVE_STATES = %w[gameplay character_select character_creation game_creation loading_screen area_banner boss_visible boss_dead death_screen].freeze
     UNKNOWN_LIMIT = 6
     LEASE_SECONDS = 120
 
