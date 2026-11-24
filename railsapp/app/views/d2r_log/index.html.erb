@@ -45,7 +45,7 @@
             </td>
             <td class="px-4 py-3"><%= run.difficulty.presence || "?" %></td>
             <td class="px-4 py-3"><%= run.area.presence || "Unknown" %></td>
-            <td class="whitespace-nowrap px-4 py-3 font-mono"><%= distance_of_time_in_words(run.started_at, run.ended_at || Time.current) %></td>
+            <td class="whitespace-nowrap px-4 py-3 font-mono"><%= distance_of_time_in_words(run.started_at, run.ended_at || run.last_event_at || run.started_at) %></td>
             <td class="whitespace-nowrap px-4 py-3">
               <%= sightings.count { |s| s["kind"] == "rune" } %> runes · <%= sightings.count { |s| s["kind"] == "unique" } %> uniques
             </td>
