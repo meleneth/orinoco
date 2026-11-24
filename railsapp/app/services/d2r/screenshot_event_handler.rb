@@ -16,7 +16,7 @@ module D2r
 
     def initialize(config_reader:, classifier: FastClassifier.new, tracker: StateTracker.new,
       hud_reader: HudReader.new, hud_area_reader: HudAreaReader.new, hud_tracker: HudTracker.new,
-      ground_label_reader: GroundLabelReader.new, loot_tracker: LootTracker.new, gate: nil)
+      ground_label_reader: GroundLabelReader.new, loot_tracker: LootTracker.new, gate: nil, presence: nil)
       @config_reader = config_reader
       @classifier = classifier
       @tracker = tracker
@@ -26,6 +26,7 @@ module D2r
       @ground_label_reader = ground_label_reader
       @loot_tracker = loot_tracker
       @gate = gate
+      @presence = presence
     end
 
     def call(event, context)
@@ -38,6 +39,9 @@ module D2r
 
       classification, hud, loot = with_screenshot_file(event.payload) do |path|
         result = @classifier.call(path).to_h
+        active = !@presence || @presence.observe(source_name, result)
+        next [result, nil, nil] unless active
+
         hud_reading = @hud_reader.call(path).except("area")
         # Bitmap references are approximate and can map any unseen/blank label
         # to the nearest Catacombs fixture. Require a known OCR heading for
@@ -58,6 +62,8 @@ module D2r
         end
         [ result, hud_reading, labels ]
       end
+      return :standby if hud.nil?
+
       events = @tracker.observe(classification, observed_at: event.occurred_at)
       events.concat(@hud_tracker.observe(hud, observed_at: event.occurred_at))
       events.concat(@loot_tracker.observe(loot, observed_at: event.occurred_at))
