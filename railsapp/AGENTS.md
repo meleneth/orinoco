@@ -135,6 +135,7 @@ bin/importmap audit
 - This app uses Tailwind via `tailwindcss-rails`.
 - Main Tailwind source: `app/assets/tailwind/application.css`.
 - Built Tailwind output lives in `app/assets/builds/tailwind.css`.
+- Use `./dc_dev css` from the repo root to export cached CSS into the bind-mounted dev tree; `./dc_dev css --force` bypasses cache. See `DEVSETUP.md`. Keep explicit Tailwind source directories and the Dockerfile builder COPY inputs aligned.
 - JavaScript is managed through import maps and Stimulus controllers in `app/javascript/controllers/`.
 
 ## Test Data And External Services
