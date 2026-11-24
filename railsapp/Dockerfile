@@ -28,7 +28,7 @@ ENV RAILS_ENV="production" \
   LD_PRELOAD="/usr/local/lib/libjemalloc.so"
 
 # Throw-away build stage to reduce size of final image
-FROM base AS build
+FROM base AS gems
 
 # Install packages needed to build gems
 RUN apt-get update -qq && \
@@ -44,15 +44,29 @@ RUN bundle install && \
   # -j 1 disable parallel compilation to avoid a QEMU bug: https://github.com/rails/bootsnap/issues/495
   bundle exec bootsnap precompile -j 1 --gemfile
 
-# Copy application code
+# CSS compilation is a separate cacheable build target. Keep unrelated backend
+# sources, screenshots and tests out of this stage.
+FROM gems AS tailwind-builder
+COPY app/assets/tailwind/ app/assets/tailwind/
+COPY app/views/ app/views/
+COPY app/components/ app/components/
+COPY app/javascript/ app/javascript/
+RUN mkdir -p app/assets/builds && \
+  bundle exec tailwindcss -i app/assets/tailwind/application.css -o app/assets/builds/tailwind.css --minify && \
+  test -s app/assets/builds/tailwind.css
+
+FROM gems AS build
 COPY . .
+COPY --from=tailwind-builder /rails/app/assets/builds/tailwind.css /rails/app/assets/builds/tailwind.css
 
 # Precompile bootsnap code for faster boot times.
 # -j 1 disable parallel compilation to avoid a QEMU bug: https://github.com/rails/bootsnap/issues/495
 RUN bundle exec bootsnap precompile -j 1 app/ lib/
 
 # Precompiling assets for production without requiring secret RAILS_MASTER_KEY
-RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
+# Tailwind has already been compiled in its own target; keep Propshaft digesting
+# all assets, but remove only the automatic Tailwind prerequisite.
+RUN SECRET_KEY_BASE_DUMMY=1 bundle exec ruby -e 'require "./config/application"; Rails.application.load_tasks; task = Rake::Task["assets:precompile"]; task.prerequisites.delete("tailwindcss:build"); abort "Missing compiled Tailwind CSS" unless File.size?("app/assets/builds/tailwind.css"); task.invoke'
 
 
 
