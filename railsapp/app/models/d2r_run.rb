@@ -22,7 +22,7 @@ class D2rRun < ApplicationRecord
       character_level: character_level, area: area, difficulty: difficulty,
       terror_zones: terror_zones, steps: steps, current_step: current_step,
       events: include_events ? events : [], screen: screen,
-      duration_seconds: ((ended_at || Time.current) - started_at).round(3)
+      duration_seconds: [ ((ended_at || last_event_at || started_at) - started_at).round(3), 0 ].max
     }
   end
 end
