@@ -13,6 +13,11 @@ module D2r
     RUNE_PATTERN = /\b(#{Regexp.union(LootTracker::RUNES).source})\s+Rune\b/i
     MIN_WORD_CONFIDENCE = 40.0
     MIN_GOLD_PIXELS = 5
+    # Ground labels are read only from the playfield. Chat/system messages
+    # occupy the lower-left, can share unique-item gold, and must never be
+    # considered loot even when OCR drops the chat prefix.
+    CHAT_LEFT_FRACTION = 0.65
+    CHAT_TOP_FRACTION = 0.52
 
     def call(path)
       image = Vips::Image.new_from_file(path.to_s, access: :random)
@@ -21,6 +26,8 @@ module D2r
       top = (image.height * 0.20).round
       height = (image.height * 0.72).round.clamp(1, image.height - top)
       bottom = top + height
+      chat_right = (image.width * CHAT_LEFT_FRACTION).ceil
+      chat_top = (image.height * CHAT_TOP_FRACTION).floor
       tsv, status = Open3.capture2(
         "tesseract", path.to_s, "stdout", "--psm", "11", "-l", "eng", "tsv",
         err: File::NULL
@@ -31,13 +38,19 @@ module D2r
         word_top = row["top"].to_i
         next unless row["level"] == "5" && row["conf"].to_f >= MIN_WORD_CONFIDENCE
         next unless word_top.between?(top, bottom - 1)
+        # Reject any word whose box intersects the untrusted chat region.
+        # Gate before grouping and rune matching, not after OCR interpretation.
+        word_left = row["left"].to_i
+        word_right = word_left + row["width"].to_i
+        word_bottom = word_top + row["height"].to_i
+        next if word_left < chat_right && word_bottom > chat_top
         word = row["text"].to_s.strip
         next if word.empty?
 
         {
           group: %w[page_num block_num par_num line_num].map { |key| row[key] },
           text: word,
-          left: row["left"].to_i,
+          left: word_left,
           top: word_top,
           width: row["width"].to_i,
           height: row["height"].to_i
