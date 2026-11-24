@@ -40,6 +40,7 @@ class AffordanceConfig < ApplicationRecord
         "scenes" => [],
         "screenshot_source_name" => "",
         "interval_seconds" => 0.5,
+        "idle_interval_seconds" => 60,
         "image_width" => 1920,
         "image_height" => 1200,
         "jpeg_quality" => 90
@@ -148,6 +149,7 @@ class AffordanceConfig < ApplicationRecord
       else
         defaults = self.class.default_config_for(:d2r_observer)
         normalized.merge!(
+          "idle_interval_seconds" => bounded_integer(config["idle_interval_seconds"], default: defaults["idle_interval_seconds"], min: 60, max: 300),
           "interval_seconds" => bounded_float(config["interval_seconds"], default: defaults["interval_seconds"], min: 0.2, max: 10.0),
           "image_width" => bounded_integer(config["image_width"], default: defaults["image_width"], min: 160, max: 1920),
           "image_height" => bounded_integer(config["image_height"], default: defaults["image_height"], min: 100, max: 1200),
