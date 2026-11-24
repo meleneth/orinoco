@@ -30,7 +30,7 @@ if [[ "${1:-}" == "css" ]]; then
   shift
   case "${1:-}" in
     "") "${compose[@]}" build tailwind-builder ;;
-    --force) "${compose[@]}" build --no-cache tailwind-builder ;;
+    --force) "${compose[@]}" build --build-arg "TAILWIND_CACHE_BUST=$(date +%s%N)" tailwind-builder ;;
     *) echo "Usage: ./dc_dev css [--force]" >&2; exit 2 ;;
   esac
   exec "${compose[@]}" run --rm --no-deps tailwind-builder
