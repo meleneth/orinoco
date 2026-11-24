@@ -6,7 +6,8 @@ RSpec.describe D2r::RunProjectionHandler do
   let(:projection) { instance_double(D2r::RunProjection) }
   let(:broadcaster) { class_double(Turbo::StreamsChannel) }
   let(:logger) { instance_double(ActiveSupport::Logger, warn: nil) }
-  let(:handler) { described_class.new(projection:, broadcaster:, logger:) }
+  let(:archive) { instance_double(D2r::RunArchive, call: nil) }
+  let(:handler) { described_class.new(projection:, broadcaster:, logger:, archive:) }
   let(:events) do
     5.times.map do |index|
       { "type" => "d2r.area.changed", "at" => "2026-11-22T10:00:0#{index}Z", "message" => "Area #{index}" }
@@ -15,25 +16,42 @@ RSpec.describe D2r::RunProjectionHandler do
 
   it "projects and replaces the live feed with the latest five events" do
     event = instance_double(Orinoco::Pipeline::Event, type: "d2r.area.changed")
+    allow(projection).to receive(:snapshot).and_return("events" => [])
     allow(projection).to receive(:call).with(event).and_return("events" => events)
-    allow(broadcaster).to receive(:broadcast_update_to)
+    allow(broadcaster).to receive(:broadcast_replace_to)
 
     expect(handler.call(event)).to eq("events" => events)
-    expect(broadcaster).to have_received(:broadcast_update_to).with(
+    expect(broadcaster).to have_received(:broadcast_replace_to).with(
       :d2r_events,
-      target: "d2r_event_feed",
+      target: "d2r_live_projection",
       layout: false,
-      renderable: an_instance_of(D2rEventFeedComponent)
+      renderable: an_instance_of(D2rLiveProjectionComponent)
     )
   end
 
   it "does not rebroadcast hidden classifier chatter" do
     event = instance_double(Orinoco::Pipeline::Event, type: "d2r.state.changed")
     allow(projection).to receive(:call).with(event).and_return("events" => events)
-    allow(broadcaster).to receive(:broadcast_update_to)
+    allow(broadcaster).to receive(:broadcast_replace_to)
+
+    allow(projection).to receive(:snapshot).and_return("events" => events, "screen" => "old")
+    handler.call(event)
+
+    expect(broadcaster).not_to have_received(:broadcast_replace_to)
+  end
+  it "broadcasts sticky changes even when the visible event feed is unchanged" do
+    event = instance_double(Orinoco::Pipeline::Event, type: "d2r.difficulty.changed")
+    allow(projection).to receive(:snapshot).and_return("events" => events, "difficulty" => "Normal")
+    allow(projection).to receive(:call).with(event).and_return("events" => events, "difficulty" => "Hell")
+    allow(broadcaster).to receive(:broadcast_replace_to)
 
     handler.call(event)
 
-    expect(broadcaster).not_to have_received(:broadcast_update_to)
+    expect(broadcaster).to have_received(:broadcast_replace_to).with(
+      :d2r_events,
+      target: "d2r_live_projection",
+      layout: false,
+      renderable: an_instance_of(D2rLiveProjectionComponent)
+    )
   end
 end
