@@ -2,6 +2,7 @@
 
 require "timeout"
 require_relative "run_projection"
+require_relative "character_archive"
 
 module D2r
   class RunProjectionHandler
@@ -20,6 +21,7 @@ module D2r
     def call(event)
       state = @projection.call(event)
       @archive.call(event, state)
+      D2r::CharacterArchive.new.call(event, state) if event.type == "d2r.character.observed"
       broadcast_events(state.fetch("events")) unless event.type == "d2r.state.changed"
       state
     end
