@@ -165,7 +165,7 @@ Bootstrap the stack and its canonical OBS scene/source with:
 
 ```sh
 ./dc_dev up -d
-./dc_dev exec -T railsapp bin/rails tailwindcss:build
+./dc_dev css
 ./dc_dev exec -T railsapp bin/rails runner script/interaction_demo_setup.rb
 ```
 
