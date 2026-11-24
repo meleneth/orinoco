@@ -6,6 +6,7 @@ From the project root:
 
 ```bash
 ./dc_dev build
+./dc_dev css
 ./dc_dev up -d
 ./dc_dev ps
 ./dc_dev restart twitch-chat-worker
@@ -16,6 +17,41 @@ This builds the Rails image and starts the development containers.
 The Rails app is available at:
 
 [Docker Orinoco](http://localhost:31050/)
+
+## Cached Tailwind CSS builds
+
+The Dockerfile has an independent `tailwind-builder` target. Its output is
+compiled once per change to the gem dependencies or frontend inputs
+(`app/assets/tailwind`, `app/views`, `app/components`, `app/javascript`).
+Docker reuses that layer on backend-only rebuilds. The final Rails image
+copies the compiled stylesheet and fingerprints assets without compiling
+Tailwind a second time.
+
+Development bind-mounts the application tree, hiding assets baked into the
+image. Export the cached stylesheet to the host with:
+
+```bash
+./dc_dev css
+```
+
+This builds the dedicated container (normally a cache hit) and atomically
+copies the CSS to `railsapp/app/assets/builds/tailwind.css`. No database, web
+server or worker needs to start for this command.
+
+After changing templates, components, JS or Tailwind source, run the same
+command. If the stylesheet is stale despite that, force a fresh build:
+
+```bash
+./dc_dev css --force
+```
+
+The force option bypasses Docker's build cache, including dependency layers,
+so reserve it for troubleshooting. Do not delete the bundle volume or prune
+Docker globally to refresh CSS. For production, rebuilding the Rails image
+automatically consumes the cached Tailwind stage; no host export is needed.
+If adding another source directory for utility classes, update both
+`app/assets/tailwind/application.css` source directives and the Dockerfile
+target's COPY inputs. Keep dynamically generated classes in the safelist.
 
 ## Running on Windows
 
