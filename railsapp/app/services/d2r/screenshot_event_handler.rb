@@ -14,6 +14,8 @@ require_relative "character_tracker"
 require_relative "character_creation_reader"
 require_relative "character_menu_reader"
 require_relative "character_menu_tracker"
+require_relative "experience_bar_reader"
+require_relative "experience_bar_tracker"
 
 module D2r
   class ScreenshotEventHandler
@@ -24,7 +26,8 @@ module D2r
       ground_label_reader: GroundLabelReader.new, loot_tracker: LootTracker.new, gate: nil, presence: nil,
       character_reader: nil, character_tracker: CharacterTracker.new,
       character_creation_reader: CharacterCreationReader.new, character_menu_reader: CharacterMenuReader.new,
-      character_menu_tracker: CharacterMenuTracker.new)
+      character_menu_tracker: CharacterMenuTracker.new, xp_reader: ExperienceBarReader.new,
+      xp_tracker: ExperienceBarTracker.new)
       @config_reader = config_reader
       @classifier = classifier
       @tracker = tracker
@@ -40,6 +43,8 @@ module D2r
       @character_creation_reader = character_creation_reader
       @character_menu_reader = character_menu_reader
       @character_menu_tracker = character_menu_tracker
+      @xp_reader = xp_reader
+      @xp_tracker = xp_tracker
     end
 
     def call(event, context)
@@ -53,7 +58,10 @@ module D2r
       classification, hud, loot, character_changes = with_screenshot_file(event.payload) do |path|
         result = @classifier.call(path).to_h
         active = !@presence || @presence.observe(source_name, result)
-        next [ result, nil, nil ] unless active
+        unless active
+          @xp_tracker.reset_sample
+          next [ result, nil, nil ]
+        end
 
         hud_reading = @hud_reader.call(path).except("area")
         # Bitmap references are approximate and can map any unseen/blank label
@@ -88,6 +96,15 @@ module D2r
           @character_menu_tracker.reset unless %w[character_creation character_select game_creation].include?(screen)
           []
         end
+        prior_level = @xp_tracker.level
+        character_changes.each do |change|
+          @xp_tracker.seed(change.fetch("payload")) if %w[d2r.character.selected d2r.character.observed].include?(change.fetch("type"))
+        end
+        character_changes.reject! do |change|
+          change.fetch("type") == "d2r.level.changed" && change.dig("payload", "level") == prior_level
+        end
+        fill = gameplay_screen ? @xp_reader.call(path) : nil
+        character_changes.concat(@xp_tracker.observe(fill, observed_at: event.occurred_at))
         [ result, hud_reading, labels, character_changes ]
       end
       return :standby if hud.nil?
