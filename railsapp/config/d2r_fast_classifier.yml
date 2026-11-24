@@ -21,6 +21,8 @@ groups:
       - cce0f060b470a0f060e8e1f221fee1faa518bc2c
       character_select:
       - 6f0cce3c7c3c7d1c859c80cc76dc76cc74cc748c
+      character_creation:
+      - f306ff16ddc1dae5d348f548ff04ff01ba6c9f4c
       area_banner:
       - 7f51ff44f690f690ff00ff00fe0aded3e558dc2c
       loading_screen:
@@ -33,6 +35,7 @@ groups:
       - dceffe5f3f0f3703f781ef41ffc1ff63c9e8d8ec
     max_distances:
       character_select: 0.1
+      character_creation: 0.1
       loading_screen: 0.05
       death_screen: 0.07
       boss_dead: 0.1
@@ -47,6 +50,7 @@ groups:
       - bfff9fbee7ee78f2ddb6df3ffb9fe37db247f25b
       - a9effbdffddffc0ffc1ffffffff7fec7dac9cea7
       - 3b3f6937f1ef3bbe7137713d713671a53faf3b9f
+      - bff63de7fa7e7cecf999f9d9fa46df46ee7fb7fa
       - bff6bfb4fdb3f9eeddd5ffd8ff3192b59ef4fff9
       - bf7ebddff67bad1feba1fcd0ffc8fe0cff00ff00
       - bfffbff97f6dbfddb8dffb6ffeeffebfff6ffeff
@@ -73,6 +77,7 @@ groups:
       - '06522580e8c8e4642d643ed8b17c837c8ae88e81'
       - bffe3ffe1fff07ff02ff10ff03ff077f2bff3e9f
       - 63c3efc1edc1e6c16bd95b990bc80fd80dd091c8
+      - '027804f844ceb04ee6c6c692c582ed8800a1c2b2'
       - 190024009f10c742e8407440f6108600c008c402
       - 7003f400b400fa00f110f709f909f968fb68f799
       - cc1bb25b8169d69136c901292287239c236cc69e
@@ -97,6 +102,7 @@ groups:
       - bd729a33dcf2f4ba6d8fefdfb793dfa7bbc7dec9
       - cf1fef8fe387e703f683ff03fe07fe87f307cf07
       - ce3e563e3e9e771ec7cec58ec3cec44ed24e764e
+      - ff8acde4cd66dd66d764d1ecd1a4e7e4bba4ff80
       - fb55d951d59bdf19f905f5a6e9a6aca6eda679cd
       - a4d5e2d1ca5bcf59b305f3a6cda68da68fa6334d
       - bad5a6d1a65bbf19c305f3a6cba68b26ca26320d

@@ -163,6 +163,10 @@ module VisualObserver
           reference_width: video.fetch("baseWidth"),
           reference_height: video.fetch("baseHeight")
         ).fetch("rect")
+      rescue Calibration::Invalid
+        # OBS reports zero source dimensions for some inactive or hooked Game
+        # Capture sources even though GetSourceScreenshot remains available.
+        nil
       end
 
       def validate!(state:, source_name:, frame_count:, interval:, confirmed:)

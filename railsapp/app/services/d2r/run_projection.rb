@@ -2,6 +2,7 @@
 
 require "json"
 require "time"
+require "digest"
 require_relative "run_inference"
 
 module D2r
@@ -36,9 +37,8 @@ module D2r
         choose_run(state, payload, at)
       when "d2r.run.step"
         advance_step(state, payload, at)
-      when "d2r.character.observed"
-        state["character"] = payload.slice("name", "character_class", "level", "experience", "stats")
-        state["level"] = payload["level"] if payload["level"]
+      when "d2r.character.selected", "d2r.character.created", "d2r.character.observed"
+        observe_character(state, payload)
       when "d2r.level.changed"
         state["level"] = Integer(payload.fetch("level"))
       when "d2r.area.changed"
@@ -92,8 +92,26 @@ module D2r
       state["difficulty"] = nil
       state["terror_zones"] = []
       state["screen"] = nil
-      state["character"] = nil
-      state["level"] = nil
+    end
+
+    def observe_character(state, payload)
+      fields = %w[
+        identity_key name character_class level experience experience_next_level
+        unspent_attribute_points stats ladder hardcore expansion season observed_created_at
+      ]
+      previous = state["character"] || {}
+      identity_key = payload["identity_key"]
+      if identity_key.blank? && previous.slice("name", "character_class") == payload.slice("name", "character_class")
+        identity_key = previous["identity_key"]
+      end
+      identity_key ||= fallback_identity_key(state, payload)
+      state["character"] = previous.merge(payload.slice(*fields)).merge("identity_key" => identity_key)
+      state["level"] = payload["level"] if payload["level"]
+    end
+
+    def fallback_identity_key(state, payload)
+      seed = [ state.dig("game", "id"), payload["name"], payload["character_class"] ]
+      "visual-session-#{Digest::SHA256.hexdigest(JSON.generate(seed)).first(24)}"
     end
 
     def track_area_step(state, at)

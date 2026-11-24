@@ -38,6 +38,21 @@ RSpec.describe D2r::RunProjection do
     expect(state.dig("game", "started_at")).to eq("2026-11-22T10:00:00.000000Z")
   end
 
+  it "carries a pre-game selected identity into the next game" do
+    emit("d2r.character.selected", {
+      "identity_key" => "roster-slot-2",
+      "name" => "Hextract",
+      "character_class" => "Paladin",
+      "level" => 90
+    }, "09:59:58")
+    state = emit("d2r.game.started", { "game_id" => "selected-game" }, "10:00:00")
+
+    expect(state.fetch("character")).to include(
+      "identity_key" => "roster-slot-2", "name" => "Hextract", "level" => 90
+    )
+    expect(state["level"]).to eq(90)
+  end
+
   it "marks consecutive matching runs and records separate step durations" do
     emit("d2r.game.started", { "game_id" => "one" }, "10:00:00")
     emit("d2r.run.selected", { "kind" => "countess" }, "10:00:01")
@@ -87,7 +102,7 @@ RSpec.describe D2r::RunProjection do
     emit("d2r.area.changed", { "area" => "Black Marsh" }, "10:00:01")
     emit("d2r.area.changed", { "area" => "Forgotten Tower" }, "10:00:11")
     state = emit("d2r.area.changed", { "area" => "Tower Cellar Level 1" }, "10:00:21")
-    expect(state.dig("run", "steps").map { |step| [step["name"], step["seconds"]] }).to eq([
+    expect(state.dig("run", "steps").map { |step| [ step["name"], step["seconds"] ] }).to eq([
       [ "Black Marsh", 10.0 ], [ "Forgotten Tower", 10.0 ]
     ])
     emit("d2r.game.ended", {}, "10:00:31")
@@ -95,7 +110,7 @@ RSpec.describe D2r::RunProjection do
     emit("d2r.area.changed", { "area" => "Black Marsh" }, "10:01:01")
     state = emit("d2r.area.changed", { "area" => "Forgotten Tower" }, "10:01:10")
     expect(state.dig("run", "repeated")).to eq(true)
-    expect(state.dig("run", "previous_steps").map { |step| step["seconds"] }).to eq([10.0, 10.0, 10.0])
+    expect(state.dig("run", "previous_steps").map { |step| step["seconds"] }).to eq([ 10.0, 10.0, 10.0 ])
   end
 
   it "infers a Countess run and renders named loot notifications" do

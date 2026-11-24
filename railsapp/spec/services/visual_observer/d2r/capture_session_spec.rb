@@ -81,6 +81,35 @@ RSpec.describe VisualObserver::D2r::CaptureSession do
     end
   end
 
+  it "captures a Game Capture source when OBS reports unusable transform dimensions" do
+    Dir.mktmpdir do |root|
+      session = FakeD2rSession.new(png)
+      allow(session).to receive(:apply_request).and_wrap_original do |original, request|
+        if request.fetch("requestType") == "GetSceneItemTransform"
+          { "sceneItemTransform" => { "sourceWidth" => 0.0, "sourceHeight" => 0.0 } }
+        else
+          original.call(request)
+        end
+      end
+      capture = described_class.new(
+        session_runner: FakeD2rRunner.new(session), output_root: root,
+        sleeper: ->(_seconds) { }
+      )
+
+      path = capture.capture(
+        state: "character_select", source_name: "D2R", frame_count: 1,
+        interval: 0, confirmed: true
+      )
+      manifest = JSON.parse(path.read)
+
+      expect(manifest.dig("obs", "source_dimensions")).to be_nil
+      expect(manifest.dig("calibration", "geometry")).to be_nil
+      expect(session.screenshot_requests).to contain_exactly(
+        "sourceName" => "D2R", "imageFormat" => "png", "imageCompressionQuality" => -1
+      )
+    end
+  end
+
   it "rejects unconfirmed captures and unsafe sampling bounds" do
     capture = described_class.new(session_runner: FakeD2rRunner.new(nil), output_root: "/unused")
 

@@ -21,7 +21,7 @@ module D2r
     def call(event)
       state = @projection.call(event)
       @archive.call(event, state)
-      D2r::CharacterArchive.new.call(event, state) if event.type == "d2r.character.observed"
+      D2r::CharacterArchive.new.call(event, state) if event.type.start_with?("d2r.character.")
       broadcast_events(state.fetch("events")) unless event.type == "d2r.state.changed"
       state
     end
