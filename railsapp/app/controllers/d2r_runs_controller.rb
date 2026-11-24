@@ -19,7 +19,17 @@ class D2rRunsController < ApplicationController
   end
 
   def show
-    render json: D2r::RunProjection.new(redis: redis).snapshot
+    state = D2r::RunProjection.new(redis: redis).snapshot
+    respond_to do |format|
+      format.json { render json: state }
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.replace(
+          "d2r_live_projection",
+          renderable: D2rLiveProjectionComponent.new(state: state)
+        )
+      end
+      format.html { render json: state }
+    end
   end
 
   private
