@@ -1,8 +1,16 @@
-#!/bin/bash -e
+#!/bin/bash
+set -euo pipefail
 
-# If running the rails server then create or migrate existing database
-if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
-  ./bin/rails db:prepare
-fi
+# The web container owns database preparation. Recognize the server command
+# even when Thruster wraps Rails and server flags follow the subcommand.
+for ((i = 1; i < $#; i++)); do
+  if [[ "${!i}" == "./bin/rails" || "${!i}" == "bin/rails" || "${!i}" == "rails" ]]; then
+    next=$((i + 1))
+    if [[ "${!next}" == "server" || "${!next}" == "s" ]]; then
+      ./bin/rails db:prepare
+      break
+    fi
+  fi
+done
 
-exec "${@}"
+exec "$@"
