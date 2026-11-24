@@ -7,6 +7,7 @@ source_name="${D2R_CAPTURE_SOURCE:-[Game] Game Capture}"
 frames="${D2R_CAPTURE_FRAMES:-5}"
 interval="${D2R_CAPTURE_INTERVAL:-0.5}"
 states="character_creation,character_select,game_creation,character_sheet,quest_log,gameplay_idle,unrelated_screen"
+output="${D2R_CAPTURE_BUNDLE:-$repo_dir/d2r-progression-captures.tar.gz}"
 
 usage() {
   cat <<'USAGE'
@@ -20,6 +21,7 @@ Environment overrides:
   D2R_CAPTURE_SOURCE    OBS source name (default: [Game] Game Capture)
   D2R_CAPTURE_FRAMES    Frames per screen (default: 5)
   D2R_CAPTURE_INTERVAL  Seconds between frames (default: 0.5)
+  D2R_CAPTURE_BUNDLE    Output archive path
 USAGE
 }
 
@@ -61,6 +63,8 @@ echo
 
 ./d2r_capture validate railsapp/tmp/d2r-captures
 
+# Include capture sessions only, never OBS credentials or environment files.
+tar -czf "$output" -C railsapp/tmp d2r-captures
 echo
-echo "Capture campaign complete. Send Codex the final validation JSON; it will"
-echo "inspect truth, promote train/holdout fixtures, and run recognizer regressions."
+echo "Upload this archive for recognizer calibration: $output"
+echo "It contains captured screenshots and their manifests. Review before sharing."
