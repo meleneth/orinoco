@@ -90,12 +90,12 @@ module D2r
       return [] unless group == "screen"
 
       events = []
-      if current == "character_select"
+      if %w[character_select character_creation game_creation].include?(current)
         events << { "type" => "d2r.game.ended", "payload" => payload } if @game_lifecycle == :in_game
         @game_lifecycle = :armed
       elsif current == "loading_screen" && @game_lifecycle == :armed
         @game_lifecycle = :entry_loading
-      elsif previous == "loading_screen" && @game_lifecycle == :entry_loading
+      elsif previous == "loading_screen" && @game_lifecycle == :entry_loading && %w[gameplay area_banner boss_visible boss_dead death_screen].include?(current)
         @game_lifecycle = :in_game
         events << {
           "type" => "d2r.game.started",
