@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "../services/d2r/capture_gate"
+require_relative "../services/d2r/scan_presence"
 require_relative "../services/d2r/screenshot_request_loop"
 require_relative "../services/interaction_demo/obs_command_publisher"
 require_relative "../services/interaction_demo/obs_setup"
@@ -28,6 +29,7 @@ class D2rObserverCaptureWorker
       config_reader: -> { AffordanceConfig.fetch!(:d2r_observer) },
       publisher: screenshot_publisher,
       gate: gate,
+      presence: D2r::ScanPresence.new(redis: Redis.new(url: config.scoreboard.redis_url)),
       bridge_available: -> { obs_bridge_ready? },
       logger: ->(message) { Rails.logger.warn(message) }
     )
