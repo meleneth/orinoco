@@ -20,7 +20,16 @@ module D2r
       return {} unless rect
 
       image = Vips::Image.new_from_file(path.to_s, access: :random)
-      CharacterSheetReader.parse_identity(ocr(crop(image, rect)))
+      reading = CharacterSheetReader.parse_identity(ocr(crop(image, rect)))
+      return reading if screen != "game_creation" || %w[name character_class level].all? { |key| reading[key] }
+
+      # The lobby's name and level/class are separate, tightly spaced rows.
+      name = ocr(crop(image, [ 0.4492, 0.6000, 0.1035, 0.0234 ]), psm: 7).strip
+      summary = ocr(crop(image, [ 0.4395, 0.621875, 0.1221, 0.01875 ]), psm: 7, contrast: true)
+      summary = summary.sub(/\bLev(?:er|en|et)\b/i, "Level")
+      fallback = CharacterSheetReader.parse_identity("#{name}\n#{summary}")
+      reading.merge(fallback)
+
     rescue Vips::Error, Errno::ENOENT
       {}
     end
@@ -35,11 +44,21 @@ module D2r
       image.crop(left, top, width, height)
     end
 
-    def ocr(image)
+    def ocr(image, psm: 6, contrast: false)
       Tempfile.create([ "d2r-character-menu-", ".png" ]) do |file|
-        image.colourspace("b-w").resize(4.0).sharpen.write_to_file(file.path)
+        prepared = image.colourspace("b-w").resize(4.0)
+        if contrast
+          low, high = prepared.min, prepared.max
+          return "" unless high > low
+
+          prepared = (255 - (prepared - low) * (255.0 / (high - low))).cast("uchar")
+          prepared = prepared.embed(15, 15, prepared.width + 30, prepared.height + 30, extend: :white)
+        else
+          prepared = prepared.sharpen
+        end
+        prepared.write_to_file(file.path)
         output, status = Open3.capture2(
-          "tesseract", file.path, "stdout", "-l", "eng", "--psm", "6",
+          "tesseract", file.path, "stdout", "-l", "eng", "--psm", psm.to_s,
           err: File::NULL
         )
         status.success? ? output : ""
