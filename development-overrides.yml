@@ -1,5 +1,17 @@
 ---
 services:
+  tailwind-builder:
+    image: orinoco/tailwind-builder
+    profiles: ["tools"]
+    build:
+      context: ./railsapp
+      target: tailwind-builder
+      network: ${ORINOCO_BUILD_NETWORK:-default}
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    entrypoint: ["/bin/sh", "-ec"]
+    command: ["mkdir -p /output && cp /rails/app/assets/builds/tailwind.css /output/tailwind.css.tmp && mv /output/tailwind.css.tmp /output/tailwind.css"]
+    volumes:
+      - ./railsapp/app/assets/builds:/output
   orinoco-db:
     environment:
     - POSTGRES_DB=${ORINOCO_DB_POSTGRES_DB}
