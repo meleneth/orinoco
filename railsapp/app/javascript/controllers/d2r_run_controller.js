@@ -10,6 +10,7 @@ export default class extends Controller {
     this.historyPageNumber = 1
     this.historyTotal = 0
     this.revision = 0
+    this.streamConnected = false
     this.active = true
     this.readState()
     this.clock = setInterval(() => this.tick(), 250)
@@ -32,16 +33,17 @@ export default class extends Controller {
   readState() {
     if (!this.hasStateTarget) return
     this.revision += 1
-    this.state = JSON.parse(this.stateTarget.textContent)
+    this.stateText = this.stateTarget.textContent
+    this.state = JSON.parse(this.stateText)
     this.render()
   }
 
   connectionChanged() {
-    if (this.streamTarget.hasAttribute("connected")) {
-      this.refresh()
-    } else {
-      this.syncRequest?.abort()
-    }
+    const connected = this.streamTarget.hasAttribute("connected")
+    if (connected === this.streamConnected) return
+    this.streamConnected = connected
+    if (connected) this.refresh()
+    else this.syncRequest?.abort()
   }
 
   async refresh() {
@@ -57,8 +59,9 @@ export default class extends Controller {
       })
       if (!response.ok) throw new Error(`D2R state HTTP ${response.status}`)
       const html = await response.text()
-      if (this.active && !request.signal.aborted && revision === this.revision) {
+      if (this.active && !request.signal.aborted && revision === this.revision && this.streamTarget.hasAttribute("connected")) {
         // Use the same server-rendered fragment as a normal live broadcast.
+        if (this.stateTarget.textContent !== this.stateText) return
         const template = document.createElement("template")
         template.innerHTML = html
         const fragment = template.content.querySelector("template")?.content
