@@ -51,8 +51,8 @@ module D2r
           low, high = prepared.min, prepared.max
           return "" unless high > low
 
-          prepared = (255 - (prepared - low) * (255.0 / (high - low))).cast("uchar")
-          prepared = prepared.embed(15, 15, prepared.width + 30, prepared.height + 30, extend: :white)
+          prepared = ((prepared - low) * (-255.0 / (high - low)) + 255).cast("uchar")
+          prepared = prepared.embed(15, 15, prepared.width + 30, prepared.height + 30, extend: :background, background: [255])
         else
           prepared = prepared.sharpen
         end
