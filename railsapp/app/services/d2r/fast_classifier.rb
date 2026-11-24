@@ -11,6 +11,9 @@ module D2r
       end
     end
 
+    LOBBY_LOGO_HASH = "0ecf18e77cd16cc9ce8c6aa4ce249e833f031f0f"
+    LOBBY_LOGO_MAX_DISTANCE = 0.12
+
     def initialize(model_path: default_model_path, fingerprinter: FastFingerprint.new, clock: -> { Process.clock_gettime(Process::CLOCK_MONOTONIC) })
       @model = YAML.safe_load_file(model_path)
       @fingerprinter = fingerprinter
@@ -24,6 +27,10 @@ module D2r
         result = classify_group(fingerprints.fetch(config.fetch("roi")), config)
         result = classify_fallback(fingerprints, config.fetch("fallback")) if result.fetch("state") == "unknown" && config["fallback"]
         [ group, result ]
+      end
+      if (logo = fingerprints["lobby_logo"]) && (distance = @fingerprinter.distance(logo, LOBBY_LOGO_HASH)) <= LOBBY_LOGO_MAX_DISTANCE
+        signals["screen"] = { "state" => "game_creation", "distance" => distance.round(4),
+          "confidence" => (1.0 - distance).round(4), "margin" => 0.0, "fallback" => "lobby_logo" }
       end
       Classification.new(signals:, elapsed_ms: ((@clock.call - started_at) * 1_000).round(3))
     end
