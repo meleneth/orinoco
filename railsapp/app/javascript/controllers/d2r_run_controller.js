@@ -96,7 +96,7 @@ export default class extends Controller {
         button.className = "w-full rounded border border-slate-700 p-2 text-left hover:border-cyan-600"
         const runes = (run.loot_sightings || []).filter(sighting => sighting.kind === "rune")
         const uniques = (run.loot_sightings || []).filter(sighting => sighting.kind === "unique")
-        button.textContent = `${new Date(run.started_at).toLocaleString()} · ${run.run_kind || "Unclassified"} · ${run.area || "Unknown area"} · ${this.format(run.duration_seconds)} · ${runes.length} runes · ${uniques.length} uniques`
+        button.textContent = `${new Date(run.started_at).toLocaleString()} · ${run.run_kind || "Unclassified"} · ${run.outcome?.replaceAll("_", " ") || "unknown"} · ${run.area || "Unknown area"} · ${this.format(run.duration_seconds)} · ${runes.length} runes · ${uniques.length} uniques`
         button.addEventListener("click", () => this.showHistoryRun(run))
         item.append(button)
         return item
@@ -122,6 +122,7 @@ export default class extends Controller {
       `Started: ${new Date(run.started_at).toLocaleString()}`,
       `Ended: ${run.ended_at ? new Date(run.ended_at).toLocaleString() : "In progress"}`,
       `Run: ${run.run_kind || "Unclassified"}${run.repeated ? " (repeat)" : ""}`,
+      `Outcome: ${run.outcome?.replaceAll("_", " ") || "unknown"}`,
       `Confidence: ${run.run_confidence == null ? "Not classified" : `${Math.round(run.run_confidence * 100)}%`}`,
       `Evidence: ${(run.run_evidence || []).join(" → ") || "None"}`,
       `Level: ${run.character_level ?? "?"} · Difficulty: ${run.difficulty || "?"}`,
