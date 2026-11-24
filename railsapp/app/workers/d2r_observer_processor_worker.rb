@@ -29,6 +29,7 @@ class D2rObserverProcessorWorker
     handler = D2r::ScreenshotEventHandler.new(
       config_reader: -> { AffordanceConfig.fetch!(:d2r_observer) },
       gate: D2r::CaptureGate.new(redis: Redis.new(url: config.scoreboard.redis_url)),
+      character_reader: D2r::CharacterSheetReader.new,
       presence: D2r::ScanPresence.new(redis: Redis.new(url: config.scoreboard.redis_url))
     )
 
