@@ -31,6 +31,9 @@ module D2r
       truth = YAML.safe_load_file(truth_path)
       groups = GROUP_ROIS.transform_values { |roi| { "roi" => roi, "max_distance" => 0.28, "templates" => {} } }
       groups.fetch("screen")["max_distances"] = SCREEN_MAX_DISTANCES
+      groups.fetch("screen")["fallback"] = {
+        "roi" => "game_hud", "state" => "gameplay", "max_distance" => 0.18, "templates" => []
+      }
 
       truth.fetch("fixtures").select { |fixture| fixture.fetch("split") == "train" }.each do |fixture|
         fingerprints = @fingerprinter.call(File.join(fixture_root, fixture.fetch("file")))
@@ -39,6 +42,10 @@ module D2r
           templates = config.fetch("templates")
           templates[state] ||= []
           templates.fetch(state) << fingerprints.fetch(config.fetch("roi"))
+        end
+        if fixture.dig("signals", "screen") == "gameplay"
+          fallback = groups.fetch("screen").fetch("fallback")
+          fallback.fetch("templates") << fingerprints.fetch(fallback.fetch("roi"))
         end
       end
 

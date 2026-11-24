@@ -102,6 +102,19 @@ RSpec.describe D2r::ScreenshotEventHandler do
     )
   end
 
+  it "infers Normal when an OCR-confirmed area has no difficulty row" do
+    allow(hud_area_reader).to receive(:call).and_return("Blood Moor")
+    allow(tracker).to receive(:observe).and_return([])
+    handler = described_class.new(config_reader: -> { config }, classifier:, tracker:, hud_reader:, hud_area_reader:,
+      hud_tracker:, ground_label_reader:, loot_tracker:, gate:)
+
+    handler.call(event, context)
+
+    expect(hud_tracker).to have_received(:observe).with(
+      { "area" => "Blood Moor", "difficulty" => "Normal" }, observed_at: event.occurred_at
+    )
+  end
+
   it "emits confirmed rune and unique sightings through the same event stream" do
     classification["signals"]["screen"]["state"] = "gameplay"
     allow(ground_label_reader).to receive(:call).and_return([
@@ -146,7 +159,8 @@ RSpec.describe D2r::ScreenshotEventHandler do
 
     expect(handler.call(event, context)).to eq(:unchanged)
     expect(handler.call(event, context)).to eq(:changed)
-    expect(context.published.sole).to include(
+    expect(context.published.size).to eq(1)
+    expect(context.published.first).to include(
       type: "d2r.character.selected",
       payload: include("name" => "REDACTED", "character_class" => "Sorceress", "level" => 1)
     )

@@ -29,15 +29,15 @@ module D2r
       image = Vips::Image.new_from_file(path.to_s)
       left = (image.width * 0.79).round.clamp(0, image.width - 1)
       width = image.width - left
-      # Only the first physical HUD line is the current area. Cropping the
-      # larger text block lets difficulty modifiers or terror-zone names move
-      # into the first OCR line whenever the area heading is absent.
-      height = (image.height * 0.05).round.clamp(1, image.height)
+      # The game name can occupy the first line, with the current area directly
+      # below it. Keep the crop above NPC labels and the difficulty/terror-zone
+      # block so those cannot become area candidates.
+      height = (image.height * 0.09).round.clamp(1, image.height)
       roi = image.crop(left, 0, width, height).resize(2.0)
       Tempfile.create([ "d2r-area-", ".png" ]) do |file|
         roi.write_to_file(file.path)
         output, status = Open3.capture2(
-          "tesseract", file.path, "stdout", "-l", "eng", "--psm", "7",
+          "tesseract", file.path, "stdout", "-l", "eng", "--psm", "6",
           err: File::NULL
         )
         return nil unless status.success?
@@ -56,10 +56,11 @@ module D2r
       end
       return nil if lines.empty?
 
-      # The area heading is the first OCR line. Later lines contain difficulty,
-      # monster modifiers, and terror-zone names; considering those as area
-      # candidates can turn the terror-zone list into a false area change.
-      heading = lines.first
+      # Current captures put the game name before the area. The crop is kept
+      # above the difficulty and terror-zone rows, so use the second line when
+      # the first is the game-name label.
+      heading = lines.first.match?(/\bgame\b/) ? lines[1] : lines.first
+      return nil unless heading
 
       # Prefer longest names so a complete 'Level 5' cannot match a shorter
       # prefix of the same label.
@@ -70,19 +71,39 @@ module D2r
       end
       return exact if exact
 
-      areas.filter_map do |area|
+      matches = areas.filter_map do |area|
         target = normalize_text(area)
-        next if (heading.length - target.length).abs > 3
+        candidate = best_token_window(heading, target)
+        next unless candidate
 
-        distance = edit_distance(heading, target)
-        next unless distance <= [ 1, (target.length * 0.12).ceil ].max
+        distance = edit_distance(ocr_signature(candidate), ocr_signature(target))
+        limit = [ 1, (ocr_signature(target).length * 0.18).ceil ].max
+        [ area, distance ] if distance <= limit
+      end
+      best, runner_up = matches.sort_by { |(_, distance)| distance }.first(2)
+      return nil if best && runner_up && best.last == runner_up.last && best.first != runner_up.first
 
-        [ area, distance ]
-      end.min_by(&:last)&.first
+      best&.first
     end
 
     def self.normalize_text(value)
       value.to_s.downcase.tr("@®", "oo").gsub(/[^a-z0-9]+/, " ").strip.gsub(/\s+/, " ")
+    end
+
+    def self.best_token_window(heading, target)
+      words = heading.split
+      target_words = target.split.length
+      windows = ((target_words - 1).clamp(1, target_words)..(target_words + 1)).flat_map do |length|
+        words.each_cons(length).map { |parts| parts.join(" ") }
+      end
+      windows.min_by { |candidate| edit_distance(ocr_signature(candidate), ocr_signature(target)) }
+    end
+
+    # Exocet's round glyphs are frequently interchanged by OCR (for example,
+    # "Blood Moor" becomes "BLe@eo Meer"). A vowel-family signature keeps the
+    # known-area match strict on consonants while tolerating those substitutions.
+    def self.ocr_signature(value)
+      normalize_text(value).tr("aeiou0", "vvvvvv").gsub(/v+/, "v")
     end
 
     def self.edit_distance(left, right)

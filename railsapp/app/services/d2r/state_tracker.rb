@@ -106,6 +106,19 @@ module D2r
             "observed_at" => payload.fetch("observed_at")
           }
         }
+      elsif previous.nil? && @game_lifecycle == :outside && %w[gameplay area_banner boss_visible boss_dead death_screen].include?(current)
+        # A worker can restart while the player remains in game. Recover the
+        # lifecycle from the first confirmed gameplay state instead of waiting
+        # for another character-select/loading boundary.
+        @game_lifecycle = :in_game
+        events << {
+          "type" => "d2r.game.started",
+          "payload" => {
+            "game_id" => "visual-#{payload.fetch("observed_at")}",
+            "boundary" => "observer_started_in_game",
+            "observed_at" => payload.fetch("observed_at")
+          }
+        }
       end
       events
     end

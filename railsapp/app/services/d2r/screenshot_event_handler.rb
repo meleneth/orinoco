@@ -60,7 +60,12 @@ module D2r
         # to the nearest Catacombs fixture. Require a known OCR heading for
         # area changes; bitmap features still supply difficulty/terror zones.
         inferred_area = @hud_area_reader.call(path)
-        hud_reading["area"] = inferred_area if inferred_area
+        if inferred_area
+          hud_reading["area"] = inferred_area
+          # D2R omits the difficulty row in Normal games; Nightmare and Hell
+          # render an explicit row which HudReader recognizes independently.
+          hud_reading["difficulty"] ||= "Normal"
+        end
         screen = result.dig("signals", "screen", "state")
         left_panel = result.dig("signals", "left_panel", "state")
         right_panel = result.dig("signals", "right_panel", "state")

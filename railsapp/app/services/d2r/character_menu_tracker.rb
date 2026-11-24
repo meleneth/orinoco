@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "active_support/core_ext/object/blank"
+
 module D2r
   class CharacterMenuTracker
     def initialize(confirmations: 2)

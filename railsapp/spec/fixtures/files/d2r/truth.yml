@@ -4,6 +4,8 @@ fixtures:
   - { file: gameplay_idle_holdout.jpg, split: holdout, signals: { screen: gameplay, left_panel: none, right_panel: none, tooltip: none } }
   - { file: gameplay_cata2_train.jpg, split: train, signals: { screen: gameplay, left_panel: none, right_panel: none, tooltip: none } }
   - { file: gameplay_cata2_holdout.jpg, split: holdout, signals: { screen: gameplay, left_panel: none, right_panel: none, tooltip: none } }
+  - { file: gameplay_blood_moor_normal_train.jpg, split: train, signals: { screen: gameplay, left_panel: none, right_panel: none, tooltip: none } }
+  - { file: gameplay_blood_moor_normal_holdout.jpg, split: holdout, signals: { screen: gameplay, left_panel: none, right_panel: unknown, tooltip: unknown } }
   - { file: character_select_train.jpg, split: train, signals: { screen: character_select, left_panel: none, right_panel: none, tooltip: none } }
   - { file: character_select_holdout.jpg, split: holdout, signals: { screen: character_select, left_panel: none, right_panel: none, tooltip: none } }
   - { file: progression_character_select_train.jpg, split: train, signals: { screen: character_select, left_panel: none, right_panel: none, tooltip: none } }

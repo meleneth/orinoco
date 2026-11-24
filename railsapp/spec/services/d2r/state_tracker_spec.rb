@@ -84,6 +84,18 @@ RSpec.describe D2r::StateTracker do
     )
   end
 
+  it "recovers an active game when the observer starts during gameplay" do
+    tracker = described_class.new
+    tracker.observe(classification(screen: "gameplay"), observed_at: "2026-11-23T04:00:03Z")
+    events = tracker.observe(classification(screen: "gameplay"), observed_at: "2026-11-23T04:00:04Z")
+
+    started = events.find { |event| event.fetch("type") == "d2r.game.started" }
+    expect(started.fetch("payload")).to include(
+      "game_id" => "visual-2026-11-23T04:00:04Z",
+      "boundary" => "observer_started_in_game"
+    )
+  end
+
   it "does not mistake an in-game loading transition for a new game" do
     tracker = described_class.new
     tracker.observe(classification(screen: "loading_screen"))

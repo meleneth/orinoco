@@ -19,6 +19,14 @@ RSpec.describe D2r::HudAreaReader do
 
     expect(described_class.parse(text)).to eq("Tower Cellar Level 5")
     expect(described_class.parse("TewerR CELLAR LEVEL 5")).to eq("Tower Cellar Level 5")
+    expect(described_class.parse("GAME: STARTINGAGAIN\nBLe@eo Meer")).to eq("Blood Moor")
+  end
+
+  it "reads an area below the game-name line from a Normal-game capture" do
+    fixture = Pathname(__dir__).join("../../fixtures/files/d2r/gameplay_blood_moor_normal_holdout.jpg").expand_path
+    reading = described_class.new.call(fixture)
+
+    expect(reading).to eq("Blood Moor")
   end
 
   it "does not confuse a listed terror zone for the current area" do

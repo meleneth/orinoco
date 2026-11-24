@@ -10,6 +10,7 @@ groups:
       gameplay:
       - 7f88fd649864e924ef9ebf0fbfceded0a4c8dc24
       - 9c9fbf3fcf0fcf07fe07fe0ff60fc33be518dc2c
+      - fd82fc80f680e6b0f590ff00ff30f1f0f5a8d8a4
       - 7dc8f3bcdb35dd13e96fe94cf98cf893e468dc25
       - e94de9bc0eb39933a92b792c2f9cb613a4a89ca5
       - e9cce9b80e979819a909790c2f0cb613a4a89ca5
@@ -50,6 +51,26 @@ groups:
       area_banner: 0.15
       boss_visible: 0.18
       gameplay: 0.22
+    fallback:
+      roi: game_hud
+      state: gameplay
+      max_distance: 0.18
+      templates:
+      - a6e8a66cb62c9d249ae4dca4dc24d8a4d8a4d8c4
+      - a5d8a5f8f4ecfd24dbe4dca4dca4d8a4daa4daa4
+      - a4a8a52cb6ecbb249aa4d8a4d8a4d8a4d8a4daa4
+      - a488a4ccb4ec9d249ae4dca5dca5d8a7d8a7d8c7
+      - a688a4a8b4ec9f249ae49ca55ca5d8a7d8e75ac7
+      - a688a6acb4ac9f249ae49ca55ca5d8a7d8e75ac7
+      - a688a6a8b4ecbd249ae4dca55ca5d8a7d8e75ac7
+      - a688a4c8b4ecbd249ae4dca55ca5d8a7d8e75ac7
+      - a688a688b4acbb249ae49ca55ca5d8a7d8e75ac7
+      - a548a7ccb6ccbd249ae4dca45ca4d8a4d8a458c4
+      - a588a4a8b4ecbf249be4dce45ca4d8e4d8e458e4
+      - a588a588b6acbd049be4dca45ca4d8a4d8a458e4
+      - a348a308b7ecbd049be4dca4dca4d8a4d8a4d8e4
+      - a528a528b4acbd24dae4dca5dca5d8a7d8a7d8c7
+      - a758a75cb5acbf249ae49ca45ca4d8a4d8a458c4
   left_panel:
     roi: left_panel
     max_distance: 0.28
@@ -57,6 +78,7 @@ groups:
       none:
       - bfff9fbee7ee78f2ddb6df3ffb9fe37db247f25b
       - a9effbdffddffc0ffc1ffffffff7fec7dac9cea7
+      - 7bdefbecfdeefb5bff87ff84df7ff7f7ff6fdfe6
       - 3b3f6937f1ef3bbe7137713d713671a53faf3b9f
       - 3b3f693fb0f73bbe7137713d713c71a53f8c399f
       - bff63de7fa7e7cecf999f9d9fa46df46ee7fb7fa
@@ -91,6 +113,7 @@ groups:
       none:
       - '06522580e8c8e4642d643ed8b17c837c8ae88e81'
       - bffe3ffe1fff07ff02ff10ff03ff077f2bff3e9f
+      - 2616099488d02d827880583005305910fc64de80
       - 63c3efc1edc1e6c16bd95b990bc80fd80dd091c8
       - 63c96fc9ecd5e6c1f3c91bd9cf988dc80dd811d0
       - '027804f844ceb04ee6c6c692c582ed8800a1c2b2'
@@ -122,6 +145,7 @@ groups:
       none:
       - bd729a33dcf2f4ba6d8fefdfb793dfa7bbc7dec9
       - cf1fef8fe387e703f683ff03fe07fe87f307cf07
+      - de40d640e2dce750f370f498ef8af704fb11ff9a
       - ce3e563e3e9e771ec7cec58ec3cec44ed24e764e
       - ca3e583a7e2e7686c69ec596c786c58edace364e
       - ff8acde4cd66dd66d764d1ecd1a4e7e4bba4ff80

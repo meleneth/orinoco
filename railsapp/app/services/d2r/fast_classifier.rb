@@ -21,7 +21,9 @@ module D2r
       started_at = @clock.call
       fingerprints = @fingerprinter.call(path)
       signals = @model.fetch("groups").to_h do |group, config|
-        [ group, classify_group(fingerprints.fetch(config.fetch("roi")), config) ]
+        result = classify_group(fingerprints.fetch(config.fetch("roi")), config)
+        result = classify_fallback(fingerprints, config.fetch("fallback")) if result.fetch("state") == "unknown" && config["fallback"]
+        [ group, result ]
       end
       Classification.new(signals:, elapsed_ms: ((@clock.call - started_at) * 1_000).round(3))
     end
@@ -40,6 +42,15 @@ module D2r
       margin = second.fetch("distance") - best.fetch("distance")
       confidence = ((1.0 - best.fetch("distance")) * 0.8) + ([ margin, 0.0 ].max * 0.2)
       best.merge("state" => state, "confidence" => confidence.clamp(0.0, 1.0).round(4), "margin" => margin.round(4))
+    end
+
+    def classify_fallback(fingerprints, config)
+      actual = fingerprints.fetch(config.fetch("roi"))
+      distance = config.fetch("templates").map { |template| @fingerprinter.distance(actual, template) }.min
+      state = distance && distance <= config.fetch("max_distance") ? config.fetch("state") : "unknown"
+      confidence = distance ? (1.0 - distance).clamp(0.0, 1.0).round(4) : 0.0
+      { "state" => state, "distance" => distance&.round(4), "confidence" => confidence, "margin" => 0.0,
+        "fallback" => config.fetch("roi") }
     end
 
     def default_model_path
