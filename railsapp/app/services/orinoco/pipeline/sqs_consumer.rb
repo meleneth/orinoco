@@ -38,7 +38,7 @@ module Orinoco
         @logger.call("[pipeline/#{@definition.name}] invalid message left for retry: #{e.class}: #{e.message}")
         :failed
       rescue StandardError => e
-        @logger.call("[pipeline/#{@definition.name}] handler failed; message left for retry: #{e.class}: #{e.message}")
+        @logger.call("[pipeline/#{@definition.name}] handler failed; message left for retry: #{e.class}: #{e.message}\n#{Array(e.backtrace).first(12).join("\n")}")
         :failed
       end
 
