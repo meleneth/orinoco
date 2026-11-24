@@ -1,0 +1,4 @@
+<div id="d2r_live_projection">
+  <span hidden data-d2r-run-target="state"><%= state.to_json %></span>
+  <%= render D2rEventFeedComponent.new(events: state.fetch("events", [])) %>
+</div>
