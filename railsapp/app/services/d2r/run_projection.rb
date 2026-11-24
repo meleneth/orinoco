@@ -36,6 +36,9 @@ module D2r
         choose_run(state, payload, at)
       when "d2r.run.step"
         advance_step(state, payload, at)
+      when "d2r.character.observed"
+        state["character"] = payload.slice("name", "character_class", "level", "experience", "stats")
+        state["level"] = payload["level"] if payload["level"]
       when "d2r.level.changed"
         state["level"] = Integer(payload.fetch("level"))
       when "d2r.area.changed"
@@ -89,6 +92,8 @@ module D2r
       state["difficulty"] = nil
       state["terror_zones"] = []
       state["screen"] = nil
+      state["character"] = nil
+      state["level"] = nil
     end
 
     def track_area_step(state, at)
