@@ -5,10 +5,11 @@
     <div>
       <h1 class="text-3xl font-semibold text-cyan-300"><%= @run.run_kind.presence&.titleize || "Unclassified run" %></h1>
       <p class="mt-2 text-sm text-slate-400"><%= l(@run.started_at, format: :long) %> · <%= @run.difficulty.presence || "Unknown difficulty" %> · Level <%= @run.character_level || "?" %></p>
+      <% if @run.d2r_character %><%= link_to @run.d2r_character.name, d2r_character_path(@run.d2r_character), class: "text-sm text-cyan-300" %><% end %>
       <p class="mt-1 break-all font-mono text-xs text-slate-500">Game ID: <%= @run.game_id %></p>
     </div>
     <div class="text-right">
-      <div class="font-mono text-xl"><%= distance_of_time_in_words(@run.started_at, @run.ended_at || Time.current) %></div>
+      <div class="font-mono text-xl"><%= distance_of_time_in_words(@run.started_at, @run.ended_at || @run.last_event_at || @run.started_at) %></div>
       <div class="text-xs text-slate-400"><%= @run.outcome.humanize %> · Game <%= @run.ended_at ? "ended" : "open" %><%= @run.repeated? ? " · Repeat run" : "" %></div>
     </div>
   </header>
