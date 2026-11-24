@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
 ENV_FILE="development.env"
 COMPOSE_FILE="compose/development-compose.yml"
@@ -25,4 +25,15 @@ if [[ "$OSTYPE" != "msys" && "$OSTYPE" != "win32" ]]; then
 	fi
 fi
 
-exec docker compose --env-file development.env -f development-compose.yml -f development-overrides.yml "$@"
+compose=(docker compose --env-file development.env -f development-compose.yml -f development-overrides.yml)
+if [[ "${1:-}" == "css" ]]; then
+  shift
+  case "${1:-}" in
+    "") "${compose[@]}" build tailwind-builder ;;
+    --force) "${compose[@]}" build --no-cache tailwind-builder ;;
+    *) echo "Usage: ./dc_dev css [--force]" >&2; exit 2 ;;
+  esac
+  exec "${compose[@]}" run --rm --no-deps tailwind-builder
+fi
+
+exec "${compose[@]}" "$@"
