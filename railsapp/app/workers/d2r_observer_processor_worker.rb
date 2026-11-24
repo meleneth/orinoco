@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "../services/d2r/capture_gate"
+require_relative "../services/d2r/scan_presence"
 require_relative "../services/d2r/screenshot_event_handler"
 require_relative "../services/orinoco/pipeline"
 
@@ -27,7 +28,8 @@ class D2rObserverProcessorWorker
   def definition
     handler = D2r::ScreenshotEventHandler.new(
       config_reader: -> { AffordanceConfig.fetch!(:d2r_observer) },
-      gate: D2r::CaptureGate.new(redis: Redis.new(url: config.scoreboard.redis_url))
+      gate: D2r::CaptureGate.new(redis: Redis.new(url: config.scoreboard.redis_url)),
+      presence: D2r::ScanPresence.new(redis: Redis.new(url: config.scoreboard.redis_url))
     )
 
     @definition ||= Orinoco::Pipeline.processor(:d2r_observer) do
