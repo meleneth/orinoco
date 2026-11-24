@@ -5,7 +5,7 @@ module D2r
     ACT_TOWNS = { "Rogue Encampment" => 1, "Lut Gholein" => 2, "Kurast Docks" => 3,
       "Pandemonium Fortress" => 4, "Harrogath" => 5 }.freeze
 
-    def self.call(runs, now: Time.current)
+    def self.call(runs)
       result = { game_seconds: 0.0, town_seconds: 0.0, outside_seconds: 0.0,
         activities: Hash.new(0.0), act_arrivals: {}, unknown_games: 0 }
       previous_end = nil
