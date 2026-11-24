@@ -21,6 +21,7 @@ Rails.application.routes.draw do
   get  "clip_show/get_scenes"
   get  "clip_show" => "clip_show#get_scenes", as: :clip_show
   get  "overlay" => "overlay#show", as: :overlay
+  resources :d2r_characters, path: "d2r/characters", only: [:index, :show]
   get  "d2r/log" => "d2r_log#index", as: :d2r_log
   get  "d2r/log/:id" => "d2r_log#show", as: :d2r_log_run
   get  "d2r/run" => "d2r_runs#show", as: :d2r_run
