@@ -45,8 +45,8 @@ command. If the stylesheet is stale despite that, force a fresh build:
 ./dc_dev css --force
 ```
 
-The force option bypasses Docker's build cache, including dependency layers,
-so reserve it for troubleshooting. Do not delete the bundle volume or prune
+The force option invalidates only the Tailwind compilation layer, preserving
+the installed gem and OS dependency layers. Do not delete the bundle volume or prune
 Docker globally to refresh CSS. For production, rebuilding the Rails image
 automatically consumes the cached Tailwind stage; no host export is needed.
 If adding another source directory for utility classes, update both
