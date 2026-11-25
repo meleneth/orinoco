@@ -29,11 +29,19 @@ compose=(docker compose --env-file development.env -f development-compose.yml -f
 if [[ "${1:-}" == "css" ]]; then
   shift
   case "${1:-}" in
-    "") "${compose[@]}" build tailwind-builder ;;
+    "")
+      if [[ -s railsapp/app/assets/builds/tailwind.css ]]; then
+        echo "Reusing existing Tailwind CSS (use ./dc_dev css --force to rebuild)."
+        exit 0
+      fi
+      if ! docker image inspect orinoco/tailwind-builder >/dev/null 2>&1; then
+        "${compose[@]}" build tailwind-builder
+      fi
+      ;;
     --force) "${compose[@]}" build --build-arg "TAILWIND_CACHE_BUST=$(date +%s%N)" tailwind-builder ;;
     *) echo "Usage: ./dc_dev css [--force]" >&2; exit 2 ;;
   esac
-  exec "${compose[@]}" run --rm --no-deps tailwind-builder
+  exec "${compose[@]}" run --rm --no-deps --no-build tailwind-builder
 fi
 
 exec "${compose[@]}" "$@"
