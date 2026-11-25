@@ -42,4 +42,13 @@ RSpec.describe D2r::HudAreaReader do
   it "does not manufacture an area from unrecognized text" do
     expect(described_class.parse("some unmatched hud fragments")).to be_nil
   end
+
+  it "reads the Throne heading when OCR attaches noise to the game label" do
+    expect(described_class.parse("wemGAME: Example\nTHRONE #F DESTRUCTIGN")).to eq("Throne of Destruction")
+  end
+
+  it "does not infer Sewers from a generic level suffix" do
+    expect(described_class.parse("Ruins Level 3")).to be_nil
+    expect(described_class.parse("Sewers Level 30")).to be_nil
+  end
 end
