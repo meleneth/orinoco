@@ -34,4 +34,29 @@ RSpec.describe D2r::ScreenshotRequestLoop do
     expect(loop_service.run_once).to eq(:in_flight)
     expect(publisher).to have_received(:publish!).once
   end
+
+  it "forces scanning while presence says the game is absent and reports every decision" do
+    config = double("config", enabled?: true, screenshot_source_name: "D2R",
+      config: { "idle_interval_seconds" => 60, "interval_seconds" => 0.5 })
+    event = double("event", correlation: { "request_id" => "req-2" })
+    publisher = double("publisher", publish!: event)
+    gate = double("gate", pending?: false, requested!: nil)
+    presence = double("presence", active?: false)
+    control = double("control", mode: "auto", record_capture: nil)
+    now = 100.0
+    loop_service = described_class.new(config_reader: -> { config }, publisher:, gate:,
+      presence:, observer_control: control, clock: -> { now })
+
+    expect(loop_service.run_once).to eq(:requested)
+    now += 1.0
+    expect(loop_service.run_once).to eq(:standby)
+    allow(control).to receive(:mode).and_return("force_on")
+    expect(loop_service.run_once).to eq(:requested)
+    allow(control).to receive(:mode).and_return("force_off")
+    expect(loop_service.run_once).to eq(:force_off)
+    expect(publisher).to have_received(:publish!).twice
+    expect(control).to have_received(:record_capture).with(reason: :standby, source: "D2R")
+    expect(control).to have_received(:record_capture).with(reason: :force_off, source: "D2R")
+  end
+
 end
