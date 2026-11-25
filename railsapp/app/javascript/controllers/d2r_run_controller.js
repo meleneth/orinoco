@@ -1,9 +1,11 @@
 import { Controller } from "@hotwired/stimulus"
 
+const TERROR_ROTATION_MINUTES = 30
+
 // The projection stores timestamps, not a ticking Redis counter. The browser
 // renders elapsed time from server-origin event timestamps.
 export default class extends Controller {
-  static targets = ["state", "stream", "elapsed", "level", "area", "difficulty", "terrorZones", "run", "step", "splits", "historyToggle", "historyPanel", "historyPage", "historyList", "historyDetails"]
+  static targets = ["state", "stream", "elapsed", "level", "area", "difficulty", "terrorZones", "terrorCountdown", "terrorEmpty", "run", "step", "splits", "historyToggle", "historyPanel", "historyPage", "historyList", "historyDetails"]
   static values = { url: String, historyUrl: String }
 
   connect() {
@@ -78,7 +80,15 @@ export default class extends Controller {
     this.levelTarget.textContent = state.level ?? "?"
     this.areaTarget.textContent = state.area || "Unknown area"
     this.difficultyTarget.textContent = state.difficulty || "?"
-    this.terrorZonesTarget.textContent = state.terror_zones?.join(" · ") || "No active zones"
+    const zones = state.terror_zones || []
+    this.terrorZonesTarget.replaceChildren(...zones.map(zone => {
+      const item = document.createElement("li")
+      item.textContent = zone
+      return item
+    }))
+    this.terrorZonesTarget.hidden = zones.length === 0
+    this.terrorCountdownTarget.hidden = zones.length === 0
+    this.terrorEmptyTarget.hidden = zones.length > 0
     const run = state.run
     this.runTarget.textContent = run ? `${run.kind}${run.repeated ? " (repeat)" : ""}` : "Unclassified run"
     this.stepTarget.textContent = run?.step?.name || "No active step"
@@ -93,13 +103,19 @@ export default class extends Controller {
   }
 
   tick() {
+    const now = Date.now()
+    if (!this.terrorCountdownTarget.hidden) {
+      const minutes = TERROR_ROTATION_MINUTES - (Math.floor(now / 60_000) % TERROR_ROTATION_MINUTES)
+      const countdown = `${minutes} min left`
+      if (this.terrorCountdownTarget.textContent !== countdown) this.terrorCountdownTarget.textContent = countdown
+    }
     const game = this.state?.game
-    const end = game?.ended_at ? Date.parse(game.ended_at) : Date.now()
+    const end = game?.ended_at ? Date.parse(game.ended_at) : now
     this.elapsedTarget.textContent = game?.started_at
       ? this.format(Math.max(0, (end - Date.parse(game.started_at)) / 1000))
       : "00:00"
     const step = this.state?.run?.step
-    if (step) this.stepTarget.textContent = `${step.name} · ${this.format(Math.max(0, (Date.now() - Date.parse(step.started_at)) / 1000))}`
+    if (step) this.stepTarget.textContent = `${step.name} · ${this.format(Math.max(0, (now - Date.parse(step.started_at)) / 1000))}`
   }
 
 

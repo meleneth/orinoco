@@ -8,7 +8,14 @@
     <span class="text-slate-400">Level</span><span data-d2r-run-target="level">?</span>
     <span class="text-slate-400">Area</span><span data-d2r-run-target="area">Unknown area</span>
     <span class="text-slate-400">Difficulty</span><span data-d2r-run-target="difficulty">?</span>
-    <span class="text-slate-400">Terror</span><span data-d2r-run-target="terrorZones">No active zones</span>
+    <div class="text-slate-400">
+      <span>Terror</span>
+      <div class="text-xs tabular-nums" data-d2r-run-target="terrorCountdown" hidden></div>
+    </div>
+    <div>
+      <span data-d2r-run-target="terrorEmpty">No active zones</span>
+      <ul data-d2r-run-target="terrorZones" aria-label="Terror zones" hidden></ul>
+    </div>
     <span class="text-slate-400">Run</span><span data-d2r-run-target="run">Unclassified run</span>
     <span class="text-slate-400">Step</span><span class="font-mono" data-d2r-run-target="step">No active step</span>
   </div>
