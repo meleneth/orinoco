@@ -7,7 +7,9 @@ module D2r
   class CaptureGate
     KEY = "orinoco:d2r:observer:capture:pending"
 
-    def initialize(redis:, stale_after: 2.0, clock: -> { Time.now.utc })
+    # A first read of a character sheet runs several OCR passes before the
+    # processor acknowledges the frame. Keep that work covered by the gate.
+    def initialize(redis:, stale_after: 30.0, clock: -> { Time.now.utc })
       @redis = redis
       @stale_after = Float(stale_after)
       @clock = clock

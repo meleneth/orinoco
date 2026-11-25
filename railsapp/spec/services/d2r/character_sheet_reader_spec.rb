@@ -43,4 +43,14 @@ RSpec.describe D2r::CharacterSheetReader do
       "stats" => include("strength" => 10, "mana" => 35, "fire_resistance" => 0)
     )
   end
+
+  it "recovers the name from a separate crop when the identity OCR includes panel borders" do
+    path = Pathname(__dir__).join("../../fixtures/files/d2r/progression_character_sheet_holdout.jpg").expand_path
+    reader = described_class.new
+    allow(reader).to receive(:ocr).and_return("| REDACTED iss :\n| Level 38 S@RCERESS", "REDACTED", "")
+
+    expect(reader.call(path)).to include(
+      "name" => "REDACTED", "character_class" => "Sorceress", "level" => 38
+    )
+  end
 end

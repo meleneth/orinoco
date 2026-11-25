@@ -14,6 +14,7 @@ module D2r
     PANEL = [ 0.055, 0.09, 0.36, 0.70 ].freeze
     REGIONS = {
       identity: [ 0.08, 0.16, 0.30, 0.09 ],
+      name: [ 0.101, 0.17, 0.22, 0.027 ],
       experience: [ 0.08, 0.205, 0.30, 0.07 ],
       primary_attributes: [ 0.08, 0.265, 0.14, 0.38 ],
       resources: [ 0.22, 0.25, 0.17, 0.40 ],
@@ -38,6 +39,10 @@ module D2r
       reading = {}
       identity_text = ocr(crop(image, REGIONS.fetch(:identity)), psm: 6)
       merge_identity(reading, identity_text)
+      if reading["level"] && !reading["name"]
+        name = self.class.clean(self.class.normalize_letters(ocr(crop(image, REGIONS.fetch(:name)), psm: 7)))
+        reading["name"] = name if self.class.valid_name?(name)
+      end
       # D2R renders the compact "current of next" XP values on the same row
       # as level and class. Parse that high-signal crop before the looser
       # fallback region used by other layouts.
