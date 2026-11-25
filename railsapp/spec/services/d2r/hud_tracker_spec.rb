@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "spec_helper"
+require "active_support/core_ext/enumerable"
 require "d2r/hud_tracker"
 
 RSpec.describe D2r::HudTracker do
@@ -29,11 +30,28 @@ RSpec.describe D2r::HudTracker do
     tracker.observe(reading, observed_at: "one")
     expect(tracker.observe(reading, observed_at: "two").size).to eq(1)
 
-    tracker.reset_difficulty
+    tracker.reset_game
 
     expect(tracker.observe(reading, observed_at: "three")).to be_empty
     expect(tracker.observe(reading, observed_at: "four").sole).to include(
       "type" => "d2r.difficulty.changed", "payload" => include("difficulty" => "Normal")
+    )
+  end
+
+  it "publishes the same terror rotation again after a game starts with a blank HUD" do
+    tracker = described_class.new
+    zones = [ "Tamoe Highland", "Pit", "Monastery Gate", "Outer Cloister" ]
+    reading = { "terror_zones" => zones }
+    tracker.observe(reading, observed_at: "one")
+    expect(tracker.observe(reading, observed_at: "two").sole).to include(
+      "type" => "d2r.terror_zones.changed"
+    )
+
+    tracker.reset_game
+    expect(tracker.observe({ "terror_zones" => [] }, observed_at: "three")).to be_empty
+    expect(tracker.observe(reading, observed_at: "four")).to be_empty
+    expect(tracker.observe(reading, observed_at: "five").sole).to include(
+      "type" => "d2r.terror_zones.changed", "payload" => include("terror_zones" => zones)
     )
   end
 end

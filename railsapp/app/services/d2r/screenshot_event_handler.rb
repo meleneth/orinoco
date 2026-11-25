@@ -130,7 +130,7 @@ module D2r
 
       events = @tracker.observe(classification, observed_at: event.occurred_at)
       new_game = events.any? { |change| change.fetch("type") == "d2r.game.started" }
-      @hud_tracker.reset_difficulty if new_game
+      @hud_tracker.reset_game if new_game
       hud_events = @hud_tracker.observe(hud, observed_at: event.occurred_at)
       area_change = hud_events.find { |change| change.fetch("type") == "d2r.area.changed" }
       area = area_change&.dig("payload", "area") || (hud["area"] if new_game)

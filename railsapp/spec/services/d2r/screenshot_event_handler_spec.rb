@@ -33,7 +33,7 @@ RSpec.describe D2r::ScreenshotEventHandler do
   let(:gate) { double("gate", complete!: nil) }
   let(:hud_reader) { double("hud_reader", call: {}) }
   let(:hud_area_reader) { double("hud_area_reader", call: {}) }
-  let(:hud_tracker) { double("hud_tracker", observe: [], reset_difficulty: nil) }
+  let(:hud_tracker) { double("hud_tracker", observe: [], reset_game: nil) }
   let(:ground_label_reader) { double("ground_label_reader", call: []) }
   let(:loot_tracker) { double("loot_tracker", observe: []) }
   let(:config) { double("config", enabled?: true, screenshot_source_name: "D2R") }
@@ -140,7 +140,7 @@ RSpec.describe D2r::ScreenshotEventHandler do
 
     handler.call(event, context)
 
-    expect(hud_tracker).to have_received(:reset_difficulty)
+    expect(hud_tracker).to have_received(:reset_game)
     expect(context.published.first).to include(
       type: "d2r.game.started",
       payload: include("screen" => "gameplay", "area" => "Blood Moor", "difficulty" => "Normal")

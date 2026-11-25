@@ -34,10 +34,12 @@ module D2r
       end
     end
 
-    def reset_difficulty
-      @candidates.delete("difficulty")
-      @candidate_counts.delete("difficulty")
-      @stable.delete("difficulty")
+    def reset_game
+      %w[difficulty terror_zones].each do |field|
+        @candidates.delete(field)
+        @candidate_counts.delete(field)
+        @stable.delete(field)
+      end
     end
   end
 end
