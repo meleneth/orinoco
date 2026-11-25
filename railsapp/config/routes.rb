@@ -50,6 +50,7 @@ Rails.application.routes.draw do
       post :stop, on: :member
       post :refresh, on: :member
       post :capture_all, on: :member
+      post :d2r_mode, on: :member
     end
   end
 
