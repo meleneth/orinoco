@@ -32,6 +32,10 @@ class Admin::ObsBridgesController < ApplicationController
     @bridges = BRIDGES
     @bridge_definition = bridge_definition
     @bridge = status_reader.snapshot
+    if bridge_id == "obs_bridge"
+      @d2r_config = AffordanceConfig.fetch!(:d2r_observer)
+      @d2r_status = d2r_control.snapshot(source: @d2r_config.screenshot_source_name)
+    end
   end
 
   def start
@@ -75,7 +79,20 @@ class Admin::ObsBridgesController < ApplicationController
     redirect_back_to_bridge("Failed to request capture-all: #{e.message}", alert: true)
   end
 
+  def d2r_mode
+    raise ActionController::RoutingError, "unknown bridge" unless bridge_id == "obs_bridge"
+
+    d2r_control.mode = params.require(:mode).to_s
+    redirect_back_to_bridge("D2R scan override set to #{d2r_control.mode}.")
+  rescue ArgumentError, ActionController::ParameterMissing => e
+    redirect_back_to_bridge("Invalid D2R scan override: #{e.message}", alert: true)
+  end
+
   private
+
+  def d2r_control
+    @d2r_control ||= D2r::ObserverControl.new(redis: redis_client)
+  end
 
   def bridge_id
     params[:id].presence || Rails.application.config.x.obs_bridge.bridge_id
