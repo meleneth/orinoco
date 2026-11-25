@@ -33,9 +33,9 @@ module D2r
     def run_once
       config = @config_reader.call
       @interval_seconds = DEFAULT_INTERVAL_SECONDS
+      return decision(:disabled, "") unless config.enabled?
       source_name = config.screenshot_source_name.to_s.strip
       mode = @observer_control&.mode || "auto"
-      return decision(:disabled, source_name) unless config.enabled?
       return decision(:force_off, source_name) if mode == "force_off"
       return decision(:missing_source, source_name) if source_name.empty?
 
