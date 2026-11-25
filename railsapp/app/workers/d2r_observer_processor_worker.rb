@@ -2,6 +2,7 @@
 
 require_relative "../services/d2r/capture_gate"
 require_relative "../services/d2r/observer_control"
+require_relative "../services/d2r/run_projection"
 require_relative "../services/d2r/scan_presence"
 require_relative "../services/d2r/screenshot_event_handler"
 require_relative "../services/orinoco/pipeline"
@@ -27,12 +28,20 @@ class D2rObserverProcessorWorker
   end
 
   def definition
+    redis = Redis.new(url: config.scoreboard.redis_url)
+    state = D2r::RunProjection.new(redis:).snapshot
+    xp_tracker = D2r::ExperienceBarTracker.new
+    if state.dig("game", "id") && !state.dig("game", "ended_at") &&
+        %w[gameplay area_banner boss_visible boss_dead].include?(state["screen"])
+      xp_tracker.seed(state["character"] || {})
+    end
     handler = D2r::ScreenshotEventHandler.new(
       config_reader: -> { AffordanceConfig.fetch!(:d2r_observer) },
-      gate: D2r::CaptureGate.new(redis: Redis.new(url: config.scoreboard.redis_url)),
+      gate: D2r::CaptureGate.new(redis:),
       character_reader: D2r::CharacterSheetReader.new,
       presence: D2r::ScanPresence.new(redis: Redis.new(url: config.scoreboard.redis_url)),
-      observer_control: D2r::ObserverControl.new(redis: Redis.new(url: config.scoreboard.redis_url))
+      observer_control: D2r::ObserverControl.new(redis: Redis.new(url: config.scoreboard.redis_url)),
+      xp_tracker:
     )
 
     @definition ||= Orinoco::Pipeline.processor(:d2r_observer) do

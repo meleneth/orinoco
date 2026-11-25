@@ -18,7 +18,7 @@ module D2r
     def observe(reading, observed_at:)
       EVENT_TYPES.filter_map do |field, type|
         value = reading[field]
-        next if value.nil? || (value.respond_to?(:empty?) && value.empty?)
+        next if value.nil? || value == ""
 
         if @candidates[field] == value
           @candidate_counts[field] += 1
@@ -26,7 +26,8 @@ module D2r
           @candidates[field] = value
           @candidate_counts[field] = 1
         end
-        next if @candidate_counts[field] < @confirmations || @stable[field] == value
+        default = [] if field == "terror_zones"
+        next if @candidate_counts[field] < @confirmations || @stable.fetch(field, default) == value
 
         previous = @stable[field]
         @stable[field] = value

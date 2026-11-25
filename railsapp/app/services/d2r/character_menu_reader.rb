@@ -27,8 +27,9 @@ module D2r
       name = ocr(crop(image, [ 0.4492, 0.6000, 0.1035, 0.0234 ]), psm: 7).strip
       summary = ocr(crop(image, [ 0.4395, 0.621875, 0.1221, 0.01875 ]), psm: 7, contrast: true)
       summary = summary.sub(/\bLev(?:er|en|et)\b/i, "Level")
-      fallback = CharacterSheetReader.parse_identity("#{name}\n#{summary}")
-      reading.merge(fallback)
+      reading = CharacterSheetReader.parse_identity(summary).merge(reading)
+      reading["name"] ||= name if CharacterSheetReader.valid_name?(name)
+      reading
 
     rescue Vips::Error, Errno::ENOENT
       {}

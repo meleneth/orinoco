@@ -54,4 +54,17 @@ RSpec.describe D2r::HudTracker do
       "type" => "d2r.terror_zones.changed", "payload" => include("terror_zones" => zones)
     )
   end
+
+  it "clears active terror zones after two explicitly empty HUD readings" do
+    tracker = described_class.new
+    active = { "terror_zones" => [ "Tamoe Highland" ] }
+    tracker.observe(active, observed_at: "one")
+    tracker.observe(active, observed_at: "two")
+
+    expect(tracker.observe({}, observed_at: "three")).to be_empty
+    expect(tracker.observe({ "terror_zones" => [] }, observed_at: "four")).to be_empty
+    expect(tracker.observe({ "terror_zones" => [] }, observed_at: "five").sole).to include(
+      "type" => "d2r.terror_zones.changed", "payload" => include("terror_zones" => [])
+    )
+  end
 end

@@ -51,13 +51,14 @@ module D2r
       rows = rows_for(normalized_hud(Vips::Image.new_from_file(path.to_s, access: :sequential)))
       gold = rows.fetch(:gold).filter_map { |feature| match(feature, :gold) }
       # Match every row because the optional modifier may be absent.
-      purple = rows.fetch(:purple).filter_map { |feature| match(feature, :purple) }
+      purple_rows = rows.fetch(:purple)
+      purple = purple_rows.filter_map { |feature| match(feature, :purple) }
       purple.delete("__modifier__")
 
       {
         "area" => gold.find { |label| !label.start_with?("Difficulty:") },
         "difficulty" => gold.filter_map { |label| label[/\ADifficulty:\s*(.+)\z/, 1] }.first,
-        "terror_zones" => purple.uniq
+        "terror_zones" => (purple.uniq if purple_rows.empty? || !purple.empty?)
       }.compact
     rescue Vips::Error
       {}

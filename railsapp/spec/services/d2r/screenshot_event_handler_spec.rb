@@ -60,6 +60,7 @@ RSpec.describe D2r::ScreenshotEventHandler do
   end
 
   it "publishes confirmed HUD changes through the same event pipeline" do
+    classification["signals"]["screen"]["state"] = "gameplay"
     reading = { "area" => "Catacombs Level 2", "difficulty" => "Hell", "terror_zones" => [ "Dry Hills" ] }
     allow(hud_reader).to receive(:call).and_return(reading)
     allow(hud_area_reader).to receive(:call).and_return("area" => "Catacombs Level 2")
@@ -215,6 +216,28 @@ RSpec.describe D2r::ScreenshotEventHandler do
       payload: include("name" => "REDACTED", "character_class" => "Sorceress", "level" => 1)
     )
     expect(menu_reader).to have_received(:call).with(anything, screen: "character_select").twice
+  end
+
+  it "detects XP rollover when capture times differ but event timestamps match" do
+    classification["signals"]["screen"]["state"] = "gameplay"
+    allow(tracker).to receive(:observe).and_return([])
+    xp_reader = double("xp reader")
+    allow(xp_reader).to receive(:call).and_return(0.98, 0.01)
+    xp_tracker = D2r::ExperienceBarTracker.new
+    xp_tracker.seed("name" => "REDACTED", "character_class" => "Sorceress", "level" => 32)
+    handler = described_class.new(config_reader: -> { config }, classifier:, tracker:, hud_reader:, hud_area_reader:,
+      hud_tracker:, ground_label_reader:, loot_tracker:, gate:, xp_reader:, xp_tracker:)
+
+    %w[.200 .750].each do |fraction|
+      screenshot = Orinoco::Pipeline::Event.build(event.type,
+        event.payload.merge("captureCompletedAt" => "2026-11-25T02:20:00#{fraction}Z"),
+        occurred_at: "2026-11-25T02:20:00Z", correlation: event.correlation)
+      handler.call(screenshot, context)
+    end
+
+    expect(context.published).to contain_exactly(include(
+      type: "d2r.level.changed", payload: include("level" => 33, "source" => "xp_bar_rollover")
+    ))
   end
 
   it "ignores frames from another source" do

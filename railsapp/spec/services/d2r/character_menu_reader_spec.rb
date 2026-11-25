@@ -18,6 +18,15 @@ RSpec.describe D2r::CharacterMenuReader do
     end
   end
 
+  it "keeps the separately read lobby name when the summary fallback is unreadable" do
+    reader = described_class.new
+    allow(reader).to receive(:ocr).and_return("Level 32 Sorceress", "REDACTED", "unreadable")
+
+    expect(reader.call(fixture_root.join("progression_game_creation_train.jpg"), screen: "game_creation")).to eq(
+      "name" => "REDACTED", "character_class" => "Sorceress", "level" => 32
+    )
+  end
+
   it "does not apply a menu crop to an unsupported screen" do
     expect(described_class.new.call(fixture_root.join("progression_gameplay_holdout.jpg"), screen: "gameplay")).to eq({})
   end

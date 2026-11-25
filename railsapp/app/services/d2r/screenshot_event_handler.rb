@@ -98,6 +98,9 @@ module D2r
         if hud_reading["area"] || (gameplay_screen && ocr_hud["game_named"])
           hud_reading["difficulty"] ||= "Normal"
         end
+        unless gameplay_screen && (hud_reading["area"] || ocr_hud["game_named"] || hud_reading["terror_zones"].present?)
+          hud_reading.delete("terror_zones")
+        end
         ground_labels_visible = gameplay_screen &&
           !%w[stash_runes stash_other quest_log].include?(left_panel) && right_panel != "inventory" &&
           (!tooltip || %w[none unknown].include?(tooltip))
@@ -123,7 +126,8 @@ module D2r
           change.fetch("type") == "d2r.level.changed" && change.dig("payload", "level") == prior_level
         end
         fill = gameplay_screen ? @xp_reader.call(path) : nil
-        character_changes.concat(@xp_tracker.observe(fill, observed_at: event.occurred_at))
+        captured_at = event.payload_value("captureCompletedAt") || event.occurred_at
+        character_changes.concat(@xp_tracker.observe(fill, observed_at: captured_at))
         [ result, hud_reading, labels, character_changes ]
       end
       return :standby if hud.nil?
