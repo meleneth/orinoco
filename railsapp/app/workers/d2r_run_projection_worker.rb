@@ -37,7 +37,11 @@ class D2rRunProjectionWorker
          d2r.loot.rune.sighted d2r.loot.unique.sighted
          d2r.character.selection.visible
          d2r.character.creation.visible d2r.character.selected d2r.character.created d2r.character.observed d2r.game.creation.visible].each do |type|
-        on(type) { |event, _context| handler.call(event) }
+        on(type) do |event, _context|
+          # The runner skips its process-wide executor so each event can release
+          # Rails resources before the worker waits for the next message.
+          Rails.application.executor.wrap { handler.call(event) }
+        end
       end
     end
   end

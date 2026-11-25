@@ -31,14 +31,12 @@ module D2r
 
     def broadcast_state(state)
       Timeout.timeout(@broadcast_timeout_seconds) do
-        Rails.application.reloader.wrap do
-          @broadcaster.broadcast_replace_to(
-            STREAM,
-            target: TARGET,
-            layout: false,
-            renderable: D2rLiveProjectionComponent.new(state: state)
-          )
-        end
+        @broadcaster.broadcast_replace_to(
+          STREAM,
+          target: TARGET,
+          layout: false,
+          renderable: D2rLiveProjectionComponent.new(state: state)
+        )
       end
     rescue StandardError => e
       @logger.warn("[d2r-run-projection] broadcast failed: #{e.class}: #{e.message}")

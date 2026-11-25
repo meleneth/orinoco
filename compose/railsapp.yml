@@ -97,6 +97,6 @@ services:
     depends_on: *railsapp_worker_depends_on
   d2r-run-projection-worker:
     image: orinoco/railsapp
-    command: ["bundle", "exec", "rails", "runner", "D2rRunProjectionWorker.new.run"]
+    command: ["bundle", "exec", "rails", "runner", "--skip-executor", "D2rRunProjectionWorker.new.run"]
     environment: *railsapp_environment
     depends_on: *railsapp_worker_depends_on
