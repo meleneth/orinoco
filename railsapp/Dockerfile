@@ -44,8 +44,7 @@ RUN bundle install && \
   # -j 1 disable parallel compilation to avoid a QEMU bug: https://github.com/rails/bootsnap/issues/495
   bundle exec bootsnap precompile -j 1 --gemfile
 
-# CSS compilation is a separate cacheable build target. Keep unrelated backend
-# sources, screenshots and tests out of this stage.
+# Explicit CSS tool only: the application build never depends on this target.
 FROM gems AS tailwind-builder
 COPY app/assets/tailwind/ app/assets/tailwind/
 COPY app/views/ app/views/
@@ -58,7 +57,8 @@ RUN echo "Tailwind cache generation: ${TAILWIND_CACHE_BUST}" && mkdir -p app/ass
 
 FROM gems AS build
 COPY . .
-COPY --from=tailwind-builder /rails/app/assets/builds/tailwind.css /rails/app/assets/builds/tailwind.css
+# Consume the exported stylesheet as an opaque artifact; never compile CSS here.
+RUN test -s app/assets/builds/tailwind.css || (echo 'Missing compiled Tailwind CSS; run ./dc_dev css --force from the repository root' >&2; exit 1)
 
 # Precompile bootsnap code for faster boot times.
 # -j 1 disable parallel compilation to avoid a QEMU bug: https://github.com/rails/bootsnap/issues/495
