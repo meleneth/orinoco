@@ -86,18 +86,18 @@ module D2r
         # Bitmap references are approximate and can map any unseen/blank label
         # to the nearest Catacombs fixture. Require a known OCR heading for
         # area changes; bitmap features still supply difficulty/terror zones.
-        inferred_area = @hud_area_reader.call(path)
-        if inferred_area
-          hud_reading["area"] = inferred_area
-          # D2R omits the difficulty row in Normal games; Nightmare and Hell
-          # render an explicit row which HudReader recognizes independently.
-          hud_reading["difficulty"] ||= "Normal"
-        end
+        ocr_hud = @hud_area_reader.call(path)
+        hud_reading.merge!(ocr_hud.slice("area", "difficulty"))
         screen = result.dig("signals", "screen", "state")
         left_panel = result.dig("signals", "left_panel", "state")
         right_panel = result.dig("signals", "right_panel", "state")
         tooltip = result.dig("signals", "tooltip", "state")
         gameplay_screen = %w[gameplay area_banner boss_visible boss_dead].include?(screen)
+        # D2R omits the difficulty row in Normal games. A readable game name
+        # identifies the HUD even when OCR cannot resolve the area.
+        if hud_reading["area"] || (gameplay_screen && ocr_hud["game_named"])
+          hud_reading["difficulty"] ||= "Normal"
+        end
         ground_labels_visible = gameplay_screen &&
           !%w[stash_runes stash_other quest_log].include?(left_panel) && right_panel != "inventory" &&
           (!tooltip || %w[none unknown].include?(tooltip))
@@ -130,6 +130,7 @@ module D2r
 
       events = @tracker.observe(classification, observed_at: event.occurred_at)
       new_game = events.any? { |change| change.fetch("type") == "d2r.game.started" }
+      @hud_tracker.reset_difficulty if new_game
       hud_events = @hud_tracker.observe(hud, observed_at: event.occurred_at)
       area_change = hud_events.find { |change| change.fetch("type") == "d2r.area.changed" }
       area = area_change&.dig("payload", "area") || (hud["area"] if new_game)

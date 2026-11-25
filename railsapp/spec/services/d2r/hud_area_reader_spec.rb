@@ -26,7 +26,13 @@ RSpec.describe D2r::HudAreaReader do
     fixture = Pathname(__dir__).join("../../fixtures/files/d2r/gameplay_blood_moor_normal_holdout.jpg").expand_path
     reading = described_class.new.call(fixture)
 
-    expect(reading).to eq("Blood Moor")
+    expect(reading).to eq("area" => "Blood Moor", "game_named" => true)
+  end
+
+  it "recognizes a game name and explicit difficulty without resolving the area" do
+    expect(described_class.read_hud("Game: Example\nUnreadable area\nDifficucty: Nightmare")).to eq(
+      "game_named" => true, "difficulty" => "Nightmare"
+    )
   end
 
   it "does not confuse a listed terror zone for the current area" do

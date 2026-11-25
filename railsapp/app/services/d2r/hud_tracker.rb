@@ -33,5 +33,11 @@ module D2r
         { "type" => type, "payload" => { field => value, "previous" => previous, "observed_at" => observed_at } }
       end
     end
+
+    def reset_difficulty
+      @candidates.delete("difficulty")
+      @candidate_counts.delete("difficulty")
+      @stable.delete("difficulty")
+    end
   end
 end

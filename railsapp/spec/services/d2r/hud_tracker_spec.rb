@@ -22,4 +22,18 @@ RSpec.describe D2r::HudTracker do
       "payload" => include("area" => "Catacombs Level 3", "previous" => "Catacombs Level 2")
     )
   end
+
+  it "confirms the same difficulty again when a new game starts" do
+    tracker = described_class.new
+    reading = { "difficulty" => "Normal" }
+    tracker.observe(reading, observed_at: "one")
+    expect(tracker.observe(reading, observed_at: "two").size).to eq(1)
+
+    tracker.reset_difficulty
+
+    expect(tracker.observe(reading, observed_at: "three")).to be_empty
+    expect(tracker.observe(reading, observed_at: "four").sole).to include(
+      "type" => "d2r.difficulty.changed", "payload" => include("difficulty" => "Normal")
+    )
+  end
 end

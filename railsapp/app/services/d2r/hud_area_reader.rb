@@ -29,10 +29,8 @@ module D2r
       image = Vips::Image.new_from_file(path.to_s)
       left = (image.width * 0.79).round.clamp(0, image.width - 1)
       width = image.width - left
-      # The game name can occupy the first line, with the current area directly
-      # below it. Keep the crop above NPC labels and the difficulty/terror-zone
-      # block so those cannot become area candidates.
-      height = (image.height * 0.09).round.clamp(1, image.height)
+      # Include the game name, area and optional difficulty row.
+      height = (image.height * 0.11).round.clamp(1, image.height)
       roi = image.crop(left, 0, width, height).resize(2.0)
       Tempfile.create([ "d2r-area-", ".png" ]) do |file|
         roi.write_to_file(file.path)
@@ -40,26 +38,34 @@ module D2r
           "tesseract", file.path, "stdout", "-l", "eng", "--psm", "6",
           err: File::NULL
         )
-        return nil unless status.success?
+        return {} unless status.success?
 
-        self.class.parse(output)
+        self.class.read_hud(output)
       end
     rescue Vips::Error, Errno::ENOENT => e
       Rails.logger.warn("[d2r-hud-area] #{e.class}: #{e.message}") if defined?(Rails)
-      nil
+      {}
     end
 
-    def self.parse(value)
+    def self.read_hud(value)
       lines = value.to_s.lines.filter_map do |line|
         normalized = normalize_text(line)
         normalized unless normalized.empty?
       end
-      return nil if lines.empty?
+      game_named = lines.first&.match?(/\bgame [a-z0-9]+/)
+      area = parse_heading(game_named ? lines[1] : lines.first)
+      difficulty = lines.drop(game_named ? 2 : 1).filter_map do |line|
+        label = line[/\b(?:nightmare|hell)\z/]
+        label.capitalize if label && (line == label || line.match?(/\bdiffic\w* /))
+      end.first
+      { "area" => area, "difficulty" => difficulty, "game_named" => !!game_named }.compact
+    end
 
-      # Current captures put the game name before the area. The crop is kept
-      # above the difficulty and terror-zone rows, so use the second line when
-      # the first is the game-name label.
-      heading = lines.first.match?(/\bgame\b/) ? lines[1] : lines.first
+    def self.parse(value)
+      read_hud(value)["area"]
+    end
+
+    def self.parse_heading(heading)
       return nil unless heading
 
       # Prefer longest names so a complete 'Level 5' cannot match a shorter

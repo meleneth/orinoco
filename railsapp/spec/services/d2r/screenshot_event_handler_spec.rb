@@ -32,8 +32,8 @@ RSpec.describe D2r::ScreenshotEventHandler do
   end
   let(:gate) { double("gate", complete!: nil) }
   let(:hud_reader) { double("hud_reader", call: {}) }
-  let(:hud_area_reader) { double("hud_area_reader", call: nil) }
-  let(:hud_tracker) { double("hud_tracker", observe: []) }
+  let(:hud_area_reader) { double("hud_area_reader", call: {}) }
+  let(:hud_tracker) { double("hud_tracker", observe: [], reset_difficulty: nil) }
   let(:ground_label_reader) { double("ground_label_reader", call: []) }
   let(:loot_tracker) { double("loot_tracker", observe: []) }
   let(:config) { double("config", enabled?: true, screenshot_source_name: "D2R") }
@@ -62,7 +62,7 @@ RSpec.describe D2r::ScreenshotEventHandler do
   it "publishes confirmed HUD changes through the same event pipeline" do
     reading = { "area" => "Catacombs Level 2", "difficulty" => "Hell", "terror_zones" => [ "Dry Hills" ] }
     allow(hud_reader).to receive(:call).and_return(reading)
-    allow(hud_area_reader).to receive(:call).and_return("Catacombs Level 2")
+    allow(hud_area_reader).to receive(:call).and_return("area" => "Catacombs Level 2")
     allow(hud_tracker).to receive(:observe).and_return([
       { "type" => "d2r.area.changed", "payload" => { "area" => "Catacombs Level 2" } }
     ])
@@ -90,7 +90,7 @@ RSpec.describe D2r::ScreenshotEventHandler do
 
   it "prefers a known OCR area over an approximate bitmap match" do
     allow(hud_reader).to receive(:call).and_return({ "area" => "Catacombs Level 3", "difficulty" => "Hell" })
-    allow(hud_area_reader).to receive(:call).and_return("Tower Cellar Level 2")
+    allow(hud_area_reader).to receive(:call).and_return("area" => "Tower Cellar Level 2")
     allow(tracker).to receive(:observe).and_return([])
     handler = described_class.new(config_reader: -> { config }, classifier:, tracker:, hud_reader:, hud_area_reader:,
       hud_tracker:, ground_label_reader:, loot_tracker:, gate:)
@@ -104,7 +104,7 @@ RSpec.describe D2r::ScreenshotEventHandler do
   end
 
   it "infers Normal when an OCR-confirmed area has no difficulty row" do
-    allow(hud_area_reader).to receive(:call).and_return("Blood Moor")
+    allow(hud_area_reader).to receive(:call).and_return("area" => "Blood Moor")
     allow(tracker).to receive(:observe).and_return([])
     handler = described_class.new(config_reader: -> { config }, classifier:, tracker:, hud_reader:, hud_area_reader:,
       hud_tracker:, ground_label_reader:, loot_tracker:, gate:)
@@ -116,9 +116,22 @@ RSpec.describe D2r::ScreenshotEventHandler do
     )
   end
 
+  it "infers Normal from a visible game name even when the area is unreadable" do
+    classification["signals"]["screen"]["state"] = "gameplay"
+    allow(hud_area_reader).to receive(:call).and_return("game_named" => true)
+    handler = described_class.new(config_reader: -> { config }, classifier:, tracker:, hud_reader:, hud_area_reader:,
+      hud_tracker:, ground_label_reader:, loot_tracker:, gate:)
+
+    handler.call(event, context)
+
+    expect(hud_tracker).to have_received(:observe).with(
+      { "difficulty" => "Normal" }, observed_at: event.occurred_at
+    )
+  end
+
   it "includes the confirmed screen and HUD state on a game boundary" do
     classification["signals"]["screen"]["state"] = "gameplay"
-    allow(hud_area_reader).to receive(:call).and_return("Blood Moor")
+    allow(hud_area_reader).to receive(:call).and_return("area" => "Blood Moor")
     allow(tracker).to receive(:observe).and_return([
       { "type" => "d2r.game.started", "payload" => { "game_id" => "visual-1" } }
     ])
@@ -127,6 +140,7 @@ RSpec.describe D2r::ScreenshotEventHandler do
 
     handler.call(event, context)
 
+    expect(hud_tracker).to have_received(:reset_difficulty)
     expect(context.published.first).to include(
       type: "d2r.game.started",
       payload: include("screen" => "gameplay", "area" => "Blood Moor", "difficulty" => "Normal")
