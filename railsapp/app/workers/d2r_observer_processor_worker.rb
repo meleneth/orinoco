@@ -45,7 +45,9 @@ class D2rObserverProcessorWorker
     )
 
     @definition ||= Orinoco::Pipeline.processor(:d2r_observer) do
-      consume Orinoco::Messaging::Names::D2R_SCREENSHOT_RESULT_QUEUE, wait_time_seconds: 1
+      # OCR runs serially. A batch can outlive the visibility timeout before
+      # its last frame is processed, causing the queue to redeliver it.
+      consume Orinoco::Messaging::Names::D2R_SCREENSHOT_RESULT_QUEUE, wait_time_seconds: 1, max_number_of_messages: 1
       publish_to Orinoco::Messaging::Names::D2R_EVENTS_TOPIC
 
       on "obs.screenshot.captured" do |event, context|
