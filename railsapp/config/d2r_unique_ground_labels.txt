@@ -1,0 +1,780 @@
+# Unique names and their base item labels from the English item table.
+# https://github.com/blizzhackers/d2data/blob/51e7826e67515f4a84583ebaa882339aeeb99758/json/uniqueitems.json
+# Includes display aliases for internal names and charm bases.
+2-handed sword
+aegis
+aerin shield
+alma negra
+amulet
+amulet of the viper
+ancient axe
+ancient shield
+ancient sword
+ancientarmor
+andariel's visage
+annihilus
+arachnid mesh
+arbalest
+archon staff
+arioc's needle
+arkaine's valor
+arm of king leoric
+armet
+arreat's face
+ars al'diablolos
+ars dul'mephistos
+ars tor'baalos
+ataghan
+athena's wrath
+atma's scarab
+atma's wail
+axe
+azurewrath
+baezil's vortex
+balista
+balrog blade
+balrog skin
+balrog spear
+bane ash
+baranar's star
+barbed club
+barbed shield
+bardiche
+basinet
+bastard sword
+battle axe
+battle belt
+battle boots
+battle cestus
+battle dart
+battle guantlets
+battle hammer
+battle scythe
+battle staff
+battle sword
+bearded axe
+bec-de-corbin
+belt
+berserker axe
+bill
+bing sz wang
+black cleft
+black hades
+blackbog's sharp
+blackhand key
+blackhorn's face
+blackleach blade
+blackoak shield
+blacktongue
+blade
+blade barrier
+blade of ali baba
+bladebone
+bladebuckle
+blasphemous compendium
+blasphemous grimoire
+blastbark
+blinkbats form
+blood crescent
+blood spirit
+bloodfist
+bloodletter
+bloodlord skull
+bloodmoon
+bloodpact shard
+bloodraven's charge
+bloodrise
+bloodthief
+bloodtree stump
+bone break
+bone helm
+bone knife
+bone shield
+bone visage
+bone wand
+boneflame
+boneflesh
+bonehew
+boneshade
+boneslayer blade
+bonesob
+boneweave boots
+bracers
+brainhew
+brandistock
+breast plate
+broad axe
+broad sword
+buckler
+bul katho's wedding band
+buriza-do kyanon
+burnt text
+burnt wand
+butcher's pupil
+bverrit keep
+caduceus
+cap
+carin shard
+carrion wind
+casque
+cedar staff
+cedarbow
+cerebus
+ceremonial bow
+ceremonial javelin
+ceremonial pike
+chain boots
+chain mail
+champion axe
+champion sword
+chance guards
+chaos armor
+charm
+chromatic ire
+chu-ko-nu
+cinquedeas
+claymore
+cleaver
+cliffkiller
+cloudcrack
+club
+coif of glory
+cold rupture
+coldkill
+coldsteel eye
+colossal jewel
+colossus blade
+colossus crossbow
+composite bow
+conqueror crown
+constricting ring
+corona
+corpsemourn
+crack of the heavens
+crainte vomir
+cranebeak
+crescent moon
+crossbow
+crow caw
+crowbill
+crown
+crown of ages
+crown of thieves
+crusader bow
+crushflange
+cryptic axe
+cryptic sword
+crystal sword
+cudgel
+cuirass
+culwens point
+cutlass
+cutthroat1
+dacian falx
+dagger
+dark clan crusher
+darkfear
+darkforge spawn
+darkglow
+darksight helm
+death mask
+deathbit
+deathcleaver
+deaths's web
+deathspade
+decapitator
+defender
+defender's bile
+defender's fire
+demon crossbow
+demon machine
+demon's arch
+demonhead
+demonhide armor
+demonhide boots
+demonhide gloves
+demonhide sash
+demonhorn's edge
+demonlimb
+destroyer helm
+devil star
+diadem
+dimensional blade
+dimensional shard
+dimoaks hew
+dirk
+divine scepter
+djinnslayer
+doombringer
+doomspittle
+double axe
+double bow
+dracul's grasp
+dragon shield
+dragonscale
+dreadfang
+dream spirit
+duriel's shell
+dusk shroud
+duskdeep
+dwarf star
+eaglehorn
+earth shifter
+earth spirit
+earthshaker
+earthshifter
+edge bow
+elder staff
+eldritch orb
+elegant blade
+embossed plate
+endlesshail
+entropy locket
+eschuta's temper
+espadon
+ethereal edge
+ettin axe
+executioner sword
+executioner's justice
+falchion
+fanged knife
+fathom
+fechmars axe
+felloak
+feral claws
+field plate
+firelizard's talons
+flail
+flamberge
+flame rift
+flamebellow
+flanged mace
+fleshrender
+fleshripper
+flying axe
+francisca
+frostburn
+frostwind
+full helm
+full plate mail
+fury visor
+fuscina
+gargoyle's bite
+gauntlets
+gheed's fortune
+gheed's wager
+ghost armor
+ghost glaive
+ghostflame
+ghoulhide
+giant axe
+giant sword
+giant thresher
+giantskull
+gimmershred
+ginther's rift
+girdle
+gladius
+gleamscythe
+gloomstrap
+glorious axe
+gloves
+gnarled staff
+goblin toe
+godstrike arch
+goldskin
+goldwrap
+gorefoot
+gorerider
+goreshovel
+gothic axe
+gothic bow
+gothic plate
+gothic shield
+gothic staff
+gothic sword
+grand charm
+grand crown
+grand scepter
+grave wand
+gravenspine
+gravepalm
+great axe
+great helm
+great maul
+great sword
+greyform
+griffon's eye
+grim helm
+grim scythe
+grim shield
+grim wand
+grim's burning dead
+griswolds edge
+guardian angel
+guardian naga
+guardian's light
+guardian's thunder
+gull
+gutsiphon
+halaberd's reign
+halberd
+hammer
+hand axe
+hand of blessed light
+hard leather
+harlequin crest
+hatchet
+hawkmail
+head hunter's glory
+headhunter's glory
+headstriker
+heart carver
+heaven's light
+heavenly garb
+heavy belt
+heavy boots
+heavy bracers
+heavy crossbow
+heavy gloves
+heirophant trophy
+hell forge hammer
+hellcast
+hellclap
+hellfire torch
+hellmouth
+hellplague
+hellrack
+hellslayer
+hellwarden's will
+helm
+herald of zakarum
+hexfire
+highlord's wrath
+holy water sprinkler
+homunculus
+hone sundan
+horadric staff
+horizon's tornado
+hotspur
+howltusk
+hunter\92s bow
+husoldal evo
+hydra bow
+hyperion spear
+iceblink
+ichorsting
+infernostride
+irices shard
+ironpelt
+ironstone
+ironward
+iros torch
+islestrike
+jadetalon
+jagged star
+jalal's mane
+jewel
+jo stalf
+kelpie snare
+kerke's sanctuary
+khalimflail
+kinemils awl
+kira's guardian
+kite shield
+knell striker
+knout
+kraken shell
+krintizs skewer
+kris
+kuko shakaku
+lacerator
+lance
+lance guard
+lance of yaggai
+langer briser
+large axe
+large charm
+large shield
+latent black cleft
+latent bone break
+latent cold rupture
+latent crack of the heavens
+latent flame rift
+latent rotting fissure
+lavagout
+lazarus spire
+leadcrow
+leather armor
+leather boots
+legend spike
+legend sword
+legendary mallet
+lenyms cord
+leviathan
+lich wand
+lidless wall
+light belt
+light crossbow
+light gauntlets
+light plate
+light plate boots
+lightsabre
+linked mail
+lochaber axe
+long battle bow
+long bow
+long siege bow
+long staff
+long sword
+long war bow
+luna
+lycander's aim
+lycander's flank
+mace
+maelstromwrath
+mage plate
+magefist
+magewrath
+manald heal
+mang song's lesson
+mara's kaleidoscope
+marrowwalk
+martel de fer
+mask
+matriarchal bow
+matriarchal javelin
+matriarchal spear
+maul
+measured wrath
+medusa's gaze
+mesh armor
+mesh belt
+mesh boots
+messerschmidt's reaver
+metalgrid
+mighty scepter
+military axe
+military pick
+mindrend
+mirrored boots
+mithril coil
+mithril point
+monarch
+moonfall
+morning star
+mosers blessed circle
+myrmidon greaves
+naga
+nagelring
+nature's peace
+nightsmoke
+nightwing's veil
+nokozan relic
+nord's tenderizer
+nosferatu's coil
+occult tome
+ogre axe
+ogre gauntlets
+ogre maul
+ondal's wisdom
+opalvein
+ormus' robes
+ornate armor
+partizan
+pavise
+peasent crown
+pelta lunata
+petrified wand
+phase blade
+piercerib
+pierre tombale couant
+pike
+plague bearer
+plate boots
+plate mail
+pluckeye
+poignard
+poleaxe
+pompe's wrath
+protector's frost
+protector's stone
+pullspite
+pus spiter
+quarterstaff
+que-hegan's wisdon
+quilted armor
+radimant's sphere
+rainbow facet
+rakescar
+rattlecage
+raven frost
+ravenlore
+razor bow
+razoredge
+razorswitch
+razortail
+razortine
+renewed black cleft
+renewed bone break
+renewed cold rupture
+renewed crack of the heavens
+renewed flame rift
+renewed rotting fissure
+repeating crossbow
+ribcracker
+rimeraven
+ring
+ring mail
+riphook
+ripsaw
+rixots keen
+rockfleece
+rockstopper
+rondel
+rotting fissure
+round shield
+rune bow
+rune scepter
+rune staff
+rune sword
+runemaster
+runic talons
+russet armor
+rusthandle
+saber
+sacred armor
+sacred rondache
+sallet
+sandstorm trek
+saracen's chance
+sash
+scale mail
+scarabshell boots
+scepter
+schaefer's hammer
+scimitar
+scourge
+scutum
+scythe
+seraph's hymn
+serpent lord
+serpentskin armor
+shadow plate
+shadowdancer
+shadowfang
+shadowkiller
+shaftstop
+shako
+shamshir
+sharkskin belt
+sharkskin boots
+sharkskin gloves
+sharktooth armor
+short battle bow
+short bow
+short siege bow
+short staff
+short sword
+short war bow
+siege crossbow
+silkweave
+silver-edged axe
+skin of the flayerd one
+skin of the vipermagi
+skull cap
+skullcollector
+skullder's ire
+sky spirit
+skystrike
+slayer guard
+sling
+small charm
+small shield
+snakecord
+snowclash
+soul harvest
+souldrain
+soulfeast tine
+soulflay
+sparking mail
+spear
+spellsteel
+spetum
+spiderweb sash
+spike thorn
+spiked club
+spiked shield
+spineripper
+spire of honor
+spired helm
+spirit ward
+spiritforge
+spiritkeeper
+splint mail
+staff
+staff of kings
+stealskull
+steel carapice
+steelclash
+steeldriver
+steelgoad
+steelpillar
+steelrend
+steelshade
+stilleto
+stone crusher
+stoneraven
+stormchaser
+stormeye
+stormguild
+stormlash
+stormrider
+stormshield
+stormspike
+stormspire
+stoutnail
+string of ears
+studded leather
+succubae skull
+suicide branch
+superkhalimflail
+sureshrill frost
+swirling crystal
+swordback hold
+swordguard
+tabar
+tarnhelm
+tearhaunch
+templar coat
+templar's might
+the atlantian
+the battlebranch
+the cat's eye
+the centurion
+the chieftan
+the cranium basher
+the diggler
+the dragon chang
+the eye of etlich
+the face of horror
+the fetid sprinkler
+the gavel of pain
+the generals tan do li ga
+the gladiator's bane
+the gnasher
+the grandfather
+the grim reaper
+the hand of broc
+the humongous
+the impaler
+the iron jang bong
+the jade tan do
+the mahim-oak curio
+the meat scraper
+the minataur
+the oculus
+the patriarch
+the reaper's toll
+the redeemer
+the reedeemer
+the rising sun
+the salamander
+the scalper
+the spirit shroud
+the stone of jordan
+the tannr gorerod
+the vile husk
+the ward
+thresher
+thudergod's vigor
+thunder maul
+thunderstroke
+tiamat's rebuke
+tiara
+tigulated mail
+titan's revenge
+todesfaelle flamme
+tomahawk
+tomb reaver
+tomb wand
+toothrow
+tower shield
+treads of cthon
+tresllised armor
+trident
+troll belt
+troll nest
+truncheon
+tulwar
+tusk sword
+twin axe
+twitchthroe
+tyrael's might
+tyrant club
+umbral disk
+umes lament
+undead crown
+unearthed wand
+valkiry wing
+vambraces
+vampirebone gloves
+vampirefang belt
+vampiregaze
+veil of steel
+venom grip
+venomsward
+verdugo's hearty cord
+victors silk
+viperfork
+visceratuant
+voulge
+wall of the eyeless
+wand
+war axe
+war belt
+war bonnet
+war boots
+war club
+war fork
+war gauntlets
+war hammer
+war hat
+war pike
+war scepter
+war scythe
+war spear
+war spike
+war staff
+war sword
+ward
+ward bow
+warlord's trust
+warpspear
+warshrike
+wartraveler
+waterwalk
+whichwild string
+widowmaker
+windforce
+windhammer
+winged axe
+winged harpoon
+winged helm
+winged knife
+wire fleece
+wisp
+witherstring
+wizardspike
+wizendraw
+woestave
+wolfhowl
+wormskull
+wraithflight
+wraithstep
+wrist sword
+yari
+yew wand
+zakarum shield
+zakarum's hand
+zweihander

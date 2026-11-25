@@ -2,6 +2,7 @@
 
 require "csv"
 require "open3"
+require "set"
 require "vips"
 require_relative "loot_tracker"
 
@@ -13,6 +14,8 @@ module D2r
     RUNE_PATTERN = /\b(#{Regexp.union(LootTracker::RUNES).source})\s+Rune\b/i
     MIN_WORD_CONFIDENCE = 40.0
     MIN_GOLD_PIXELS = 5
+    UNIQUE_LABELS = File.foreach(File.expand_path("../../../config/d2r_unique_ground_labels.txt", __dir__))
+      .map(&:strip).reject { |line| line.empty? || line.start_with?("#") }.to_set.freeze
     # Ground labels are read only from the playfield. Chat/system messages
     # occupy the lower-left, can share unique-item gold, and must never be
     # considered loot even when OCR drops the chat prefix.
@@ -71,15 +74,13 @@ module D2r
         end
         next rune_names unless rune_names.empty?
 
-        # Unique-item labels use gold foreground in D2R. Exclude HUD-style
-        # phrases and single-word speculative detections. This is a candidate
-        # requiring multiple matching screenshot confirmations downstream.
-        next [] if label.length < (words.length == 1 ? 8 : 5)
-        next [] if label.match?(/\b(?:Difficulty|Level|Experience|Life|Mana|Gold|Rune)\b/i)
+        # Player names can appear gold too. Require a complete known unique
+        # name or base label before treating the color as item evidence.
+        next [] unless UNIQUE_LABELS.include?(label.downcase.tr("’", "'"))
 
         required_gold_words = words.length == 1 ? 1 : 2
         if words.count { |word| gold_word?(image, word) } >= required_gold_words
-          [ { "kind" => "unique", "name" => normalize_unique_label(label), "confidence" => "candidate" } ]
+          [ { "kind" => "unique", "name" => label, "confidence" => "candidate" } ]
         else
           []
         end
@@ -90,10 +91,6 @@ module D2r
     end
 
     private
-
-    def normalize_unique_label(label)
-      label.sub(/\bHEL\z/i, "Helm")
-    end
 
     def chat_or_system_label?(label)
       label.match?(/\A\s*\[?Game\]?(?:\s|$)/i) ||

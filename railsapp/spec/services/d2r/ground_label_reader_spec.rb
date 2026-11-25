@@ -7,7 +7,8 @@ RSpec.describe D2r::GroundLabelReader do
   it "revisits OCR word regions to confirm a gold unique label" do
     tsv = <<~TSV
       level	page_num	block_num	par_num	line_num	word_num	left	top	width	height	conf	text
-      5	1	1	1	1	1	10	30	60	12	95	Harlequin
+      5	1	1	1	1	1	10	30	50	12	95	Harlequin
+      5	1	1	1	1	2	63	30	30	12	95	Crest
     TSV
     status = instance_double(Process::Status, success?: true)
     allow(Open3).to receive(:capture2).and_return([ tsv, status ])
@@ -16,8 +17,25 @@ RSpec.describe D2r::GroundLabelReader do
       Vips::Image.black(100, 100).new_from_image([ 150, 120, 40 ]).write_to_file(file.path)
 
       expect(described_class.new.call(file.path)).to eq([
-        { "kind" => "unique", "name" => "Harlequin", "confidence" => "candidate" }
+        { "kind" => "unique", "name" => "Harlequin Crest", "confidence" => "candidate" }
       ])
+    end
+  end
+
+  it "rejects gold player names and incomplete unique names outside chat" do
+    tsv = <<~TSV
+      level	page_num	block_num	par_num	line_num	word_num	left	top	width	height	conf	text
+      5	1	1	1	1	1	10	25	60	10	95	Copemicus
+      5	1	2	1	1	1	10	35	60	10	95	Atlas-MVP
+      5	1	3	1	1	1	10	45	60	10	95	Harlequin
+    TSV
+    status = instance_double(Process::Status, success?: true)
+    allow(Open3).to receive(:capture2).and_return([ tsv, status ])
+
+    Tempfile.create([ "gold-player-names", ".png" ]) do |file|
+      Vips::Image.black(100, 100).new_from_image([ 150, 120, 40 ]).write_to_file(file.path)
+
+      expect(described_class.new.call(file.path)).to be_empty
     end
   end
 
@@ -52,7 +70,7 @@ RSpec.describe D2r::GroundLabelReader do
   it "never interprets lower-left chat as a ground unique even without chat prefixes" do
     tsv = <<~TSV
       level\tpage_num\tblock_num\tpar_num\tline_num\tword_num\tleft\ttop\twidth\theight\tconf\ttext
-      5\t1\t1\t1\t1\t1\t10\t65\t40\t12\t95\tHarlequin
+      5\t1\t1\t1\t1\t1\t10\t65\t40\t12\t95\tShako
     TSV
     status = instance_double(Process::Status, success?: true)
     allow(Open3).to receive(:capture2).and_return([ tsv, status ])
@@ -66,7 +84,7 @@ RSpec.describe D2r::GroundLabelReader do
   it "still recognizes candidate ground labels outside the excluded chat rectangle" do
     tsv = <<~TSV
       level\tpage_num\tblock_num\tpar_num\tline_num\tword_num\tleft\ttop\twidth\theight\tconf\ttext
-      5\t1\t1\t1\t1\t1\t72\t65\t25\t12\t95\tHarlequin
+      5\t1\t1\t1\t1\t1\t72\t65\t25\t12\t95\tShako
     TSV
     status = instance_double(Process::Status, success?: true)
     allow(Open3).to receive(:capture2).and_return([ tsv, status ])
@@ -74,7 +92,7 @@ RSpec.describe D2r::GroundLabelReader do
     Tempfile.create([ "ground-right", ".png" ]) do |file|
       Vips::Image.black(100, 100).new_from_image([ 150, 120, 40 ]).write_to_file(file.path)
       expect(described_class.new.call(file.path)).to eq([
-        { "kind" => "unique", "name" => "Harlequin", "confidence" => "candidate" }
+        { "kind" => "unique", "name" => "Shako", "confidence" => "candidate" }
       ])
     end
   end
