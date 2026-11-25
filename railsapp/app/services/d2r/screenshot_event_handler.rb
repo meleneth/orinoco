@@ -49,6 +49,7 @@ module D2r
     end
 
     def call(event, context)
+      @last_screen = nil
       outcome = process_event(event, context)
       @observer_control&.record_processing(
         reason: outcome, source: event.payload_value("sourceName"),
