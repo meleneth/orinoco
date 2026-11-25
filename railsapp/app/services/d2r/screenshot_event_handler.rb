@@ -129,8 +129,12 @@ module D2r
       return :standby if hud.nil?
 
       events = @tracker.observe(classification, observed_at: event.occurred_at)
-      events.concat(@hud_tracker.observe(hud, observed_at: event.occurred_at))
-      events.concat(@loot_tracker.observe(loot, observed_at: event.occurred_at))
+      new_game = events.any? { |change| change.fetch("type") == "d2r.game.started" }
+      hud_events = @hud_tracker.observe(hud, observed_at: event.occurred_at)
+      area_change = hud_events.find { |change| change.fetch("type") == "d2r.area.changed" }
+      area = area_change&.dig("payload", "area") || (hud["area"] if new_game)
+      events.concat(hud_events)
+      events.concat(@loot_tracker.observe(loot, observed_at: event.occurred_at, area:, new_game:))
       events.concat(character_changes || [])
       events.each do |change|
         payload = change.fetch("payload")

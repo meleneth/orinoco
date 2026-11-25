@@ -72,6 +72,7 @@ RSpec.describe D2r::ScreenshotEventHandler do
     expect(handler.call(event, context)).to eq(:changed)
     expect(context.published.first).to include(type: "d2r.area.changed")
     expect(hud_tracker).to have_received(:observe).with(reading, observed_at: event.occurred_at)
+    expect(loot_tracker).to have_received(:observe).with([], observed_at: event.occurred_at, area: "Catacombs Level 2", new_game: false)
   end
 
   it "does not publish an approximate bitmap area when OCR sees no heading" do
@@ -130,6 +131,7 @@ RSpec.describe D2r::ScreenshotEventHandler do
       type: "d2r.game.started",
       payload: include("screen" => "gameplay", "area" => "Blood Moor", "difficulty" => "Normal")
     )
+    expect(loot_tracker).to have_received(:observe).with([], observed_at: event.occurred_at, area: "Blood Moor", new_game: true)
   end
 
   it "emits confirmed rune and unique sightings through the same event stream" do
@@ -160,7 +162,7 @@ RSpec.describe D2r::ScreenshotEventHandler do
       hud_tracker:, ground_label_reader:, loot_tracker:, gate:)
     handler.call(event, context)
     expect(ground_label_reader).not_to have_received(:call)
-    expect(loot_tracker).to have_received(:observe).with([], observed_at: event.occurred_at)
+    expect(loot_tracker).to have_received(:observe).with([], observed_at: event.occurred_at, area: nil, new_game: false)
   end
 
   %w[game_creation character_select character_creation loading_screen death_screen unknown].each do |screen|
@@ -173,7 +175,7 @@ RSpec.describe D2r::ScreenshotEventHandler do
       handler.call(event, context)
 
       expect(ground_label_reader).not_to have_received(:call)
-      expect(loot_tracker).to have_received(:observe).with([], observed_at: event.occurred_at)
+      expect(loot_tracker).to have_received(:observe).with([], observed_at: event.occurred_at, area: nil, new_game: false)
       expect(context.published.map { |item| item.fetch(:type) }).not_to include(
         "d2r.loot.rune.sighted", "d2r.loot.unique.sighted"
       )

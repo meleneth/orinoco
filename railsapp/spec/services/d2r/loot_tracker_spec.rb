@@ -27,6 +27,25 @@ RSpec.describe D2r::LootTracker do
       "source" => "ground_label")
   end
 
+  it "emits a unique label once per area per game before publishing" do
+    label = { "kind" => "unique", "name" => "Shako" }
+    expect(tracker.observe([label], observed_at: "1", area: "Catacombs Level 2")).to be_empty
+    expect(tracker.observe([label], observed_at: "2").size).to eq(1)
+
+    tracker.observe([], observed_at: "3")
+    2.times do
+      expect(tracker.observe([label.merge("name" => "SHAKO")], observed_at: "4")).to be_empty
+    end
+
+    expect(tracker.observe([label], observed_at: "5", area: "Catacombs Level 3")).to be_empty
+    expect(tracker.observe([label], observed_at: "6").size).to eq(1)
+    expect(tracker.observe([label], observed_at: "7", area: "Catacombs Level 2")).to be_empty
+    expect(tracker.observe([label], observed_at: "8")).to be_empty
+
+    expect(tracker.observe([label], observed_at: "9", area: "Catacombs Level 2", new_game: true)).to be_empty
+    expect(tracker.observe([label], observed_at: "10").size).to eq(1)
+  end
+
   it "rejects unrecognized rune names" do
     labels = [ { "kind" => "rune", "name" => "Super Rune" } ]
     2.times { expect(tracker.observe(labels, observed_at: "time")).to eq([]) }
