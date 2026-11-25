@@ -26,6 +26,7 @@ module D2r
     def run(stop: -> { false })
       until stop.call
         run_once
+        yield if block_given?
         @sleeper.call(@interval_seconds)
       end
     end

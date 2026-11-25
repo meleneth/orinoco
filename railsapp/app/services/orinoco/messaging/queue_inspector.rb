@@ -20,25 +20,12 @@ module Orinoco
       end
 
       def queues
-        @topology.queue_refs.map do |ref|
-          attributes = @sqs.get_queue_attributes(
-            queue_url: ref.url,
-            attribute_names: ATTRIBUTE_NAMES
-          ).attributes
-
-          QueueSnapshot.new(
-            name: ref.name,
-            url: ref.url,
-            arn: ref.arn,
-            visible: integer_attribute(attributes, "ApproximateNumberOfMessages"),
-            in_flight: integer_attribute(attributes, "ApproximateNumberOfMessagesNotVisible"),
-            delayed: integer_attribute(attributes, "ApproximateNumberOfMessagesDelayed")
-          )
-        end
+        @topology.queue_refs.map { |ref| snapshot(ref) }
       end
 
       def queue(name)
-        queues.find { |queue| queue.name == name.to_s }
+        ref = @topology.queue_refs.find { |candidate| candidate.name == name.to_s }
+        snapshot(ref) if ref
       end
 
       def clear(name)
@@ -67,6 +54,18 @@ module Orinoco
       end
 
       private
+
+      def snapshot(ref)
+        attributes = @sqs.get_queue_attributes(queue_url: ref.url, attribute_names: ATTRIBUTE_NAMES).attributes
+        QueueSnapshot.new(
+          name: ref.name,
+          url: ref.url,
+          arn: ref.arn,
+          visible: integer_attribute(attributes, "ApproximateNumberOfMessages"),
+          in_flight: integer_attribute(attributes, "ApproximateNumberOfMessagesNotVisible"),
+          delayed: integer_attribute(attributes, "ApproximateNumberOfMessagesDelayed")
+        )
+      end
 
       def integer_attribute(attributes, name)
         Integer(attributes.fetch(name, 0))

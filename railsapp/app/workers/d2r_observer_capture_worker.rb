@@ -10,13 +10,15 @@ require_relative "../services/obs_bridge/control_publisher"
 require_relative "../services/obs_bridge/inventory_reader"
 require_relative "../services/obs_bridge/screenshot_command_publisher"
 require_relative "../services/obs_bridge/status_reader"
+require_relative "../services/orinoco/messaging/queue_inspector"
 
 class D2rObserverCaptureWorker
   BRIDGE_HEARTBEAT_STALE_AFTER_SECONDS = 15
+  QUEUE_BROADCAST_INTERVAL_SECONDS = 5
 
   def run
     install_signal_handlers
-    loop_service.run(stop: -> { @stop_requested })
+    loop_service.run(stop: -> { @stop_requested }) { broadcast_queue_depth }
   end
 
   def run_once
@@ -24,6 +26,26 @@ class D2rObserverCaptureWorker
   end
 
   private
+
+  def broadcast_queue_depth
+    now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    return if @next_queue_broadcast && now < @next_queue_broadcast
+
+    @next_queue_broadcast = now + QUEUE_BROADCAST_INTERVAL_SECONDS
+    queue = queue_inspector.queue(Orinoco::Messaging::Names::D2R_SCREENSHOT_RESULT_QUEUE)
+    depth = queue.visible + queue.in_flight + queue.delayed
+    Turbo::StreamsChannel.broadcast_update_to(:d2r_events, target: "d2r_screenshot_queue_depth", html: depth.to_s)
+  rescue StandardError => e
+    Rails.logger.warn("[d2r/queue-depth] #{e.class}: #{e.message}")
+  end
+
+  def queue_inspector
+    @queue_inspector ||= Orinoco::Messaging::QueueInspector.new(
+      sqs: Aws::SQS::Client.new(**config.event_pipeline.aws_client_options,
+        http_open_timeout: 1, http_read_timeout: 1, retry_limit: 0),
+      topology: config.orinoco.messaging_topology
+    )
+  end
 
   def loop_service
     @loop_service ||= D2r::ScreenshotRequestLoop.new(
