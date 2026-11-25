@@ -23,7 +23,7 @@ module D2r
 
     def initialize(config_reader:, classifier: FastClassifier.new, tracker: StateTracker.new,
       hud_reader: HudReader.new, hud_area_reader: HudAreaReader.new, hud_tracker: HudTracker.new,
-      ground_label_reader: GroundLabelReader.new, loot_tracker: LootTracker.new, gate: nil, presence: nil,
+      ground_label_reader: GroundLabelReader.new, loot_tracker: LootTracker.new, gate: nil, presence: nil, observer_control: nil,
       character_reader: nil, character_tracker: CharacterTracker.new,
       character_creation_reader: CharacterCreationReader.new, character_menu_reader: CharacterMenuReader.new,
       character_menu_tracker: CharacterMenuTracker.new, xp_reader: ExperienceBarReader.new,
@@ -38,6 +38,7 @@ module D2r
       @loot_tracker = loot_tracker
       @gate = gate
       @presence = presence
+      @observer_control = observer_control
       @character_reader = character_reader
       @character_tracker = character_tracker
       @character_creation_reader = character_creation_reader
@@ -48,6 +49,21 @@ module D2r
     end
 
     def call(event, context)
+      outcome = process_event(event, context)
+      @observer_control&.record_processing(
+        reason: outcome, source: event.payload_value("sourceName"),
+        screen: @last_screen
+      )
+      outcome
+    rescue StandardError => e
+      @observer_control&.record_processing(
+        reason: :failed, source: event.payload_value("sourceName"),
+        screen: @last_screen, error: "#{e.class}: #{e.message}"
+      )
+      raise
+    end
+
+    def process_event(event, context)
       config = @config_reader.call
       return :disabled unless config.enabled?
 
@@ -57,7 +73,9 @@ module D2r
 
       classification, hud, loot, character_changes = with_screenshot_file(event.payload) do |path|
         result = @classifier.call(path).to_h
-        active = !@presence || @presence.observe(source_name, result)
+        @last_screen = result.dig("signals", "screen", "state")
+        observed_active = !@presence || @presence.observe(source_name, result)
+        active = observed_active || @observer_control&.mode == "force_on"
         unless active
           @xp_tracker.reset_sample
           next [ result, nil, nil ]
