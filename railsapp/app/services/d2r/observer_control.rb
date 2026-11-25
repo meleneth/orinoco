@@ -2,6 +2,8 @@
 
 require "json"
 require "time"
+require_relative "scan_presence"
+require_relative "capture_gate"
 
 module D2r
   # Redis-backed control and diagnostics shared by the observer workers and web UI.
