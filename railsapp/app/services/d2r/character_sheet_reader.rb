@@ -5,6 +5,7 @@ require "json"
 require "open3"
 require "tempfile"
 require "vips"
+require_relative "ocr_text_mask"
 
 module D2r
   # Reads small, normalized regions independently. A failed field never erases
@@ -40,7 +41,9 @@ module D2r
       identity_text = ocr(crop(image, REGIONS.fetch(:identity)), psm: 6)
       merge_identity(reading, identity_text)
       if reading["level"] && !reading["name"]
-        name = self.class.clean(self.class.normalize_letters(ocr(crop(image, REGIONS.fetch(:name)), psm: 7)))
+        name_region = crop(image, REGIONS.fetch(:name))
+        name_text = ocr(OcrTextMask.white(name_region), psm: 7)
+        name = self.class.clean(self.class.normalize_letters(name_text))
         reading["name"] = name if self.class.valid_name?(name)
       end
       # D2R renders the compact "current of next" XP values on the same row

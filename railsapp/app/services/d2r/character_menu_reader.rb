@@ -4,6 +4,7 @@ require "open3"
 require "tempfile"
 require "vips"
 require_relative "character_sheet_reader"
+require_relative "ocr_text_mask"
 
 module D2r
   # Reads the selected character summary from the roster and create-game
@@ -24,7 +25,8 @@ module D2r
       return reading if screen != "game_creation" || %w[name character_class level].all? { |key| reading[key] }
 
       # The lobby's name and level/class are separate, tightly spaced rows.
-      name = ocr(crop(image, [ 0.4492, 0.6000, 0.1035, 0.0234 ]), psm: 7).strip
+      name_region = crop(image, [ 0.4492, 0.6000, 0.1035, 0.0234 ])
+      name = ocr(OcrTextMask.gold(name_region), psm: 7).strip
       summary = ocr(crop(image, [ 0.4395, 0.621875, 0.1221, 0.01875 ]), psm: 7, contrast: true)
       summary = summary.sub(/\bLev(?:er|en|et)\b/i, "Level")
       reading = CharacterSheetReader.parse_identity(summary).merge(reading)

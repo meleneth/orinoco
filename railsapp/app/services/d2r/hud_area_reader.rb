@@ -3,6 +3,7 @@
 require "open3"
 require "tempfile"
 require "vips"
+require_relative "ocr_text_mask"
 
 module D2r
   # Fallback for areas missing from the hand-captured bitmap reference set.
@@ -36,10 +37,8 @@ module D2r
       # scenery dominates the crop, Tesseract can put it above the HUD heading.
       inset = (image.height * 0.033).round.clamp(0, height - 1)
       band_height = (image.height * 0.065).round.clamp(1, height - inset)
-      red, green, blue = roi.crop(0, inset, width, band_height).colourspace("srgb").bandsplit
-      gold = (red >= 115) & (green >= 100) & (red >= green) & (red <= green * 1.35) &
-        (green > blue * 1.18) & (green < blue * 2.4)
-      filtered = read_image(gold.invert.resize(3.0))
+      gold = OcrTextMask.gold(roi.crop(0, inset, width, band_height))
+      filtered = read_image(gold.resize(3.0))
       return filtered if filtered["area"]
 
       read_image(roi.resize(2.0)).merge(filtered) { |_, raw, masked| masked || raw }
