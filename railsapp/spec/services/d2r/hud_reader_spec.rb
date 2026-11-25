@@ -23,4 +23,17 @@ RSpec.describe D2r::HudReader do
       "terror_zones" => [ "Rocky Waste", "Stony Tomb" ]
     )
   end
+
+  it "reads a Normal terror rotation with no modifier, including the first zone and Pit" do
+    hud = Vips::Image.new_from_file(file_fixture("d2r/hud/hud_tamoe_highland_normal.png").to_s)
+    frame = hud.embed(1520, 0, 1920, 1200)
+
+    Tempfile.create([ "d2r-normal-terror", ".jpg" ]) do |file|
+      frame.jpegsave(file.path, Q: 70)
+
+      expect(described_class.new.call(file.path).fetch("terror_zones")).to eq(
+        [ "Tamoe Highland", "Pit", "Monastery Gate", "Outer Cloister" ]
+      )
+    end
+  end
 end

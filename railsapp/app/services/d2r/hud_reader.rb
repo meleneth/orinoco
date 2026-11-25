@@ -35,6 +35,11 @@ module D2r
         file: "hud_catacombs_level_3.png",
         gold: [ "Catacombs Level 3", "Difficulty: Hell" ],
         purple: [ "__modifier__", "Rocky Waste", "Stony Tomb" ]
+      },
+      {
+        file: "hud_tamoe_highland_normal.png",
+        gold: [],
+        purple: [ "Tamoe Highland", "Pit", "Monastery Gate", "Outer Cloister" ]
       }
     ].freeze
 
@@ -45,9 +50,9 @@ module D2r
     def call(path)
       rows = rows_for(normalized_hud(Vips::Image.new_from_file(path.to_s, access: :sequential)))
       gold = rows.fetch(:gold).filter_map { |feature| match(feature, :gold) }
-      # The first purple row is the rotating terror-zone strength/element
-      # modifier (for example "Extra Strong"), not a place name.
-      purple = rows.fetch(:purple).drop(1).filter_map { |feature| match(feature, :purple) }
+      # Match every row because the optional modifier may be absent.
+      purple = rows.fetch(:purple).filter_map { |feature| match(feature, :purple) }
+      purple.delete("__modifier__")
 
       {
         "area" => gold.find { |label| !label.start_with?("Difficulty:") },
@@ -99,7 +104,10 @@ module D2r
           masks[:purple][index] = purple_pixel?(red, green, blue)
         end
       end
-      masks.transform_values { |mask| line_features(mask, image.width, image.height) }
+      {
+        gold: line_features(masks.fetch(:gold), image.width, image.height, min_span: 25),
+        purple: line_features(masks.fetch(:purple), image.width, image.height, min_span: 20)
+      }
     end
 
     def gold_pixel?(red, green, blue)
@@ -110,7 +118,7 @@ module D2r
       red >= 70 && blue >= 75 && red >= (green * 1.18) && blue >= (green * 1.2)
     end
 
-    def line_features(mask, width, height)
+    def line_features(mask, width, height, min_span:)
       active_rows = height.times.select { |y| width.times.count { |x| mask[(y * width) + x] } >= 3 }
       groups = active_rows.chunk_while { |left, right| right - left <= 2 }.to_a
       groups.filter_map do |rows|
@@ -120,7 +128,7 @@ module D2r
         next if points.empty?
 
         xs = points.map(&:first)
-        next if xs.max < width * 0.82 || (xs.max - xs.min) < 25
+        next if xs.max < width * 0.82 || (xs.max - xs.min) < min_span
 
         feature_for(points, rows.min, rows.max)
       end
