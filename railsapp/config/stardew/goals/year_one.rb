@@ -1,6 +1,50 @@
 # frozen_string_literal: true
 
 goal_set :introductions do
+  # Rendezvous estimates: Shoukry's GameFAQs walkthrough, Introductions Quest.
+  # https://gamefaqs.gamespot.com/pc/701094-stardew-valley/faqs/74654?page=4
+  [
+    ["11:00", :marnies_ranch, %i[jas]],
+    ["11:10", :leahs_cottage, %i[leah]],
+    ["11:20", :willow_lane, %i[haley]],
+    ["11:30", :jodis_house, %i[vincent jodi]],
+    ["11:40", :town_square, %i[penny]],
+    ["12:00", :alexs_house, %i[george evelyn]],
+    ["12:10", :alexs_house_exterior, %i[alex]],
+    ["12:10", :trailer, %i[pam]],
+    ["12:20", :pierres_exterior, %i[sam]],
+    ["12:30", :town_square, %i[marnie]],
+    ["12:40", :pierres_store, %i[caroline abigail pierre]],
+    ["12:50", :west_town_square, %i[harvey]],
+    ["14:00", :emilys_house, %i[emily]],
+    ["14:30", :saloon, %i[gus]],
+    ["14:40", :joja_bridge, %i[maru]],
+    ["15:10", :blacksmith, %i[clint]],
+    ["15:20", :beach_bridge, %i[elliott]],
+    ["16:00", :fish_shop_exterior, %i[lewis]],
+    ["17:00", :jojamart, %i[shane]],
+    ["18:40", :carpenters_shop, %i[sebastian]],
+    ["18:50", :carpenters_exterior, %i[robin demetrius]],
+    ["19:10", :linus_tent, %i[linus]]
+  ].each_with_index do |(time, location, villagers), index|
+    villagers.each do |npc|
+      goal :"greet_#{npc}" do
+        target :talk, npc, location: location, route_index: index,
+          introduction: true, optional: %i[lewis robin].include?(npc)
+        prefer_by spring(1), time: time
+        priority :high
+        strategy :respect_npc_schedule
+      end
+    end
+  end
+
+  goal :greet_willy do
+    target :talk, :willy, location: :beach, introduction: true
+    prefer_by spring(2)
+    priority :high
+    strategy :respect_npc_schedule
+  end
+
   goal :meet_villagers do
     target :talk, :introductions, selector: :quest_targets, quantifier: :all
     prefer_by spring(1)
