@@ -22,10 +22,11 @@
       <p class="mt-2">Time: <%= state["time"] %> · Gold: <%= state["gold"] %>g · Energy: <%= state["energy"] %></p>
       <p>Location: <%= state["location"] %> · Tile: <%= state["tile_x"] %>, <%= state["tile_y"] %></p>
       <p>Weather: <%= state["raining"] ? "Rain" : "Not raining" %></p>
-      <h3 class="mt-4 font-semibold">Skills</h3>
-      <p><%= (state["skills"] || {}).map { |name, level| "#{name.humanize}: #{level}" }.join(" · ") %></p>
+      <details><summary>Skills</summary>
+      <p><%= (state["skills"] || {}).map { |name, level| "#{name.humanize}: #{level}" }.join(" · ") %></p></details>
     </div>
-    <div class="rounded border border-slate-700 bg-slate-900 p-4">
+    <details id="stardew_observations" class="rounded border border-slate-700 bg-slate-900 p-4">
+      <summary>Detailed observations</summary>
       <h2 class="text-lg font-semibold">Spring onion observations</h2>
       <% if state["spring_onions"].nil? %>
         <p>Not observed in current location.</p>
@@ -33,7 +34,6 @@
         <p><%= state["spring_onions"].size %> onions observed in the forest.</p>
       <% end %>
       <p class="text-sm text-slate-400">Patch visit completion is not inferred from forest entry alone.</p>
-    </div>
     <div class="rounded border border-slate-700 bg-slate-900 p-4">
       <h2 class="text-lg font-semibold">Crops · <%= Array(state["crops"]).size %></h2>
       <p>Watered: <%= Array(state["crops"]).count { |crop| crop["watered"] } %></p>
@@ -47,5 +47,6 @@
       <% end %>
       <details class="mt-4"><summary>Raw observation</summary><pre class="overflow-auto text-xs"><%= JSON.pretty_generate(observation) %></pre></details>
     </div>
+    </details>
   <% end %>
 </section>
