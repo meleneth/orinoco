@@ -1,4 +1,6 @@
 <div class="rounded border border-slate-700 bg-slate-900 p-4">
+  <script type="application/json" data-stardew-completion-target="snapshot" data-scope="<%= scope %>"><%= raw json_escape(agenda[:tasks].map { |task| task.slice(:id, :title, :status) }.to_json) %></script>
+  <div data-stardew-completion-target="recent" aria-live="polite" hidden></div>
   <h2 class="text-xl font-semibold">Next thing to do</h2>
   <% if (task = agenda[:next_action]) %>
     <p class="mt-2 text-2xl font-semibold text-cyan-300"><%= task[:title] %></p>
@@ -39,7 +41,7 @@
 
   <details id="stardew_full_agenda" class="mt-4">
     <summary class="cursor-pointer font-semibold">Full day agenda · <%= agenda[:tasks].count { |task| task[:status] == "complete" } %>/<%= agenda[:tasks].size %> observed complete</summary>
-    <% agenda[:tasks].each do |task| %>
+    <% agenda[:tasks].reject { |task| %w[complete deferred].include?(task[:status]) }.each do |task| %>
       <div class="border-t border-slate-700 py-3">
         <p class="font-semibold"><%= task[:status] == "complete" ? "✓" : "○" %> <%= task[:title] %></p>
         <p class="text-sm text-slate-400"><%= task[:status].humanize %> · <%= task[:evidence] %></p>
