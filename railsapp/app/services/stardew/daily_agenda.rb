@@ -44,10 +44,11 @@ module Stardew
           priority: goal.fetch("priority", "normal"), strategies: goal.fetch("strategies"),
           target: goal.fetch("target") }
       end
-      tasks.sort_by! { |task| [task[:status] == "complete" ? 1 : 0, order(task), PRIORITY.fetch(task[:priority]), task[:id]] }
+      tasks.sort_by! { |task| [task[:status] == "complete" ? 1 : 0, order(task), task[:preferred_time] || "99:99", task[:target].fetch("options").fetch("route_index", 999), PRIORITY.fetch(task[:priority]), task[:id]] }
       tomorrow = @goals.values.select { |goal| !goal["recurring"] && milestone(goal) == @today + 1 }
                        .reject { |goal| evaluate(goal).first == "complete" }.map { |goal| title(goal) }
-      { tasks: tasks, tomorrow: tomorrow, warnings: warnings }
+      { tasks: tasks, tomorrow: tomorrow, warnings: warnings, next_action: next_action(tasks),
+        blockers: blockers(tasks), relationships: relationship_status }
     end
 
     private
@@ -75,16 +76,17 @@ module Stardew
         return true
       end
       date = milestone(goal)
-      date ? date <= day : %w[caroline_two_hearts caroline_sunroom tea_sapling_recipe].include?(goal["id"])
+      date ? date <= day : %w[linus_four_hearts caroline_two_hearts caroline_sunroom tea_sapling_recipe].include?(goal["id"])
     end
 
     def order(task)
       return 0 if task[:id] == "crop_maintenance"
       return 1 if task[:strategies].include?("first_morning_outing")
       return 2 if task[:preferred_time]
-      return 3 if %w[chest_house meet_villagers].include?(task[:id])
+      return 3 if task[:strategies].include?("priority_friendship")
+      return 4 if %w[chest_house meet_villagers].include?(task[:id])
 
-      4
+      5
     end
 
     def title(goal)
@@ -95,6 +97,11 @@ module Stardew
       end
       if target["subject"].end_with?("_skill")
         return "Reach #{target["subject"].delete_suffix("_skill").capitalize} #{target["quantity"]}"
+      end
+      if target["type"] == "talk" && target["subject"] != "introductions"
+        return "Talk to #{target["subject"].capitalize}"
+      elsif target["type"] == "gift" && options["period"] == "week"
+        return "Give #{target["subject"].capitalize} a gift"
       end
       goal["id"].tr("_", " ").capitalize
     end
@@ -119,8 +126,8 @@ module Stardew
         if subject.end_with?("_skill")
           value = @state.dig("skills", subject.delete_suffix("_skill"))
           return progress(value, quantity, "skill level")
-        elsif subject == "caroline_friendship"
-          npc = friendship("Caroline")
+        elsif %w[caroline_friendship linus_friendship].include?(subject)
+          npc = friendship(subject.delete_suffix("_friendship"))
           return progress(npc && npc["points"], quantity * 250, "friendship points")
         end
       when "talk"
@@ -131,6 +138,15 @@ module Stardew
         return ["complete", "Conversation observed today"] if npc && npc["talked_today"] == true
         return ["unknown", "Earlier introduction not retained"] if goal["id"] == "jas_introduction" && @today > 1
         return ["pending", "Conversation not observed today"] if @state["friendship"].is_a?(Array)
+      when "gift"
+        if options["period"] == "week"
+          npc = friendship(subject)
+          return ["unknown", "Gift counters not observed"] unless npc && npc["gifts_this_week"].is_a?(Integer) && npc["gifts_today"].is_a?(Integer)
+          count = npc["gifts_this_week"]
+          return ["complete", "#{count}/#{quantity} gifts this week"] if count >= quantity
+          return ["deferred", "#{count}/#{quantity} this week; already gifted today"] if npc["gifts_today"] >= options.fetch("daily_limit", 1)
+          return ["pending", "#{count}/#{quantity} this week; gift available today"]
+        end
       when "plant"
         if options["crops"] && @state["crops"].is_a?(Array)
           counts = options["crops"].map do |name, needed|
@@ -152,6 +168,37 @@ module Stardew
         end
       end
       ["unknown", "Completion not yet observable"]
+    end
+
+    def next_action(tasks)
+      candidates = tasks.select { |task| task[:status] == "pending" ||
+        (task[:status] == "unknown" && %w[spring_onion_check spring_onions chest_house opening_kale_seeds].include?(task[:id])) }
+      # The current location is observable; actual NPC availability is not.
+      # Do not pin the route to a missed rendezvous indefinitely.
+      clock = @state["time"].to_i
+      candidates.reject! do |task|
+        time = task[:preferred_time]
+        time && clock > time.delete(":").to_i + 100 && task[:target]["options"]["route_index"]
+      end
+      candidates.first
+    end
+
+    def blockers(tasks)
+      tasks.filter_map do |task|
+        next unless task[:status] == "blocked"
+        next unless task[:priority] == "critical" || task[:priority] == "high" || task[:id] == "expand_kale"
+
+        { title: task[:title], reason: "Requires: #{task[:dependencies].map { |id| id.tr("_", " ") }.join(", ")}" }
+      end
+    end
+
+    def relationship_status
+      %w[Linus Caroline].map do |name|
+        npc = friendship(name)
+        { name: name, points: npc && npc["points"], talked_today: npc && npc["talked_today"],
+          gifts_today: npc && npc["gifts_today"], gifts_this_week: npc && npc["gifts_this_week"],
+          target_hearts: name == "Linus" ? 4 : 2 }
+      end
     end
 
     def friendship(name)
