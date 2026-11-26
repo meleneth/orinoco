@@ -164,6 +164,10 @@ module Stardew
         return [@state["professions"].include?(13) ? "complete" : "pending", "Choose Gatherer at Foraging 5"]
       elsif subject == "tea_sapling_recipe" && @state["recipes"].is_a?(Hash)
         return [@state["recipes"].key?("Tea Sapling") ? "complete" : "pending", "Check Caroline's recipe mail"]
+      elsif subject == "training_rod"
+        return [@fishing.training_rod? || @fishing.upgraded_rod? || @state.dig("skills", "fishing").to_i >= 5 ? "complete" : "pending", "Buy the 25g Training Rod from Willy before 5 PM"]
+      elsif subject == "fiberglass_rod"
+        return [@fishing.upgraded_rod? ? "complete" : "pending", "Fishing 2 and 1,800g required"]
       elsif subject == "fishing_rod"
         return [@fishing.rod? ? "complete" : "pending", "Visit the beach south of town between 6 AM and 5 PM to receive Willy’s bamboo pole"]
       elsif target["type"] == "build" && subject == "chest" && @state["chests"].is_a?(Array)
@@ -246,7 +250,7 @@ module Stardew
       candidates = tasks.select { |task| task[:status] == "pending" ||
         (task[:status] == "unknown" && %w[spring_onion_check spring_onions chest_house opening_kale_seeds].include?(task[:id])) }
       # Milestones measure outcomes, not executable instructions.
-      candidates.reject! { |task| task[:target]["type"] == "reach" || task[:target]["subject"] == "introductions" }
+      candidates.reject! { |task| task[:target]["type"] == "reach" || task[:target]["subject"] == "introductions" || %w[training_rod fiberglass_rod].include?(task[:id]) }
       # Avoid pinning the whole day to an unobservable morning task.
       clock = @state["time"].to_i
       candidates.reject! { |task| task[:id] == "chest_house" && inventory_count("wood").to_i < 50 && !Array(@state["inventory"]).any? { |item| item["id"] == "(BC)130" } }
