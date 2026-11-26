@@ -123,6 +123,34 @@ public sealed class ModEntry : Mod
                 ? forest.Objects.Pairs.Where(p => p.Value.QualifiedItemId == "(O)399")
                     .Select(p => new { x = (int)p.Key.X, y = (int)p.Key.Y }).ToArray()
                 : null;
+            var extras = new Dictionary<string, object?>();
+            // Optional probes are isolated: a version-specific field must not
+            // prevent the basic observation from being transmitted.
+            void Probe(string key, Func<object?> read) {
+                try { extras[key] = read(); }
+                catch (Exception ex) { extras[key] = null; Monitor.Log($"Probe {key}: {ex.Message}", LogLevel.Trace); }
+            }
+            Probe("bundle_definitions", () => Helper.GameContent.Load<Dictionary<string, string>>("Data/Bundles"));
+            Probe("gift_taste_definitions", () => Helper.GameContent.Load<Dictionary<string, string>>("Data/NPCGiftTastes"));
+            Probe("active_bundles", () => Game1.netWorldState.Value.BundleData.Pairs.ToDictionary(p => p.Key.ToString(), p => p.Value));
+            Probe("bundle_progress", () => {
+                var cc = Game1.getLocationFromName("CommunityCenter") as StardewValley.Locations.CommunityCenter;
+                return cc?.bundles.Pairs.ToDictionary(p => p.Key.ToString(), p => p.Value.ToArray());
+            });
+            Probe("beach_bridge", () => (Game1.getLocationFromName("Beach") as StardewValley.Locations.Beach)?.bridgeFixed.Value);
+            Probe("pets", () => Game1.locations.SelectMany(m => m.characters)
+                .OfType<StardewValley.Characters.Pet>().Select(p => new {
+                    name = p.Name, friendship = p.friendshipTowardFarmer.Value
+                }).ToArray());
+            Probe("gift_tastes_inventory", () => new[] { "Linus", "Caroline" }.ToDictionary(name => name, name => {
+                var npc = Game1.getCharacterFromName(name);
+                return farmer.Items.Where(i => i is StardewValley.Object)
+                    .Select(i => new { id = i.QualifiedItemId, taste = npc?.getGiftTasteForThisItem(i) }).ToArray();
+            }));
+            Probe("quest_details", () => farmer.questLog.Where(q => q != null).Select(q => new {
+                id = q.id.Value.ToString(), title = q.GetType().Name, completed = q.completed.Value,
+                description = q.questDescription
+            }).ToArray());
             var state = new {
                 year = Game1.year, season = Game1.currentSeason, day = Game1.dayOfMonth,
                 time = Game1.timeOfDay, raining = Game1.isRaining,
@@ -162,6 +190,7 @@ public sealed class ModEntry : Mod
                 }).ToArray(),
                 cooking_recipes = farmer.cookingRecipes.Pairs.ToDictionary(p => p.Key, p => p.Value),
                 crops,
+                extras,
                 spring_onions = onions
             };
             string serialized = JsonSerializer.Serialize(state);
