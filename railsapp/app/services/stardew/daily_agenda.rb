@@ -128,8 +128,12 @@ module Stardew
       subject = target.fetch("subject")
       quantity = target.fetch("quantity")
       options = target.fetch("options")
+      if Array(@state["completed_milestones"]).include?(goal["id"]) && !goal["recurring"]
+        return ["complete", "Previously observed milestone"]
+      end
       if goal["id"] == "first_chest_wood"
         wood = inventory_count("wood")
+        wood = [wood.to_i, @state["wood_peak_today"]].max if @state["wood_peak_today"].is_a?(Integer)
         return ["complete", "Chest crafted or placed"] if @state["house_chest"] == true || Array(@state["inventory"]).any? { |item| item["id"] == "(BC)130" }
         return progress(wood, 50, "wood in backpack")
       elsif goal["id"] == "chest_house"
@@ -145,6 +149,21 @@ module Stardew
         return ["complete", "Patch checked; no onions remaining"] if @state["spring_onion_patch_checked"] == true && @state["spring_onions"] == []
         return ["pending", "Pick available onions for energy and gifts"] if @state["spring_onion_patch_checked"] == true && Array(@state["spring_onions"]).any?
         return ["unknown", "Check the patch first"]
+      end
+      if subject == "scarecrow" && @state["scarecrows"].is_a?(Array)
+        return progress(@state["scarecrows"].size, 1, "placed scarecrows")
+      elsif subject == "mine_floor" || subject == "mine_progress"
+        return progress(@state["mine_floor"], quantity, "mine floor") unless options["quantity_policy"]
+      elsif subject == "gatherer_profession" && @state["professions"].is_a?(Array)
+        return [@state["professions"].include?(13) ? "complete" : "pending", "Choose Gatherer at Foraging 5"]
+      elsif subject == "tea_sapling_recipe" && @state["recipes"].is_a?(Hash)
+        return [@state["recipes"].key?("Tea Sapling") ? "complete" : "pending", "Check Caroline's recipe mail"]
+      elsif subject == "fishing_rod" && @state["tools"].is_a?(Array)
+        return [@state["tools"].any? { |tool| tool["id"].to_s.match?(/Rod|Pole/) } ? "complete" : "pending", "Collect Willy's fishing rod"]
+      elsif target["type"] == "build" && subject == "chest" && @state["chests"].is_a?(Array)
+        maps = { "ocean_fishing" => "Beach", "mountain_fishing" => "Mountain", "mines" => "Mine" }
+        map = maps[options["location"]]
+        return progress(@state["chests"].count { |chest| chest["location"] == map }, 1, "placed chests at #{map}") if map
       end
       return ["unknown", "Variable quantity requires planning"] if options["quantity_policy"] && !options["crops"]
 
@@ -193,10 +212,15 @@ module Stardew
         end
       when "acquire", "reserve"
         return progress(@state["gold"], quantity, "gold") if subject == "gold"
+        if options["budget"] && subject == "kale_seeds"
+          return ["pending", "Buy kale seeds with gold remaining after bean and cauliflower seeds"]
+        end
         return progress(inventory_count(subject), quantity, "in backpack") unless options["budget"]
       when "maintain"
         if subject == "required_crops" && @state["crops"].is_a?(Array)
           crops = @state["crops"].reject { |crop| crop["dead"] }
+          ready = crops.count { |crop| crop["ready"] == true }
+          return ["pending", "Harvest #{ready} ready crops"] if ready.positive?
           return progress(crops.count { |crop| crop["watered"] }, crops.size, "crops watered")
         elsif subject == "spring_onion_patch_check"
           return ["unknown", "Patch visit is not yet tracked; check south of Cindersap Forest"]
@@ -278,7 +302,7 @@ module Stardew
       limit = @profile.dig("run", "unprotected_crop_limit")
       return [] unless limit && @state["crops"].is_a?(Array)
 
-      return [] if @today > 6
+      return [] if @state["scarecrows"].is_a?(Array) && @state["scarecrows"].any? && @state["crops"].all? { |crop| @state["scarecrows"].any? { |scarecrow| (crop["x"].to_i - scarecrow["x"].to_i)**2 + (crop["y"].to_i - scarecrow["y"].to_i)**2 <= 49 } }
 
       count = @state["crops"].count { |crop| !crop["dead"] }
       ["Before scarecrow coverage is verified, keep total live outdoor crops at #{limit} or fewer (currently #{count})."]
