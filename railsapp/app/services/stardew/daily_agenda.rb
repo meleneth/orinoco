@@ -4,6 +4,7 @@ require_relative "dsl"
 require_relative "gift_advisor"
 require_relative "opening_shopping"
 require_relative "route_guidance"
+require_relative "spring_fishing"
 
 module Stardew
   class DailyAgenda
@@ -31,6 +32,7 @@ module Stardew
       @goals = profile.fetch("goals")
       @gift_advice = build_gift_advice
       @shopping = OpeningShopping.new(state).call
+      @fishing = SpringFishing.new(state)
     end
 
     def call
@@ -54,7 +56,7 @@ module Stardew
       tomorrow = @goals.values.select { |goal| !goal["recurring"] && milestone(goal) == @today + 1 }
                        .reject { |goal| evaluate(goal).first == "complete" }.map { |goal| title(goal) }
       { tasks: tasks, tomorrow: tomorrow, warnings: warnings, next_action: next_action(tasks),
-        blockers: blockers(tasks), relationships: relationship_status, upcoming_introduction: upcoming_introduction(tasks), shopping: @shopping }
+        blockers: blockers(tasks), relationships: relationship_status, upcoming_introduction: upcoming_introduction(tasks), shopping: @shopping, fishing: @fishing.call }
     end
 
     private
@@ -162,8 +164,8 @@ module Stardew
         return [@state["professions"].include?(13) ? "complete" : "pending", "Choose Gatherer at Foraging 5"]
       elsif subject == "tea_sapling_recipe" && @state["recipes"].is_a?(Hash)
         return [@state["recipes"].key?("Tea Sapling") ? "complete" : "pending", "Check Caroline's recipe mail"]
-      elsif subject == "fishing_rod" && @state["tools"].is_a?(Array)
-        return [@state["tools"].any? { |tool| tool["id"].to_s.match?(/Rod|Pole/) } ? "complete" : "pending", "Collect Willy's fishing rod"]
+      elsif subject == "fishing_rod"
+        return [@fishing.rod? ? "complete" : "pending", "Visit the beach south of town between 6 AM and 5 PM to receive Willy’s bamboo pole"]
       elsif target["type"] == "build" && subject == "chest" && @state["chests"].is_a?(Array)
         maps = { "ocean_fishing" => "Beach", "mountain_fishing" => "Mountain", "mines" => "Mine" }
         map = maps[options["location"]]
@@ -243,12 +245,18 @@ module Stardew
     def next_action(tasks)
       candidates = tasks.select { |task| task[:status] == "pending" ||
         (task[:status] == "unknown" && %w[spring_onion_check spring_onions chest_house opening_kale_seeds].include?(task[:id])) }
+      # Milestones measure outcomes, not executable instructions.
+      candidates.reject! { |task| task[:target]["type"] == "reach" || task[:target]["subject"] == "introductions" }
       # Avoid pinning the whole day to an unobservable morning task.
       clock = @state["time"].to_i
       candidates.reject! { |task| task[:id] == "chest_house" && inventory_count("wood").to_i < 50 && !Array(@state["inventory"]).any? { |item| item["id"] == "(BC)130" } }
       candidates.reject! { |task| task[:id] == "spring_onions" && @state["spring_onion_patch_checked"] != true }
       candidates.reject! { |task| task[:strategies].include?("first_morning_outing") && clock >= 1100 && !@state.key?("spring_onion_patch_checked") }
       candidates.reject! { |task| task[:id] == "first_chest_wood" && @today > 1 && !@state.key?("house_chest") }
+      if @today >= 2 && !@fishing.rod? && clock >= 600 && clock < 1700
+        rod = candidates.find { |task| task[:id] == "fishing_rod" }
+        return rod.merge(title: "Meet Willy and collect your bamboo pole", directions: "Walk south out of Pelican Town to the beach; head toward the fish shop on the pier.") if rod
+      end
       if @shopping && @shopping[:at_shop] && @shopping[:purchases].any?
         task = candidates.find { |entry| entry[:id] == "opening_kale_seeds" }
         return task.merge(title: "Buy seeds at Pierre's", evidence: "Follow the live shopping checklist below.") if task
@@ -277,6 +285,13 @@ module Stardew
           [preferred >= clock - 100 ? 0 : 1, task[:preferred_time] || "99:99"]
         end
         return introductions.first if introductions.any?
+      end
+      if @today >= 2 && (fishing = @fishing.call)
+        chores = candidates.find { |task| task[:id] == "crop_maintenance" && @state["location"] == "Farm" }
+        return chores if chores
+        onion = candidates.find { |task| task[:id] == "spring_onion_check" && clock < 900 }
+        return onion if onion
+        return fishing
       end
       candidates.first
     end
