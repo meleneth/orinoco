@@ -1,0 +1,54 @@
+<% observation = telemetry.fetch(:observation, {}) %>
+<% state = observation["state"] || {} %>
+<section id="stardew_live_telemetry" class="mt-6 space-y-4">
+  <div class="rounded border border-slate-700 bg-slate-900 p-4">
+    <h2 class="text-lg font-semibold">Integration status</h2>
+    <p class="mt-2"><strong><%= telemetry[:status].to_s.humanize %></strong></p>
+    <% if telemetry[:last_observation_seconds_ago] %>
+      <p class="text-sm text-slate-400">Last observation: <%= time_ago_in_words(Time.iso8601(observation.fetch("received_at"))) %> ago (at last refresh)</p>
+    <% end %>
+    <% unless configured %>
+      <p class="mt-2 text-amber-300">STARDEW_TELEMETRY_TOKEN is not configured in Rails.</p>
+    <% end %>
+    <% if state.empty? %>
+      <p class="mt-2 text-slate-400">Launch Stardew through SMAPI and load a save. Run orinoco_snapshot in the SMAPI console to force a snapshot.</p>
+    <% end %>
+    <%= link_to "Refresh status", stardew_path, class: "mt-3 inline-block text-cyan-300 hover:underline" %>
+  </div>
+  <% if state.present? %>
+    <div class="rounded border border-slate-700 bg-slate-900 p-4">
+      <h2 class="text-xl font-semibold"><%= state["season"].to_s.capitalize %> <%= state["day"] %>, Year <%= state["year"] %></h2>
+      <p class="mt-2">Time: <%= state["time"] %> · Gold: <%= state["gold"] %>g · Energy: <%= state["energy"] %></p>
+      <p>Location: <%= state["location"] %> · Tile: <%= state["tile_x"] %>, <%= state["tile_y"] %></p>
+      <p>Weather: <%= state["raining"] ? "Rain" : "Not raining" %></p>
+      <h3 class="mt-4 font-semibold">Skills</h3>
+      <p><%= (state["skills"] || {}).map { |name, level| "#{name.humanize}: #{level}" }.join(" · ") %></p>
+    </div>
+    <div class="rounded border border-slate-700 bg-slate-900 p-4">
+      <h2 class="text-lg font-semibold">Spring onion observations</h2>
+      <% if state["spring_onions"].nil? %>
+        <p>Not observed in current location.</p>
+      <% else %>
+        <p><%= state["spring_onions"].size %> onions observed in the forest.</p>
+      <% end %>
+      <p class="text-sm text-slate-400">Patch visit completion is not inferred from forest entry alone.</p>
+    </div>
+    <div class="rounded border border-slate-700 bg-slate-900 p-4">
+      <h2 class="text-lg font-semibold">Crops · <%= Array(state["crops"]).size %></h2>
+      <p>Watered: <%= Array(state["crops"]).count { |crop| crop["watered"] } %></p>
+      <h2 class="mt-4 text-lg font-semibold">Inventory</h2>
+      <% Array(state["inventory"]).each do |item| %>
+        <p><%= item["id"] %> × <%= item["count"] %> (quality <%= item["quality"] %>)</p>
+      <% end %>
+      <h2 class="mt-4 text-lg font-semibold">Villagers</h2>
+      <% Array(state["friendship"]).each do |npc| %>
+        <p><%= npc["npc"] %>: <%= npc["points"] %> points · <%= npc["talked_today"] ? "Talked today" : "Not talked today" %></p>
+      <% end %>
+      <details class="mt-4"><summary>Raw observation</summary><pre class="overflow-auto text-xs"><%= JSON.pretty_generate(observation) %></pre></details>
+    </div>
+  <% end %>
+  <div class="rounded border border-slate-700 p-4">
+    <h2 class="text-lg font-semibold">Today's plan</h2>
+    <p class="text-slate-400">Campaign declarations exist. Live goal evaluation and recommendations are not implemented yet.</p>
+  </div>
+</section>
