@@ -220,7 +220,7 @@ module Stardew
         return progress(@state["gold"], quantity, "gold") if subject == "gold"
         if options["budget"] && subject == "kale_seeds"
           return ["complete", "Opening seed budget spent"] if @shopping && @shopping[:complete]
-          return ["pending", "Buy kale seeds with gold remaining after bean and cauliflower seeds"]
+          return ["pending", "Buy kale only after required seeds and the 28g Day 2 rod reserve"]
         end
         return progress(inventory_count(subject), quantity, "in backpack") unless options["budget"]
       when "maintain"
@@ -256,6 +256,9 @@ module Stardew
       if @today >= 2 && !@fishing.rod? && clock >= 600 && clock < 1700
         rod = candidates.find { |task| task[:id] == "fishing_rod" }
         return rod.merge(title: "Meet Willy and collect your bamboo pole", directions: "Walk south out of Pelican Town to the beach; head toward the fish shop on the pier.") if rod
+      end
+      if @today >= 2 && (investment = @fishing.investment_action)
+        return investment
       end
       if @shopping && @shopping[:at_shop] && @shopping[:purchases].any?
         task = candidates.find { |entry| entry[:id] == "opening_kale_seeds" }
@@ -340,12 +343,13 @@ module Stardew
 
     def warnings
       limit = @profile.dig("run", "unprotected_crop_limit")
-      return [] unless limit && @state["crops"].is_a?(Array)
+      cash_warning = @shopping && @shopping[:cash] < @shopping[:reserve] ? ["Day 2 Training Rod funding at risk: preserve at least #{@shopping[:reserve]}g tonight."] : []
+      return cash_warning unless limit && @state["crops"].is_a?(Array)
 
-      return [] if @state["scarecrows"].is_a?(Array) && @state["scarecrows"].any? && @state["crops"].all? { |crop| @state["scarecrows"].any? { |scarecrow| (crop["x"].to_i - scarecrow["x"].to_i)**2 + (crop["y"].to_i - scarecrow["y"].to_i)**2 <= 49 } }
+      return cash_warning if @state["scarecrows"].is_a?(Array) && @state["scarecrows"].any? && @state["crops"].all? { |crop| @state["scarecrows"].any? { |scarecrow| (crop["x"].to_i - scarecrow["x"].to_i)**2 + (crop["y"].to_i - scarecrow["y"].to_i)**2 <= 49 } }
 
       count = @state["crops"].count { |crop| !crop["dead"] }
-      ["Before scarecrow coverage is verified, keep total live outdoor crops at #{limit} or fewer (currently #{count})."]
+      cash_warning + ["Before scarecrow coverage is verified, keep total live outdoor crops at #{limit} or fewer (currently #{count})."]
     end
   end
 end
