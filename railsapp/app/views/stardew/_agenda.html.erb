@@ -28,8 +28,9 @@
         <p><strong><%= purchase[:quantity] %> × <%= purchase[:name] %></strong> · <%= purchase[:cost] %>g</p>
       <% end %>
       <p class="text-sm text-slate-400">Total: <%= shopping[:total] %>g · Available: <%= shopping[:cash] %>g</p>
-      <% unless shopping[:affordable] %><p class="text-amber-300">Not enough gold for required seeds. Buy those first, not kale.</p><% end %>
+      <% unless shopping[:affordable] %><p class="text-amber-300">Insufficient cash for required seeds and tomorrow’s rod reserve. Do not buy kale.</p><% end %>
     <% end %>
+    <p class="text-sm text-slate-400">Keep at least <%= shopping[:reserve] %>g for tomorrow’s 25g Training Rod, including a possible 2 AM penalty. Planned remaining gold: <%= shopping[:remaining] %>g.</p>
     <p class="text-sm text-slate-400">Plant only 13 parsnips, 1 bean and 1 cauliflower today. Save the kale seeds.</p>
   <% end %>
   <h2 class="mt-4 text-lg font-semibold">Hard blockers</h2>
