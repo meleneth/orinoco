@@ -1,19 +1,54 @@
 <div class="rounded border border-slate-700 bg-slate-900 p-4">
-  <h2 class="text-xl font-semibold">Today's plan</h2>
-  <p class="mt-2 text-sm text-slate-400"><%= agenda[:tasks].count { |task| task[:status] == "complete" } %> / <%= agenda[:tasks].size %> objectives currently observed complete</p>
+  <h2 class="text-xl font-semibold">Next thing to do</h2>
+  <% if (task = agenda[:next_action]) %>
+    <p class="mt-2 text-2xl font-semibold text-cyan-300"><%= task[:title] %></p>
+    <p class="text-sm text-slate-400"><%= task[:evidence] %></p>
+    <% if (location = task[:target].dig("options", "location")) %>
+      <p>Location: <%= location.humanize %></p>
+    <% end %>
+    <% if task[:preferred_time] %><p>Preferred time: <%= task[:preferred_time] %></p><% end %>
+  <% else %>
+    <p class="mt-2">No actionable objective identified from current telemetry.</p>
+  <% end %>
+
+  <h2 class="mt-4 text-lg font-semibold">Hard blockers</h2>
+  <% blockers = Array(agenda[:blockers]) %>
+  <% if blockers.empty? %><p class="text-slate-400">No known blocked high-priority goals.</p><% end %>
+  <% blockers.each do |blocker| %>
+    <p class="mt-2 text-amber-300"><strong><%= blocker[:title] %></strong>: <%= blocker[:reason] %></p>
+  <% end %>
   <% agenda[:warnings].each do |warning| %>
     <p class="mt-2 text-amber-300"><%= warning %></p>
   <% end %>
-  <% agenda[:tasks].each do |task| %>
-    <div class="border-t border-slate-700 py-3">
-      <p class="font-semibold"><%= task[:status] == "complete" ? "✓" : "○" %> <%= task[:title] %></p>
-      <p class="text-sm text-slate-400"><%= task[:status].humanize %> · <%= task[:evidence] %></p>
-      <% if task[:preferred_time] %><p>Target time: <%= task[:preferred_time] %></p><% end %>
-      <% if task[:dependencies].any? %><p>Requires: <%= task[:dependencies].map(&:humanize).join(", ") %></p><% end %>
-    </div>
-  <% end %>
+
+  <h2 class="mt-4 text-lg font-semibold">Priority friendships</h2>
+  <div class="grid grid-cols-2 gap-3">
+    <% Array(agenda[:relationships]).each do |npc| %>
+      <div class="rounded border border-slate-700 p-3">
+        <h3 class="font-semibold"><%= npc[:name] %></h3>
+        <p><%= npc[:points].nil? ? "Not observed" : "#{npc[:points].div(250)} hearts · #{npc[:points]} points" %> / <%= npc[:target_hearts] %> target hearts</p>
+        <p>Talk today: <%= npc[:talked_today].nil? ? "Unknown" : (npc[:talked_today] ? "✓ Done" : "Due") %></p>
+        <p>Gifts this week: <%= npc[:gifts_this_week] || "?" %>/2</p>
+        <p>Gift today: <%= npc[:gifts_today].nil? ? "Unknown" : (npc[:gifts_today] > 0 ? "✓ Done" : (npc[:gifts_this_week].to_i >= 2 ? "Weekly quota met" : "Due")) %></p>
+      </div>
+    <% end %>
+  </div>
+
+  <details id="stardew_full_agenda" class="mt-4">
+    <summary class="cursor-pointer font-semibold">Full day agenda · <%= agenda[:tasks].count { |task| task[:status] == "complete" } %>/<%= agenda[:tasks].size %> observed complete</summary>
+    <% agenda[:tasks].each do |task| %>
+      <div class="border-t border-slate-700 py-3">
+        <p class="font-semibold"><%= task[:status] == "complete" ? "✓" : "○" %> <%= task[:title] %></p>
+        <p class="text-sm text-slate-400"><%= task[:status].humanize %> · <%= task[:evidence] %></p>
+        <% if task[:preferred_time] %><p>Target time: <%= task[:preferred_time] %></p><% end %>
+        <% if task[:dependencies].any? %><p>Requires: <%= task[:dependencies].map(&:humanize).join(", ") %></p><% end %>
+      </div>
+    <% end %>
+  </details>
   <% if agenda[:tomorrow].any? %>
-    <h3 class="mt-4 font-semibold">Tomorrow's preparation</h3>
-    <% agenda[:tomorrow].each do |task| %><p><%= task %></p><% end %>
+    <details id="stardew_tomorrow" class="mt-4">
+      <summary class="cursor-pointer font-semibold">Tomorrow's preparation</summary>
+      <% agenda[:tomorrow].each do |task| %><p><%= task %></p><% end %>
+    </details>
   <% end %>
 </div>
