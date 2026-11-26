@@ -190,11 +190,28 @@ goal_set :daily_routine do
     every :sunday
   end
 
-  recurring :caroline_conversation do
-    target :talk, :caroline
-    every :day
-    when_needed :caroline_two_hearts
-    strategy :respect_npc_schedule
+  %i[linus caroline].each do |npc|
+    recurring :"#{npc}_conversation" do
+      target :talk, npc
+      every :day
+      priority :high
+      strategy :respect_npc_schedule
+      strategy :priority_friendship
+    end
+
+    recurring :"#{npc}_gift" do
+      target :gift, npc, quantity: 2, period: :week, daily_limit: 1
+      every :day
+      priority :high
+      strategy :priority_friendship
+      strategy :optimize_gifts
+    end
+  end
+
+  goal :linus_four_hearts do
+    target :reach, :linus_friendship, quantity: 4, unit: :hearts
+    strategy :optimize_gifts
+    priority :high
   end
 
   goal :caroline_two_hearts do
