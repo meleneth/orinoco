@@ -173,9 +173,10 @@ module Stardew
     def next_action(tasks)
       candidates = tasks.select { |task| task[:status] == "pending" ||
         (task[:status] == "unknown" && %w[spring_onion_check spring_onions chest_house opening_kale_seeds].include?(task[:id])) }
-      # The current location is observable; actual NPC availability is not.
-      # Do not pin the route to a missed rendezvous indefinitely.
+      # Avoid pinning the whole day to an unobservable morning task.
       clock = @state["time"].to_i
+      candidates.reject! { |task| task[:strategies].include?("first_morning_outing") && clock >= 1100 }
+      # Prefer nearby, observed pending friendship opportunities outside the opening route.
       candidates.reject! do |task|
         time = task[:preferred_time]
         time && clock > time.delete(":").to_i + 100 && task[:target]["options"]["route_index"]
