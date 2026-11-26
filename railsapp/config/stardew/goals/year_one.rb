@@ -18,7 +18,7 @@ end
 
 goal_set :crops do
   goal :first_parsnip_harvest do
-    target :harvest, :parsnip, quantity: 15
+    target :harvest, :parsnip, quantity: 13
     prefer_by spring(5)
   end
   %i[spring summer fall].each do |season|
