@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "stardew/dsl"
+require_relative "../../../app/services/stardew/dsl"
 
 RSpec.describe Stardew::Dsl::Compiler do
   subject(:compiler) { described_class.new(ruleset: "stardew-1.6") }
