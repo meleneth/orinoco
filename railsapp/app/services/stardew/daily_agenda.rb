@@ -129,21 +129,31 @@ module Stardew
       end
     end
 
+    # The farmhouse starter parcel is also a Chest in the game API.
+    # Only trust the filtered player-owned storage collection or crafting evidence.
+    def placed_storage_chest?
+      if @state["chests"].is_a?(Array)
+        return @state["chests"].any? { |chest| %w[Farm FarmHouse].include?(chest["location"]) && !Array(chest["items"]).any? { |item| item["id"] == "(O)472" && item["count"].to_i == 15 } } if !@state["recipes"].is_a?(Hash)
+        return @state["chests"].any? { |chest| %w[Farm FarmHouse].include?(chest["location"]) } && (@state["recipes"].fetch("Chest", 0).to_i > 0 || @today > 1)
+      end
+      @state["house_chest"] == true && @state.dig("recipes", "Chest").to_i > 0
+    end
+
     def evaluate(goal)
       target = goal.fetch("target")
       subject = target.fetch("subject")
       quantity = target.fetch("quantity")
       options = target.fetch("options")
-      if Array(@state["completed_milestones"]).include?(goal["id"]) && !goal["recurring"]
+      if Array(@state["completed_milestones"]).include?(goal["id"]) && !goal["recurring"] && goal["id"] != "first_chest_wood"
         return ["complete", "Previously observed milestone"]
       end
       if goal["id"] == "first_chest_wood"
         wood = inventory_count("wood")
         wood = [wood.to_i, @state["wood_peak_today"]].max if @state["wood_peak_today"].is_a?(Integer)
-        return ["complete", "Chest crafted or placed"] if @state["house_chest"] == true || Array(@state["inventory"]).any? { |item| item["id"] == "(BC)130" }
+        return ["complete", "Chest crafted or placed"] if @state.dig("recipes", "Chest").to_i > 0 || placed_storage_chest? || Array(@state["inventory"]).any? { |item| item["id"] == "(BC)130" }
         return progress(wood, 50, "wood in backpack")
       elsif goal["id"] == "chest_house"
-        return ["complete", "Chest placed at farmhouse or farm"] if @state["house_chest"] == true
+        return ["complete", "Chest placed at farmhouse or farm"] if placed_storage_chest?
         return ["pending", "Place the crafted chest near the house"] if Array(@state["inventory"]).any? { |item| item["id"] == "(BC)130" }
         return ["pending", "Craft a chest from 50 wood"] if inventory_count("wood").to_i >= 50
         return ["unknown", "Chest placement not yet observed"] unless @state.key?("house_chest")
@@ -257,6 +267,10 @@ module Stardew
       candidates.reject! { |task| task[:id] == "spring_onions" && @state["spring_onion_patch_checked"] != true }
       candidates.reject! { |task| task[:strategies].include?("first_morning_outing") && clock >= 1100 && !@state.key?("spring_onion_patch_checked") }
       candidates.reject! { |task| task[:id] == "first_chest_wood" && @today > 1 && !@state.key?("house_chest") }
+      if @today == 1 && %w[Farm FarmHouse].include?(@state["location"]) && clock < 1000
+        opening_chest = candidates.find { |task| %w[first_chest_wood chest_house].include?(task[:id]) }
+        return opening_chest if opening_chest
+      end
       if @today >= 2 && !@fishing.rod? && clock >= 600 && clock < 1700
         rod = candidates.find { |task| task[:id] == "fishing_rod" }
         return rod.merge(title: "Meet Willy and collect your bamboo pole", directions: "Walk south out of Pelican Town to the beach; head toward the fish shop on the pier.") if rod
