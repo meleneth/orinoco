@@ -29,6 +29,9 @@
         <p><%= npc[:points].nil? ? "Not observed" : "#{npc[:points].div(250)} hearts · #{npc[:points]} points" %> / <%= npc[:target_hearts] %> target hearts</p>
         <p>Talk today: <%= npc[:talked_today].nil? ? "Unknown" : (npc[:talked_today] ? "✓ Done" : "Due") %></p>
         <p>Gifts this week: <%= npc[:gifts_this_week] || "?" %>/2</p>
+        <% if npc[:gift_advice] %>
+          <p class="mt-2 text-cyan-300"><%= npc[:gift_advice][:available] ? "Recommended gift: " : "Acquire a gift: " %><%= npc[:gift_advice][:text] %></p>
+        <% end %>
         <p>Gift today: <%= npc[:gifts_today].nil? ? "Unknown" : (npc[:gifts_today] > 0 ? "✓ Done" : (npc[:gifts_this_week].to_i >= 2 ? "Weekly quota met" : "Due")) %></p>
       </div>
     <% end %>
