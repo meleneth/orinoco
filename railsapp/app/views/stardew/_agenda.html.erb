@@ -13,6 +13,11 @@
     <p class="mt-2">No actionable objective identified from current telemetry.</p>
   <% end %>
 
+  <% if (intro = agenda[:upcoming_introduction]) %>
+    <h2 class="mt-4 text-lg font-semibold">Upcoming introductions</h2>
+    <p class="text-cyan-300"><%= intro[:preferred_time] %> · <%= intro[:title] %> · <%= intro[:target].dig("options", "location").to_s.humanize %></p>
+    <p class="text-sm text-slate-400">Allow travel time; the full introductions route is in the daily agenda.</p>
+  <% end %>
   <h2 class="mt-4 text-lg font-semibold">Hard blockers</h2>
   <% blockers = Array(agenda[:blockers]) %>
   <% if blockers.empty? %><p class="text-slate-400">No known blocked high-priority goals.</p><% end %>
