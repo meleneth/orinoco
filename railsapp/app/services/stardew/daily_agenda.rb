@@ -50,7 +50,7 @@ module Stardew
       tomorrow = @goals.values.select { |goal| !goal["recurring"] && milestone(goal) == @today + 1 }
                        .reject { |goal| evaluate(goal).first == "complete" }.map { |goal| title(goal) }
       { tasks: tasks, tomorrow: tomorrow, warnings: warnings, next_action: next_action(tasks),
-        blockers: blockers(tasks), relationships: relationship_status }
+        blockers: blockers(tasks), relationships: relationship_status, upcoming_introduction: upcoming_introduction(tasks) }
     end
 
     private
@@ -205,6 +205,12 @@ module Stardew
       ["unknown", "Completion not yet observable"]
     end
 
+    def upcoming_introduction(tasks)
+      return unless @today == 1
+
+      tasks.find { |task| task[:status] == "pending" && task[:target].dig("options", "introduction") && task[:preferred_time] && task[:preferred_time].delete(":").to_i >= @state["time"].to_i }
+    end
+
     def next_action(tasks)
       candidates = tasks.select { |task| task[:status] == "pending" ||
         (task[:status] == "unknown" && %w[spring_onion_check spring_onions chest_house opening_kale_seeds].include?(task[:id])) }
@@ -218,6 +224,10 @@ module Stardew
       candidates.reject! do |task|
         time = task[:preferred_time]
         time && clock > time.delete(":").to_i + 100 && task[:target]["options"]["route_index"]
+      end
+      upcoming = upcoming_introduction(tasks)
+      if upcoming && @state["time"].to_i >= 1000 && @state["time"].to_i < 1100
+        return upcoming
       end
       candidates.first
     end
