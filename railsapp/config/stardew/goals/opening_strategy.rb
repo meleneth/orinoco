@@ -27,7 +27,7 @@ goal_set :opening_strategy do
   end
 
   goal :opening_kale_seeds do
-    target :acquire, :kale_seeds, budget: :remaining_after_required_seeds
+    target :acquire, :kale_seeds, budget: :remaining_after_required_seeds_and_training_rod_reserve
     prefer_by spring(1)
     strategy :reserve_for_scarecrow
   end
@@ -88,6 +88,13 @@ goal_set :opening_strategy do
   goal :beach_bridge do
     target :unlock, :beach_bridge
     prefer_by spring(3)
+  end
+
+  goal :training_rod do
+    target :acquire, :training_rod
+    prefer_by spring(2)
+    priority :high
+    strategy :prioritize_fishing_income
   end
 
   goal :fiberglass_rod do
