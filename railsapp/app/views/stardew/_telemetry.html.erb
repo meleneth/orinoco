@@ -16,7 +16,7 @@
     <%= link_to "Refresh status", stardew_path, class: "mt-3 inline-block text-cyan-300 hover:underline" %>
   </div>
   <% if state.present? %>
-    <%= render "stardew/agenda", agenda: Stardew::DailyAgenda.new(profile: Stardew::DailyAgenda.profile, state: state).call %>
+    <%= render "stardew/agenda", agenda: Stardew::DailyAgenda.new(profile: Stardew::DailyAgenda.profile, state: state).call, scope: [observation["save_id"], observation["session_id"], state["year"], state["season"], state["day"]].join(":") %>
     <div class="rounded border border-slate-700 bg-slate-900 p-4">
       <h2 class="text-xl font-semibold"><%= state["season"].to_s.capitalize %> <%= state["day"] %>, Year <%= state["year"] %></h2>
       <p class="mt-2">Time: <%= state["time"] %> · Gold: <%= state["gold"] %>g · Energy: <%= state["energy"] %></p>
