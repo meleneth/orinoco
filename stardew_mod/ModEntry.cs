@@ -20,6 +20,10 @@ public sealed class ModEntry : Mod
     private string? lastState;
     private DateTime lastCapture;
     private const int QueueLimit = 32;
+    private string observationDay = "";
+    private bool onionPatchChecked;
+    private int woodPeak;
+    private readonly HashSet<string> introduced = new();
 
     public override void Entry(IModHelper helper)
     {
@@ -38,6 +42,8 @@ public sealed class ModEntry : Mod
             player = Hash(Game1.player.UniqueMultiplayerID.ToString());
             sequence = 0;
             lastState = null;
+            observationDay = "";
+            introduced.Clear();
             Capture("save_loaded", true);
         };
         helper.Events.GameLoop.DayStarted += (_, _) => Capture("day_started", true);
@@ -67,6 +73,35 @@ public sealed class ModEntry : Mod
         {
             var farmer = Game1.player;
             var location = farmer.currentLocation;
+            string dayKey = $"{Game1.year}:{Game1.currentSeason}:{Game1.dayOfMonth}";
+            if (observationDay != dayKey) {
+                observationDay = dayKey;
+                onionPatchChecked = false;
+                woodPeak = 0;
+            }
+            int tileX = (int)(farmer.Position.X / 64), tileY = (int)(farmer.Position.Y / 64);
+            // Vanilla forest patch bounds; keep explicit and calibratable for map mods.
+            if (location.Name == "Forest" && tileX >= 75 && tileX <= 110 && tileY >= 80 && tileY <= 110)
+                onionPatchChecked = true;
+            woodPeak = Math.Max(woodPeak, farmer.Items.Where(i => i != null && i.QualifiedItemId == "(O)388").Sum(i => i.Stack));
+            foreach (var pair in farmer.friendshipData.Pairs)
+                if (pair.Value.TalkedToToday || pair.Value.Points > 0) introduced.Add(pair.Key);
+            var farmObjects = Game1.getFarm().Objects.Pairs.ToArray();
+            var chests = new List<object>();
+            var nearbyNpcs = new List<object>();
+            foreach (var map in Game1.locations) {
+                foreach (var npc in map.characters)
+                    nearbyNpcs.Add(new { npc = npc.Name, location = map.NameOrUniqueName,
+                        x = (int)(npc.Position.X / 64), y = (int)(npc.Position.Y / 64) });
+                foreach (var pair in map.Objects.Pairs) {
+                    if (pair.Value is not StardewValley.Objects.Chest chest || !chest.playerChest.Value) continue;
+                    chests.Add(new { location = map.NameOrUniqueName, x = (int)pair.Key.X, y = (int)pair.Key.Y,
+                        items = chest.Items.Where(i => i != null).Select(i => new {
+                            id = i.QualifiedItemId, name = i.DisplayName, count = i.Stack,
+                            quality = i is StardewValley.Object o ? o.Quality : 0
+                        }).ToArray() });
+                }
+            }
             var crops = Game1.getFarm().terrainFeatures.Pairs
                 .Where(p => p.Value is HoeDirt dirt && dirt.crop != null)
                 .OrderBy(p => p.Key.X).ThenBy(p => p.Key.Y)
@@ -82,8 +117,9 @@ public sealed class ModEntry : Mod
                         dead = crop.dead.Value
                     };
                 }).ToArray();
-            var onions = location.Name == "Forest"
-                ? location.Objects.Pairs.Where(p => p.Value.QualifiedItemId == "(O)399")
+            var forest = Game1.getLocationFromName("Forest");
+            var onions = forest != null
+                ? forest.Objects.Pairs.Where(p => p.Value.QualifiedItemId == "(O)399")
                     .Select(p => new { x = (int)p.Key.X, y = (int)p.Key.Y }).ToArray()
                 : null;
             var state = new {
@@ -95,15 +131,26 @@ public sealed class ModEntry : Mod
                 skills = new { farming = farmer.FarmingLevel, fishing = farmer.FishingLevel,
                     foraging = farmer.ForagingLevel, mining = farmer.MiningLevel, combat = farmer.CombatLevel },
                 inventory = farmer.Items.Where(item => item != null).Select(item => new {
-                    id = item.QualifiedItemId, count = item.Stack,
+                    id = item.QualifiedItemId, name = item.DisplayName, count = item.Stack,
                     quality = item is StardewValley.Object obj ? obj.Quality : 0
                 }).ToArray(),
                 friendship = farmer.friendshipData.Pairs.OrderBy(p => p.Key).Select(p => new {
-                    npc = p.Key, points = p.Value.Points, talked_today = p.Value.TalkedToToday,
+                    npc = p.Key, points = p.Value.Points, introduced = introduced.Contains(p.Key), talked_today = p.Value.TalkedToToday,
                     gifts_today = p.Value.GiftsToday, gifts_this_week = p.Value.GiftsThisWeek
                 }).ToArray(),
                 house_chest = Game1.getFarm().Objects.Pairs.Any(p => p.Value is StardewValley.Objects.Chest)
-                    || Game1.getLocationFromName("FarmHouse").Objects.Pairs.Any(p => p.Value is StardewValley.Objects.Chest),
+                    || (Game1.getLocationFromName("FarmHouse")?.Objects.Pairs.Any(p => p.Value is StardewValley.Objects.Chest) ?? false),
+                wood_peak_today = woodPeak,
+                spring_onion_patch_checked = onionPatchChecked,
+                chests,
+                npcs = nearbyNpcs,
+                scarecrows = farmObjects.Where(p => p.Value.QualifiedItemId == "(BC)8" || p.Value.QualifiedItemId == "(BC)167").Select(p => new { x = (int)p.Key.X, y = (int)p.Key.Y, id = p.Value.QualifiedItemId }).ToArray(),
+                recipes = farmer.craftingRecipes.Pairs.ToDictionary(p => p.Key, p => p.Value),
+                mail_received = farmer.mailReceived.ToArray(),
+                events_seen = farmer.eventsSeen.ToArray(),
+                mine_floor = farmer.deepestMineLevel,
+                daily_luck = farmer.DailyLuck,
+                inventory_capacity = farmer.MaxItems,
                 crops,
                 spring_onions = onions
             };
