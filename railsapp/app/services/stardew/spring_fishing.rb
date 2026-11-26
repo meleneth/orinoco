@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "fish_liquidation"
+
 module Stardew
   class SpringFishing
     # Standard spring fish tank targets; remixed bundle parsing is separate.
@@ -53,6 +55,10 @@ module Stardew
         bait = [[(cash - 1800) / 5, 40].min, 0].max
         return action("Buy the Fiberglass Rod", "Spend 1,800g on the rod#{bait.positive? ? " and #{bait} bait (#{bait * 5}g); attach bait to the rod" : "; buy bait as soon as you can afford it"}.")
       end
+      liquidation = FishLiquidation.new(@state).call
+      if level >= 2 && liquidation[:liquid] >= 1800 && liquidation[:net].positive?
+        return action("Sell surplus fish to fund the Fiberglass Rod", "Sell only the quantities shown in the liquidation panel; then buy the rod and affordable bait.")
+      end
       if level < 5 && !training_rod? && cash >= 25
         return action("Buy the Training Rod for 25g", "Use it for easy catches and perfect-catch XP until the Fiberglass Rod is affordable.")
       end
@@ -82,7 +88,9 @@ module Stardew
       training = training_rod? && !upgraded_rod? && @state.dig("skills", "fishing").to_i < 5
       # The training rod only catches fish with difficulty below 50.
       available = available.reject { |f| %w[136 143 148].include?(f[0]) } if training
-      location = if rain
+      location = if @state["year"] == 1 && @state["day"] == 2
+        "Beach"
+      elsif rain
         clock >= 1600 && available.any? { |f| f[0] == "148" } ? "Beach" : "Town"
       elsif @state["location"] == "Beach" && clock < 1900 && available.any? { |f| f[2] == "Beach" }
         "Beach"
