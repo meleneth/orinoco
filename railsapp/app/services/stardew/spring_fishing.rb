@@ -27,10 +27,50 @@ module Stardew
       end
     end
 
+    def owns_rod?(pattern)
+      (Array(@state["tools"]) + Array(@state["inventory"])).any? do |item|
+        [item["id"], item["name"]].compact.any? { |value| pattern.match?(value) }
+      end
+    end
+
+    def training_rod?
+      owns_rod?(/Training\s*Rod|\(T\)TrainingRod/i)
+    end
+
+    def upgraded_rod?
+      owns_rod?(/Fiberglass\s*Rod|Iridium\s*Rod/i)
+    end
+
+    def investment_action
+      return unless rod? && @state["year"] == 1 && @state["season"] == "spring"
+      clock = @state["time"].to_i
+      return unless clock >= 900 && clock < 1700
+      level = @state.dig("skills", "fishing").to_i
+      cash = @state["gold"].to_i
+      return if upgraded_rod?
+
+      if level >= 2 && cash >= 1800
+        bait = [[(cash - 1800) / 5, 40].min, 0].max
+        return action("Buy the Fiberglass Rod", "Spend 1,800g on the rod#{bait.positive? ? " and #{bait} bait (#{bait * 5}g); attach bait to the rod" : "; buy bait as soon as you can afford it"}.")
+      end
+      if level < 5 && !training_rod? && cash >= 25
+        return action("Buy the Training Rod for 25g", "Use it for easy catches and perfect-catch XP until the Fiberglass Rod is affordable.")
+      end
+      nil
+    end
+
+    def action(title, evidence)
+      { title: title, evidence: evidence, directions: "Go to Willy's Fish Shop on the ocean pier, south of town. Buy before 5 PM.",
+        target: { "type" => "purchase", "subject" => "fishing_equipment", "options" => {} } }
+    end
+
     def call
       return unless rod? && @state["season"] == "spring"
       clock = @state["time"].to_i
       return if clock < 600 || clock >= 2400
+
+      investment = investment_action
+      return investment if investment
 
       items = Array(@state["inventory"]) + Array(@state["chests"]).flat_map { |chest| Array(chest["items"]) }
       owned = items.select { |item| item["count"].to_i.positive? }.map { |item| item["id"].to_s.delete_prefix("(O)") }
@@ -39,6 +79,9 @@ module Stardew
         !owned.include?(id) && clock >= start && clock < finish &&
           (weather == :any || weather == (rain ? :rain : :sun))
       end
+      training = training_rod? && !upgraded_rod? && @state.dig("skills", "fishing").to_i < 5
+      # The training rod only catches fish with difficulty below 50.
+      available = available.reject { |f| %w[136 143 148].include?(f[0]) } if training
       location = if rain
         clock >= 1600 && available.any? { |f| f[0] == "148" } ? "Beach" : "Town"
       elsif @state["location"] == "Beach" && clock < 1900 && available.any? { |f| f[2] == "Beach" }
@@ -59,7 +102,10 @@ module Stardew
         directions: directions, targets: targets,
         evidence: [targets.any? ? "Keep one each: #{targets.join(', ')}." : "Fish for income and XP; store useful catches.",
                    rain && location == "Town" && level < 3 ? "Catfish are difficult with the bamboo pole; keep easier Shad and Bream too." : nil,
-                   level < 2 ? "Reach Fishing 2 to unlock the 1,800g Fiberglass Rod." : "Save 1,800g for the Fiberglass Rod if not already owned."].compact.join(" "),
+                   training ? "Equip the Training Rod; aim for perfect catches." : nil,
+                   !training_rod? && !upgraded_rod? && level < 5 ? "If short of 25g, catch and sell surplus fish to Willy before 5 PM; buy the Training Rod." : nil,
+                   !upgraded_rod? ? (level < 2 ? "Reach Fishing 2 to unlock the 1,800g Fiberglass Rod." : "Save 1,800g for the Fiberglass Rod; 2,000g buys the rod and 40 bait.") : "Use bait with your upgraded rod.",
+                   @state["day"].to_i <= 13 ? "Do not buy the Iridium Rod before the strawberry investment." : nil].compact.join(" "),
         target: { "type" => "fish", "subject" => "fishing", "options" => {} } }
     end
   end
