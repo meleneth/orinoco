@@ -8,6 +8,9 @@ module Stardew
       { name: "Cauliflower Seeds", id: "474", harvest: "190", target: 1, price: 80 }
     ].freeze
     KALE_PRICE = 70
+    TRAINING_ROD_PRICE = 25
+    # Conservative: ceil(25 / 0.9), including a possible 2 AM penalty.
+    DAY_TWO_RESERVE = (TRAINING_ROD_PRICE * 10 + 8) / 9
 
     def initialize(state)
       @state = state
@@ -24,13 +27,14 @@ module Stardew
         seed.merge(quantity: missing, cost: missing * seed[:price]) if missing.positive?
       end
       required_cost = required.sum { |seed| seed[:cost] }
-      kale = [cash - required_cost, 0].max / KALE_PRICE
+      kale = [cash - required_cost - DAY_TWO_RESERVE, 0].max / KALE_PRICE
       purchases = required.dup
       purchases << { name: "Kale Seeds", quantity: kale, price: KALE_PRICE, cost: kale * KALE_PRICE } if kale.positive?
-      { purchases: purchases, required_cost: required_cost, affordable: cash >= required_cost,
+      { purchases: purchases, required_cost: required_cost, affordable: cash >= required_cost + DAY_TWO_RESERVE,
+        reserve: DAY_TWO_RESERVE, remaining: cash - purchases.sum { |seed| seed[:cost] },
         total: purchases.sum { |seed| seed[:cost] }, cash: cash,
         kale_owned: owned("477"), at_shop: @state["location"] == "SeedShop",
-        complete: purchases.empty? && cash >= required_cost }
+        complete: purchases.empty? && cash >= DAY_TWO_RESERVE }
     end
 
     private
