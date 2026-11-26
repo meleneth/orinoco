@@ -33,6 +33,19 @@
     <p class="text-sm text-slate-400">Keep at least <%= shopping[:reserve] %>g for tomorrow’s 25g Training Rod, including a possible 2 AM penalty. Planned remaining gold: <%= shopping[:remaining] %>g.</p>
     <p class="text-sm text-slate-400">Plant only 13 parsnips, 1 bean and 1 cauliflower today. Save the kale seeds.</p>
   <% end %>
+  <% if (funds = agenda[:liquidation]) %>
+    <h2 class="mt-4 text-lg font-semibold">Fishing capital</h2>
+    <p>Cash: <%= funds[:cash] %>g · Backpack fish gross: <%= funds[:gross] %>g</p>
+    <p>Reserved value: <%= funds[:gross] - funds[:net] %>g · Sellable fish: <%= funds[:net] %>g</p>
+    <p class="text-xl font-semibold text-cyan-300">After liquidation: <%= funds[:liquid] %>g</p>
+    <p>Fiberglass Rod shortfall: <%= funds[:rod_shortfall] %>g · Rod + 40 bait shortfall: <%= funds[:bait_shortfall] %>g</p>
+    <details>
+      <summary>Fish to sell and keep</summary>
+      <% funds[:lines].each do |line| %>
+        <p><%= line[:name] %> · Sell <%= line[:sell] %> × <%= line[:unit] %>g · Keep <%= line[:keep] %></p>
+      <% end %>
+    </details>
+  <% end %>
   <h2 class="mt-4 text-lg font-semibold">Hard blockers</h2>
   <% blockers = Array(agenda[:blockers]) %>
   <% if blockers.empty? %><p class="text-slate-400">No known blocked high-priority goals.</p><% end %>
