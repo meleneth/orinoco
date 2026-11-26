@@ -56,7 +56,7 @@ module Stardew
       tomorrow = @goals.values.select { |goal| !goal["recurring"] && milestone(goal) == @today + 1 }
                        .reject { |goal| evaluate(goal).first == "complete" }.map { |goal| title(goal) }
       { tasks: tasks, tomorrow: tomorrow, warnings: warnings, next_action: next_action(tasks),
-        blockers: blockers(tasks), relationships: relationship_status, upcoming_introduction: upcoming_introduction(tasks), shopping: @shopping, fishing: @fishing.call }
+        blockers: blockers(tasks), relationships: relationship_status, upcoming_introduction: upcoming_introduction(tasks), shopping: @shopping, fishing: @fishing.call, liquidation: @fishing.rod? ? FishLiquidation.new(@state).call : nil }
     end
 
     private
