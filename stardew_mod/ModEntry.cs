@@ -132,7 +132,7 @@ public sealed class ModEntry : Mod
             }
             Probe("bundle_definitions", () => Helper.GameContent.Load<Dictionary<string, string>>("Data/Bundles"));
             Probe("gift_taste_definitions", () => Helper.GameContent.Load<Dictionary<string, string>>("Data/NPCGiftTastes"));
-            Probe("active_bundles", () => Game1.netWorldState.Value.BundleData.Pairs.ToDictionary(p => p.Key.ToString(), p => p.Value));
+            Probe("active_bundles", () => Game1.netWorldState.Value.BundleData.ToDictionary(p => p.Key.ToString(), p => p.Value));
             Probe("bundle_progress", () => {
                 var cc = Game1.getLocationFromName("CommunityCenter") as StardewValley.Locations.CommunityCenter;
                 return cc?.bundles.Pairs.ToDictionary(p => p.Key.ToString(), p => p.Value.ToArray());
