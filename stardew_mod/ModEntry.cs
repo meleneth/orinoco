@@ -114,6 +114,7 @@ public sealed class ModEntry : Mod
                         phase = crop.currentPhase.Value,
                         phase_day = crop.dayOfCurrentPhase.Value,
                         watered = dirt.state.Value == 1,
+                        ready = !crop.dead.Value && crop.currentPhase.Value >= crop.phaseDays.Count - 1 && (!crop.fullyGrown.Value || crop.dayOfCurrentPhase.Value <= 0),
                         dead = crop.dead.Value
                     };
                 }).ToArray();
@@ -151,6 +152,15 @@ public sealed class ModEntry : Mod
                 mine_floor = farmer.deepestMineLevel,
                 daily_luck = farmer.DailyLuck,
                 inventory_capacity = farmer.MaxItems,
+                skill_xp = farmer.experiencePoints.ToArray(),
+                tools = farmer.Items.OfType<Tool>().Select(t => new {
+                    id = t.QualifiedItemId, name = t.DisplayName, upgrade_level = t.UpgradeLevel
+                }).ToArray(),
+                professions = farmer.professions.ToArray(),
+                quests = farmer.questLog.Where(q => q != null).Select(q => new {
+                    id = q.id.Value.ToString(), completed = q.completed.Value
+                }).ToArray(),
+                cooking_recipes = farmer.cookingRecipes.Pairs.ToDictionary(p => p.Key, p => p.Value),
                 crops,
                 spring_onions = onions
             };
