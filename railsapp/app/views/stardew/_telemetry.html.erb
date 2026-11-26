@@ -16,6 +16,7 @@
     <%= link_to "Refresh status", stardew_path, class: "mt-3 inline-block text-cyan-300 hover:underline" %>
   </div>
   <% if state.present? %>
+    <%= render "stardew/agenda", agenda: Stardew::DailyAgenda.new(profile: Stardew::DailyAgenda.profile, state: state).call %>
     <div class="rounded border border-slate-700 bg-slate-900 p-4">
       <h2 class="text-xl font-semibold"><%= state["season"].to_s.capitalize %> <%= state["day"] %>, Year <%= state["year"] %></h2>
       <p class="mt-2">Time: <%= state["time"] %> · Gold: <%= state["gold"] %>g · Energy: <%= state["energy"] %></p>
@@ -47,8 +48,4 @@
       <details class="mt-4"><summary>Raw observation</summary><pre class="overflow-auto text-xs"><%= JSON.pretty_generate(observation) %></pre></details>
     </div>
   <% end %>
-  <div class="rounded border border-slate-700 p-4">
-    <h2 class="text-lg font-semibold">Today's plan</h2>
-    <p class="text-slate-400">Campaign declarations exist. Live goal evaluation and recommendations are not implemented yet.</p>
-  </div>
 </section>
