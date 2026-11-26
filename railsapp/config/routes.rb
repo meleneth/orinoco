@@ -20,6 +20,8 @@ Rails.application.routes.draw do
   post "clip_show/play"
   get  "clip_show/get_scenes"
   get  "clip_show" => "clip_show#get_scenes", as: :clip_show
+  post "stardew/telemetry" => "stardew_telemetry#create"
+  get "stardew/telemetry" => "stardew_telemetry#show"
   get  "overlay" => "overlay#show", as: :overlay
   resources :d2r_characters, path: "d2r/characters", only: [:index, :show]
   get  "d2r/log" => "d2r_log#index", as: :d2r_log

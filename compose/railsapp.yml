@@ -13,6 +13,7 @@ services:
       - SCOREBOARD_REDIS_URL=${SCOREBOARD_REDIS_URL}
       - EVENT_PIPELINE_GOAWS_URL=${EVENT_PIPELINE_GOAWS_URL}
       - OBS_HOST=${OBS_HOST}
+      - STARDEW_TELEMETRY_TOKEN=${STARDEW_TELEMETRY_TOKEN:-}
     build:
       context: "./railsapp"
       network: ${ORINOCO_BUILD_NETWORK:-default}
@@ -98,5 +99,10 @@ services:
   d2r-run-projection-worker:
     image: orinoco/railsapp
     command: ["bundle", "exec", "rails", "runner", "--skip-executor", "D2rRunProjectionWorker.new.run"]
+    environment: *railsapp_environment
+    depends_on: *railsapp_worker_depends_on
+  stardew-telemetry-worker:
+    image: orinoco/railsapp
+    command: ["bundle", "exec", "rails", "runner", "StardewTelemetryWorker.new.run"]
     environment: *railsapp_environment
     depends_on: *railsapp_worker_depends_on

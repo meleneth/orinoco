@@ -227,5 +227,14 @@ services:
     volumes:
       - ./railsapp:/rails
       - bundle:/usr/local/bundle
+  stardew-telemetry-worker:
+    environment:
+      - DATABASE_URL=${ORINOCO_DB_DATABASE_URL}
+      - RAILS_ENV=development
+      - SCOREBOARD_REDIS_URL=${SCOREBOARD_REDIS_URL}
+      - EVENT_PIPELINE_GOAWS_URL=${EVENT_PIPELINE_GOAWS_URL}
+    volumes:
+      - ./railsapp:/rails
+      - bundle:/usr/local/bundle
 volumes:
   bundle:

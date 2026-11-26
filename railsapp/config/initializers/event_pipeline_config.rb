@@ -77,6 +77,11 @@ Rails.application.config.to_prepare do
           visibility_timeout: 30,
           receive_message_wait_time_seconds: 20
       end
+      topic Orinoco::Messaging::Names::STARDEW_EVENTS_TOPIC do
+        queue Orinoco::Messaging::Names::STARDEW_EVENTS_QUEUE,
+          visibility_timeout: 30,
+          receive_message_wait_time_seconds: 20
+      end
       topic Orinoco::Messaging::Names::WOS_BOARD_RECOGNIZED_TOPIC do
         queue Orinoco::Messaging::Names::WOS_BOARD_RECOGNIZED_QUEUE,
           visibility_timeout: 30,

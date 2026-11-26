@@ -1,0 +1,9 @@
+{
+  "Name": "Orinoco Stardew Telemetry",
+  "Author": "Orinoco",
+  "Version": "0.1.0",
+  "Description": "Read-only telemetry for the Orinoco coach.",
+  "UniqueID": "Meleneth.OrinocoTelemetry",
+  "EntryDll": "Orinoco.Stardew.dll",
+  "MinimumApiVersion": "4.0.0"
+}

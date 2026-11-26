@@ -30,6 +30,9 @@ module Orinoco
       D2R_EVENTS_TOPIC = "orinoco.d2r.events"
       D2R_EVENTS_QUEUE = "orinoco.d2r.events.queue"
 
+      STARDEW_EVENTS_TOPIC = "orinoco.stardew.events"
+      STARDEW_EVENTS_QUEUE = "orinoco.stardew.events.queue"
+
       WOS_BOARD_RECOGNIZED_TOPIC = "orinoco.wos.board.recognized"
       WOS_BOARD_RECOGNIZED_QUEUE = "orinoco.wos.board.recognized.queue"
     end
