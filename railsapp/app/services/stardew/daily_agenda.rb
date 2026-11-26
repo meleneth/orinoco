@@ -2,6 +2,8 @@
 
 require_relative "dsl"
 require_relative "gift_advisor"
+require_relative "opening_shopping"
+require_relative "route_guidance"
 
 module Stardew
   class DailyAgenda
@@ -28,6 +30,7 @@ module Stardew
       @history = history.select { |entry| ordinal(entry) == @today }
       @goals = profile.fetch("goals")
       @gift_advice = build_gift_advice
+      @shopping = OpeningShopping.new(state).call
     end
 
     def call
@@ -47,10 +50,11 @@ module Stardew
           target: goal.fetch("target") }
       end
       tasks.sort_by! { |task| [task[:status] == "complete" ? 1 : 0, order(task), task[:preferred_time] || "99:99", task[:target].fetch("options").fetch("route_index", 999), PRIORITY.fetch(task[:priority]), task[:id]] }
+      tasks.each { |task| task[:directions] = RouteGuidance.describe(task, @state) }
       tomorrow = @goals.values.select { |goal| !goal["recurring"] && milestone(goal) == @today + 1 }
                        .reject { |goal| evaluate(goal).first == "complete" }.map { |goal| title(goal) }
       { tasks: tasks, tomorrow: tomorrow, warnings: warnings, next_action: next_action(tasks),
-        blockers: blockers(tasks), relationships: relationship_status, upcoming_introduction: upcoming_introduction(tasks) }
+        blockers: blockers(tasks), relationships: relationship_status, upcoming_introduction: upcoming_introduction(tasks), shopping: @shopping }
     end
 
     private
@@ -213,6 +217,7 @@ module Stardew
       when "acquire", "reserve"
         return progress(@state["gold"], quantity, "gold") if subject == "gold"
         if options["budget"] && subject == "kale_seeds"
+          return ["complete", "Opening seed budget spent"] if @shopping && @shopping[:complete]
           return ["pending", "Buy kale seeds with gold remaining after bean and cauliflower seeds"]
         end
         return progress(inventory_count(subject), quantity, "in backpack") unless options["budget"]
@@ -244,23 +249,36 @@ module Stardew
       candidates.reject! { |task| task[:id] == "spring_onions" && @state["spring_onion_patch_checked"] != true }
       candidates.reject! { |task| task[:strategies].include?("first_morning_outing") && clock >= 1100 && !@state.key?("spring_onion_patch_checked") }
       candidates.reject! { |task| task[:id] == "first_chest_wood" && @today > 1 && !@state.key?("house_chest") }
-      # Prefer nearby, observed pending friendship opportunities outside the opening route.
-      candidates.reject! do |task|
-        time = task[:preferred_time]
-        time && clock > time.delete(":").to_i + 100 && task[:target]["options"]["route_index"]
-      end
-      upcoming = upcoming_introduction(tasks)
-      if upcoming && @state["time"].to_i >= 1000 && @state["time"].to_i < 1100
-        return upcoming
+      if @shopping && @shopping[:at_shop] && @shopping[:purchases].any?
+        task = candidates.find { |entry| entry[:id] == "opening_kale_seeds" }
+        return task.merge(title: "Buy seeds at Pierre's", evidence: "Follow the live shopping checklist below.") if task
       end
       local = Array(@state["npcs"]).select { |npc| npc["location"] == @state["location"] }
-      nearby = candidates.select do |task|
-        %w[talk gift].include?(task[:target]["type"]) &&
-          local.any? { |npc| npc["npc"].to_s.casecmp?(task[:target]["subject"]) }
+      nearby = candidates.filter_map do |task|
+        next unless %w[talk gift].include?(task[:target]["type"])
+        npc = local.find { |entry| entry["npc"].to_s.casecmp?(task[:target]["subject"]) }
+        next unless npc
+
+        distance = (npc["x"].to_i - @state["tile_x"].to_i).abs + (npc["y"].to_i - @state["tile_y"].to_i).abs
+        [task, distance]
       end
-      # Opportunistic greetings should not interrupt required morning infrastructure.
-      return candidates.first if candidates.first && order(candidates.first) <= 2
-      nearby.first || candidates.first
+      close = nearby.select { |_, distance| distance <= 12 }.min_by { |task, distance| [distance, task[:target]["type"] == "talk" ? 0 : 1, task[:id]] }
+      return close.first if close
+      upcoming = upcoming_introduction(tasks)
+      return upcoming if upcoming && clock >= 1000 && clock < 1100
+      # Preserve morning chores before the route; after 11 the rendezvous takes priority.
+      return candidates.first if clock < 1000 && candidates.first && order(candidates.first) <= 2
+      return nearby.min_by { |task, distance| [distance, task[:id]] }.first if nearby.any?
+      if @today == 1 && clock >= 1000
+        introductions = candidates.select { |task| task[:target].dig("options", "introduction") }
+        # Missed rendezvous remain outstanding; a live location is better than a stale timestamp.
+        introductions.sort_by! do |task|
+          preferred = task[:preferred_time].to_s.delete(":").to_i
+          [preferred >= clock - 100 ? 0 : 1, task[:preferred_time] || "99:99"]
+        end
+        return introductions.first if introductions.any?
+      end
+      candidates.first
     end
 
     def blockers(tasks)
