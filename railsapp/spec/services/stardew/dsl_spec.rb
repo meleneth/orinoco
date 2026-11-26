@@ -16,11 +16,17 @@ RSpec.describe Stardew::Dsl::Compiler do
 
   it "compiles the default profile deterministically and deeply freezes it" do
     root = File.expand_path("../../../config/stardew", __dir__)
-    compiler.load_file(File.join(root, "goals/year_one.rb"))
+    Dir.glob(File.join(root, "goals/*.rb")).sort.each { |path| compiler.load_file(path) }
     compiler.load_file(File.join(root, "runs/year_one_community_center.rb"))
     ir = compiler.compile(:year_one_community_center)
     expect(ir.fetch("goals").fetch("meet_villagers").fetch("target").fetch("type")).to eq("talk")
     expect(ir.fetch("run").fetch("required")).to eq(["community_center"])
+    expect(ir.fetch("run").fetch("unprotected_crop_limit")).to eq(15)
+    expect(ir.dig("goals", "initial_planting", "target", "options", "crops")).to eq("parsnip" => 13, "green_bean" => 1, "cauliflower" => 1)
+    expect(ir.dig("goals", "first_parsnip_harvest", "target", "quantity")).to eq(13)
+    expect(ir.dig("goals", "salmonberries", "window", "last", "day")).to eq(18)
+    expect(ir.dig("goals", "foraging_five", "target", "quantity")).to eq(5)
+    expect(ir.dig("goals", "jas_introduction", "preferred_time")).to eq("11:00")
     expect(ir.fetch("goals").fetch("red_cabbage").fetch("routes")).to be_frozen
     expect(described_class.digest(ir)).to eq(described_class.digest(compiler.compile(:year_one_community_center)))
   end

@@ -10,7 +10,7 @@ module Stardew
     SEASONS = %i[spring summer fall winter].freeze
     TYPES = %i[acquire reserve deliver harvest plant reach unlock talk gift complete build earn maintain].freeze
     PRIORITIES = %i[critical high normal low].freeze
-    CONSTRAINTS = %i[preserve_bundle_items respect_energy_budget respect_travel_time respect_inventory_capacity avoid_unnecessary_passouts no_hidden_rng].freeze
+    CONSTRAINTS = %i[preserve_bundle_items respect_energy_budget respect_travel_time respect_inventory_capacity avoid_unnecessary_passouts no_hidden_rng prevent_crow_exposure preserve_tree_seeds].freeze
 
     def self.canonical(value)
       case value
@@ -57,6 +57,12 @@ module Stardew
       raise Error, "invalid date"
     end
 
+    def self.game_time(value)
+      raise Error, "invalid game time" unless value.is_a?(String) && /\A(?:[01]\d|2[0-5]):[0-5]\d\z/.match?(value) || value == "26:00"
+
+      value
+    end
+
     class Builder
       SEASONS.each do |season|
         define_method(season) { |day, year: 1| Dsl.date(season, day, year) }
@@ -92,8 +98,15 @@ module Stardew
         @data[:strategies] << Dsl.id(id)
       end
 
-      def prefer_by(date)
+      def prefer_by(date, time: nil)
         set(:prefer_by, date)
+        set(:preferred_time, Dsl.game_time(time)) if time
+      end
+
+      def window(first, last)
+        raise Error, "window ends before it starts" if Dsl.ordinal(first) > Dsl.ordinal(last)
+
+        set(:window, { first: first, last: last })
       end
 
       def deadline(date)
@@ -193,6 +206,10 @@ module Stardew
         @data[:objectives][id] = Dsl.positive(weight)
       end
 
+      def unprotected_crop_limit(value)
+        set(:unprotected_crop_limit, Dsl.positive(value))
+      end
+
       def constraints(*ids)
         raise Error, "unknown constraint" unless (ids - CONSTRAINTS).empty?
 
@@ -250,6 +267,11 @@ module Stardew
           raise Error, "unknown goal reference: #{key}" unless goals.key?(key)
         end
         goals.each_value do |goal|
+          if goal[:window]
+            goal[:window].each_value do |date|
+              raise Error, "goal window outside run: #{goal[:id]}" unless (first..last).cover?(Dsl.ordinal(date))
+            end
+          end
           %i[prefer_by deadline].each do |key|
             next unless goal[key]
             raise Error, "goal date outside run: #{goal[:id]}" unless (first..last).cover?(Dsl.ordinal(goal[key]))
