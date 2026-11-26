@@ -1,0 +1,19 @@
+<div class="rounded border border-slate-700 bg-slate-900 p-4">
+  <h2 class="text-xl font-semibold">Today's plan</h2>
+  <p class="mt-2 text-sm text-slate-400"><%= agenda[:tasks].count { |task| task[:status] == "complete" } %> / <%= agenda[:tasks].size %> objectives currently observed complete</p>
+  <% agenda[:warnings].each do |warning| %>
+    <p class="mt-2 text-amber-300"><%= warning %></p>
+  <% end %>
+  <% agenda[:tasks].each do |task| %>
+    <div class="border-t border-slate-700 py-3">
+      <p class="font-semibold"><%= task[:status] == "complete" ? "✓" : "○" %> <%= task[:title] %></p>
+      <p class="text-sm text-slate-400"><%= task[:status].humanize %> · <%= task[:evidence] %></p>
+      <% if task[:preferred_time] %><p>Target time: <%= task[:preferred_time] %></p><% end %>
+      <% if task[:dependencies].any? %><p>Requires: <%= task[:dependencies].map(&:humanize).join(", ") %></p><% end %>
+    </div>
+  <% end %>
+  <% if agenda[:tomorrow].any? %>
+    <h3 class="mt-4 font-semibold">Tomorrow's preparation</h3>
+    <% agenda[:tomorrow].each do |task| %><p><%= task %></p><% end %>
+  <% end %>
+</div>
