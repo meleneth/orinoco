@@ -12,10 +12,12 @@ goal_set :opening_strategy do
     strategy :respect_crow_limit
   end
 
-  goal :jas_introduction do
-    target :talk, :jas, location: :marnies_ranch
-    prefer_by spring(1), time: "11:00"
-    strategy :respect_npc_schedule
+  goal :first_chest_wood do
+    target :acquire, :wood, quantity: 50
+    prefer_by spring(1)
+    priority :high
+    strategy :opening_morning
+    strategy :top_trees
   end
 
   goal :opening_wood do
@@ -71,6 +73,7 @@ goal_set :opening_strategy do
       target :build, :chest, location: location
       prefer_by spring(day)
       strategy :safe_chest_placement
+      strategy :opening_morning if location == :house
     end
   end
 
