@@ -1,0 +1,7 @@
+<% content_for :title, "Stardew Valley | Orinoco" %>
+<main class="mx-auto max-w-6xl py-8">
+  <h1 class="text-3xl font-semibold text-cyan-300">Stardew Valley</h1>
+  <p class="mt-2 text-slate-400">Year One Community Center coach · telemetry preview</p>
+  <%= turbo_stream_from "stardew_telemetry" %>
+  <%= render "stardew/telemetry", telemetry: @telemetry, configured: @configured %>
+</main>
