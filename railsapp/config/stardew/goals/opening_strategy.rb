@@ -163,10 +163,21 @@ goal_set :daily_routine do
     every :day
   end
 
+  recurring :spring_onion_check do
+    target :maintain, :spring_onion_patch_check, location: :cindersap_forest
+    every :day
+    window spring(1), spring(28)
+    priority :high
+    strategy :first_morning_outing
+  end
+
   recurring :spring_onions do
     target :harvest, :spring_onion, quantity_policy: :maximize_feasible
     every :day
     window spring(1), spring(28)
+    priority :high
+    strategy :first_morning_outing
+    strategy :reserve_energy_food
   end
 
   recurring :forage_sweep do
