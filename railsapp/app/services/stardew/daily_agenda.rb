@@ -71,6 +71,7 @@ module Stardew
         return false unless goal["every"].include?("day") || goal["every"].include?(DAYS[(day - 1) % 7])
         return false if goal["id"] == "pet_care" && day < 5
         return false if goal["id"] == "lucky_mining" && day < 5
+        return false if goal["id"] == "spring_seeds" && day == 1
         return true
       end
       date = milestone(goal)
@@ -128,6 +129,7 @@ module Stardew
         end
         npc = friendship(subject)
         return ["complete", "Conversation observed today"] if npc && npc["talked_today"] == true
+        return ["unknown", "Earlier introduction not retained"] if goal["id"] == "jas_introduction" && @today > 1
         return ["pending", "Conversation not observed today"] if @state["friendship"].is_a?(Array)
       when "plant"
         if options["crops"] && @state["crops"].is_a?(Array)
@@ -165,6 +167,8 @@ module Stardew
     def warnings
       limit = @profile.dig("run", "unprotected_crop_limit")
       return [] unless limit && @state["crops"].is_a?(Array)
+
+      return [] if @today > 6
 
       count = @state["crops"].count { |crop| !crop["dead"] }
       ["Before scarecrow coverage is verified, keep total live outdoor crops at #{limit} or fewer (currently #{count})."]
