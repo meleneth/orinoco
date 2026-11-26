@@ -253,7 +253,14 @@ module Stardew
       if upcoming && @state["time"].to_i >= 1000 && @state["time"].to_i < 1100
         return upcoming
       end
-      candidates.first
+      local = Array(@state["npcs"]).select { |npc| npc["location"] == @state["location"] }
+      nearby = candidates.select do |task|
+        %w[talk gift].include?(task[:target]["type"]) &&
+          local.any? { |npc| npc["npc"].to_s.casecmp?(task[:target]["subject"]) }
+      end
+      # Opportunistic greetings should not interrupt required morning infrastructure.
+      return candidates.first if candidates.first && order(candidates.first) <= 2
+      nearby.first || candidates.first
     end
 
     def blockers(tasks)
