@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "dsl"
+require_relative "gift_advisor"
 
 module Stardew
   class DailyAgenda
@@ -26,6 +27,7 @@ module Stardew
       @today = ordinal(state)
       @history = history.select { |entry| ordinal(entry) == @today }
       @goals = profile.fetch("goals")
+      @gift_advice = build_gift_advice
     end
 
     def call
@@ -37,6 +39,7 @@ module Stardew
           evaluate(@goals.fetch(goal["when_needed"])).first == "complete" && goal["when_needed"] != goal["id"]
 
         status, evidence = evaluate(goal)
+        next if goal.dig("target", "options", "introduction") && status == "complete"
         dependencies = goal.fetch("requires").reject { |id| evaluate(@goals.fetch(id)).first == "complete" }
         status = "blocked" if status != "complete" && dependencies.any?
         { id: goal["id"], title: title(goal), status: status, evidence: evidence,
@@ -80,10 +83,13 @@ module Stardew
     end
 
     def order(task)
+      return -2 if task[:id] == "first_chest_wood"
+      return -1 if task[:id] == "chest_house"
       return 0 if task[:id] == "crop_maintenance"
-      return 1 if task[:strategies].include?("first_morning_outing")
-      return 2 if task[:preferred_time]
-      return 3 if task[:strategies].include?("priority_friendship")
+      return 1 if task[:id] == "spring_onion_check"
+      return 2 if task[:id] == "spring_onions"
+      return 3 if task[:preferred_time]
+      return 4 if task[:strategies].include?("priority_friendship")
       return 4 if %w[chest_house meet_villagers].include?(task[:id])
 
       5
@@ -98,10 +104,14 @@ module Stardew
       if target["subject"].end_with?("_skill")
         return "Reach #{target["subject"].delete_suffix("_skill").capitalize} #{target["quantity"]}"
       end
+      return "Chop 50 wood for your first chest" if goal["id"] == "first_chest_wood"
+      return "Craft and place your first chest" if goal["id"] == "chest_house"
+      return "Check spring onion patches in southern Cindersap Forest" if goal["id"] == "spring_onion_check"
       if target["type"] == "talk" && target["subject"] != "introductions"
         return "Talk to #{target["subject"].capitalize}"
       elsif target["type"] == "gift" && options["period"] == "week"
-        return "Give #{target["subject"].capitalize} a gift"
+        advice = @gift_advice[target["subject"]]
+        return advice ? "#{target["subject"].capitalize}: #{advice[:text]}" : "Give #{target["subject"].capitalize} a gift"
       end
       goal["id"].tr("_", " ").capitalize
     end
@@ -119,6 +129,24 @@ module Stardew
       subject = target.fetch("subject")
       quantity = target.fetch("quantity")
       options = target.fetch("options")
+      if goal["id"] == "first_chest_wood"
+        wood = inventory_count("wood")
+        return ["complete", "Chest crafted or placed"] if @state["house_chest"] == true || Array(@state["inventory"]).any? { |item| item["id"] == "(BC)130" }
+        return progress(wood, 50, "wood in backpack")
+      elsif goal["id"] == "chest_house"
+        return ["complete", "Chest placed at farmhouse or farm"] if @state["house_chest"] == true
+        return ["pending", "Place the crafted chest near the house"] if Array(@state["inventory"]).any? { |item| item["id"] == "(BC)130" }
+        return ["pending", "Craft a chest from 50 wood"] if inventory_count("wood").to_i >= 50
+        return ["unknown", "Chest placement not yet observed"] unless @state.key?("house_chest")
+        return ["pending", "Collect 50 wood first"]
+      elsif goal["id"] == "spring_onion_check"
+        return ["complete", "Patch visited today"] if @state["spring_onion_patch_checked"] == true
+        return ["pending", "First morning outing; check the patch even if empty"]
+      elsif goal["id"] == "spring_onions"
+        return ["complete", "Patch checked; no onions remaining"] if @state["spring_onion_patch_checked"] == true && @state["spring_onions"] == []
+        return ["pending", "Pick available onions for energy and gifts"] if @state["spring_onion_patch_checked"] == true && Array(@state["spring_onions"]).any?
+        return ["unknown", "Check the patch first"]
+      end
       return ["unknown", "Variable quantity requires planning"] if options["quantity_policy"] && !options["crops"]
 
       case target["type"]
@@ -132,16 +160,24 @@ module Stardew
         end
       when "talk"
         if subject == "introductions"
-          return ["unknown", "Introduction quest targets are not yet observed"]
+          required = @goals.values.select { |entry| entry.dig("target", "options", "introduction") && !entry.dig("target", "options", "optional") }
+          count = required.count { |entry| introduced?(entry.dig("target", "subject")) }
+          return ["complete", "All tracked introductions complete"] if count == required.size && required.any?
+          return ["pending", "#{count}/#{required.size} tracked introductions"]
         end
         npc = friendship(subject)
+        if options["introduction"]
+          return ["complete", "Previously introduced"] if introduced?(subject)
+          return ["pending", "Introduction still outstanding"]
+        end
         return ["complete", "Conversation observed today"] if npc && npc["talked_today"] == true
         return ["unknown", "Earlier introduction not retained"] if goal["id"] == "jas_introduction" && @today > 1
         return ["pending", "Conversation not observed today"] if @state["friendship"].is_a?(Array)
       when "gift"
         if options["period"] == "week"
           npc = friendship(subject)
-          return ["unknown", "Gift counters not observed"] unless npc && npc["gifts_this_week"].is_a?(Integer) && npc["gifts_today"].is_a?(Integer)
+          return ["pending", "Introduce yourself first; #{@gift_advice.dig(subject, :text)}"] unless npc
+          return ["unknown", "Gift counters not observed"] unless npc["gifts_this_week"].is_a?(Integer) && npc["gifts_today"].is_a?(Integer)
           count = npc["gifts_this_week"]
           return ["complete", "#{count}/#{quantity} gifts this week"] if count >= quantity
           return ["deferred", "#{count}/#{quantity} this week; already gifted today"] if npc["gifts_today"] >= options.fetch("daily_limit", 1)
@@ -175,7 +211,10 @@ module Stardew
         (task[:status] == "unknown" && %w[spring_onion_check spring_onions chest_house opening_kale_seeds].include?(task[:id])) }
       # Avoid pinning the whole day to an unobservable morning task.
       clock = @state["time"].to_i
-      candidates.reject! { |task| task[:strategies].include?("first_morning_outing") && clock >= 1100 }
+      candidates.reject! { |task| task[:id] == "chest_house" && inventory_count("wood").to_i < 50 && !Array(@state["inventory"]).any? { |item| item["id"] == "(BC)130" } }
+      candidates.reject! { |task| task[:id] == "spring_onions" && @state["spring_onion_patch_checked"] != true }
+      candidates.reject! { |task| task[:strategies].include?("first_morning_outing") && clock >= 1100 && !@state.key?("spring_onion_patch_checked") }
+      candidates.reject! { |task| task[:id] == "first_chest_wood" && @today > 1 && !@state.key?("house_chest") }
       # Prefer nearby, observed pending friendship opportunities outside the opening route.
       candidates.reject! do |task|
         time = task[:preferred_time]
@@ -198,8 +237,22 @@ module Stardew
         npc = friendship(name)
         { name: name, points: npc && npc["points"], talked_today: npc && npc["talked_today"],
           gifts_today: npc && npc["gifts_today"], gifts_this_week: npc && npc["gifts_this_week"],
-          target_hearts: name == "Linus" ? 4 : 2 }
+          target_hearts: name == "Linus" ? 4 : 2, gift_advice: @gift_advice[name.downcase] }
       end
+    end
+
+    def build_gift_advice
+      advisor = GiftAdvisor.new(@state)
+      %w[caroline linus].to_h do |name|
+        npc = friendship(name)
+        due = !npc || (npc["gifts_today"].to_i == 0 && npc["gifts_this_week"].to_i < 2)
+        [name, due ? advisor.recommend(name) : nil]
+      end
+    end
+
+    def introduced?(name)
+      npc = friendship(name)
+      npc && (npc["talked_today"] == true || npc["points"].to_i > 0 || npc["introduced"] == true)
     end
 
     def friendship(name)
