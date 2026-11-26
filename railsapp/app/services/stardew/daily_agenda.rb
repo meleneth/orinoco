@@ -39,7 +39,6 @@ module Stardew
           evaluate(@goals.fetch(goal["when_needed"])).first == "complete" && goal["when_needed"] != goal["id"]
 
         status, evidence = evaluate(goal)
-        next if goal.dig("target", "options", "introduction") && status == "complete"
         dependencies = goal.fetch("requires").reject { |id| evaluate(@goals.fetch(id)).first == "complete" }
         status = "blocked" if status != "complete" && dependencies.any?
         { id: goal["id"], title: title(goal), status: status, evidence: evidence,
