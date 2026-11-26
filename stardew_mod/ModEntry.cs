@@ -102,6 +102,8 @@ public sealed class ModEntry : Mod
                     npc = p.Key, points = p.Value.Points, talked_today = p.Value.TalkedToToday,
                     gifts_today = p.Value.GiftsToday, gifts_this_week = p.Value.GiftsThisWeek
                 }).ToArray(),
+                house_chest = Game1.getFarm().Objects.Pairs.Any(p => p.Value is StardewValley.Objects.Chest)
+                    || Game1.getLocationFromName("FarmHouse").Objects.Pairs.Any(p => p.Value is StardewValley.Objects.Chest),
                 crops,
                 spring_onions = onions
             };
