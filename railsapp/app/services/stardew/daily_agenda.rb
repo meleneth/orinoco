@@ -90,6 +90,7 @@ module Stardew
     def order(task)
       return -2 if task[:id] == "first_chest_wood"
       return -1 if task[:id] == "chest_house"
+      return -1 if task[:id] == "opening_wood"
       return 0 if task[:id] == "crop_maintenance"
       return 1 if task[:id] == "spring_onion_check"
       return 2 if task[:id] == "spring_onions"
@@ -152,6 +153,12 @@ module Stardew
         wood = [wood.to_i, @state["wood_peak_today"]].max if @state["wood_peak_today"].is_a?(Integer)
         return ["complete", "Chest crafted or placed"] if @state.dig("recipes", "Chest").to_i > 0 || placed_storage_chest? || Array(@state["inventory"]).any? { |item| item["id"] == "(BC)130" }
         return progress(wood, 50, "wood in backpack")
+      elsif goal["id"] == "opening_wood"
+        crafted = @state.dig("recipes", "Chest").to_i
+        carried = Array(@state["inventory"]).sum { |item| item["id"] == "(BC)130" ? item["count"].to_i : 0 }
+        placed = placed_storage_chest? ? 1 : 0
+        wood = inventory_count("wood").to_i + 50 * [crafted, carried + placed].max
+        return progress(wood, 100, "wood gathered or invested in chests")
       elsif goal["id"] == "chest_house"
         return ["complete", "Chest placed at farmhouse or farm"] if placed_storage_chest?
         return ["pending", "Place the crafted chest near the house"] if Array(@state["inventory"]).any? { |item| item["id"] == "(BC)130" }
@@ -267,8 +274,8 @@ module Stardew
       candidates.reject! { |task| task[:id] == "spring_onions" && @state["spring_onion_patch_checked"] != true }
       candidates.reject! { |task| task[:strategies].include?("first_morning_outing") && clock >= 1100 && !@state.key?("spring_onion_patch_checked") }
       candidates.reject! { |task| task[:id] == "first_chest_wood" && @today > 1 && !@state.key?("house_chest") }
-      if @today == 1 && %w[Farm FarmHouse].include?(@state["location"]) && clock < 1000
-        opening_chest = candidates.find { |task| %w[first_chest_wood chest_house].include?(task[:id]) }
+      if @today == 1 && %w[Farm FarmHouse].include?(@state["location"])
+        opening_chest = candidates.find { |task| %w[first_chest_wood chest_house opening_wood].include?(task[:id]) }
         return opening_chest if opening_chest
       end
       if @today >= 2 && !@fishing.rod? && clock >= 600 && clock < 1700
@@ -362,6 +369,7 @@ module Stardew
     def warnings
       limit = @profile.dig("run", "unprotected_crop_limit")
       cash_warning = @shopping && @shopping[:cash] < @shopping[:reserve] ? ["Day 2 Training Rod funding at risk: preserve at least #{@shopping[:reserve]}g tonight."] : []
+      cash_warning << "DO NOT BUY FISH CHOWDER: reserve gold for the Fiberglass Rod." if @today <= 13 && !@fishing.upgraded_rod?
       return cash_warning unless limit && @state["crops"].is_a?(Array)
 
       return cash_warning if @state["scarecrows"].is_a?(Array) && @state["scarecrows"].any? && @state["crops"].all? { |crop| @state["scarecrows"].any? { |scarecrow| (crop["x"].to_i - scarecrow["x"].to_i)**2 + (crop["y"].to_i - scarecrow["y"].to_i)**2 <= 49 } }
