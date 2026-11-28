@@ -9,14 +9,14 @@ module Stardew
       ["142", "Carp", "Mountain", 600, 2600, :any],
       ["136", "Largemouth Bass", "Mountain", 600, 1900, :any],
       ["700", "Bullhead", "Mountain", 600, 2600, :any],
-      ["145", "Sunfish", "Town", 600, 1900, :sun],
-      ["143", "Catfish", "Town", 600, 2400, :rain],
-      ["706", "Shad", "Town", 900, 2600, :rain],
+      ["145", "Sunfish", "Forest", 600, 1900, :sun],
+      ["143", "Catfish", "Forest", 600, 2400, :rain],
+      ["706", "Shad", "Forest", 900, 2600, :rain],
       ["128", "Pufferfish", "Beach", 1200, 1600, :summer],
       ["131", "Sardine", "Beach", 600, 1900, :any],
       ["147", "Herring", "Beach", 600, 2600, :any],
       ["148", "Eel", "Beach", 1600, 2600, :rain],
-      ["132", "Bream", "Town", 1800, 2600, :any]
+      ["132", "Bream", "Forest", 1800, 2600, :any]
     ].reject { |fish| %w[128 147].include?(fish.first) }.freeze
 
     def initialize(state)
@@ -47,6 +47,7 @@ module Stardew
       return unless rod? && @state["year"] == 1 && @state["season"] == "spring"
       clock = @state["time"].to_i
       return unless clock >= 900 && clock < 1700
+      return if @state["day"].to_i % 7 == 6 && @state["raining"] != true
       level = @state.dig("skills", "fishing").to_i
       cash = @state["gold"].to_i
       return if upgraded_rod?
@@ -85,32 +86,34 @@ module Stardew
         !owned.include?(id) && clock >= start && clock < finish &&
           (weather == :any || weather == (rain ? :rain : :sun))
       end
-      training = training_rod? && !upgraded_rod? && @state.dig("skills", "fishing").to_i < 5
+      training = training_rod? && !upgraded_rod?
       # The training rod only catches fish with difficulty below 50.
       available = available.reject { |f| %w[136 143 148].include?(f[0]) } if training
       location = if @state["year"] == 1 && @state["day"] == 2
         "Beach"
+      elsif training
+        @state["location"] == "Forest" ? "Forest" : @state["location"] == "Mountain" ? "Mountain" : "Beach"
       elsif rain
-        clock >= 1600 && available.any? { |f| f[0] == "148" } ? "Beach" : "Town"
+        clock >= 1600 && available.any? { |f| f[0] == "148" } ? "Beach" : "Forest"
       elsif @state["location"] == "Beach" && clock < 1900 && available.any? { |f| f[2] == "Beach" }
         "Beach"
       elsif clock >= 1800 && available.any? { |f| f[0] == "132" }
-        "Town"
+        "Forest"
       else
         "Mountain"
       end
       targets = available.select { |f| f[2] == location }.map { |f| f[1] }
       directions = {
-        "Mountain" => "Fish in the mountain lake east of Robin's Carpenter's Shop; cast away from shore.",
-        "Beach" => "Fish from the ocean pier near Willy's shop, south of town.",
-        "Town" => "Fish in the river running through Pelican Town, near the bridge."
+        "Mountain" => "Mountain lake: stand by the long southern fence and cast east toward the submerged log. Chest: three tiles west of the standing position; check NPC paths.",
+        "Beach" => "Willy's wharf: stand outside the shop entrance and cast south. Chest: southeast corner of the pier, outside NPC paths.",
+        "Forest" => "Cindersap Forest river: enter south of the farm, stand six tiles west of Leah's door and cast south. Chest: one tile north and one east of the standing position; check NPC paths."
       }.fetch(location)
       level = @state.dig("skills", "fishing").to_i
-      { title: "Fish at #{location == 'Mountain' ? 'the mountain lake' : location == 'Beach' ? 'the ocean' : 'the town river'}",
+      { title: "Fish at #{location == 'Mountain' ? 'the mountain lake' : location == 'Beach' ? 'the ocean' : 'the Cindersap Forest river'}",
         directions: directions, targets: targets,
         evidence: [targets.any? ? "Keep one each: #{targets.join(', ')}." : "Fish for income and XP; store useful catches.",
-                   rain && location == "Town" && level < 3 ? "Catfish are difficult with the bamboo pole; keep easier Shad and Bream too." : nil,
-                   training ? "Equip the Training Rod; aim for perfect catches." : nil,
+                   rain && location == "Forest" && level < 3 ? "Catfish are difficult with the bamboo pole; keep easier Shad and Bream too." : nil,
+                   training ? "Equip the Training Rod; aim for perfect catches. DO NOT BUY FISH CHOWDER before funding the Fiberglass Rod." : nil,
                    !training_rod? && !upgraded_rod? && level < 5 ? "If short of 25g, catch and sell surplus fish to Willy before 5 PM; buy the Training Rod." : nil,
                    !upgraded_rod? ? (level < 2 ? "Reach Fishing 2 to unlock the 1,800g Fiberglass Rod." : "Save 1,800g for the Fiberglass Rod; 2,000g buys the rod and 40 bait.") : "Use bait with your upgraded rod.",
                    @state["day"].to_i <= 13 ? "Do not buy the Iridium Rod before the strawberry investment." : nil].compact.join(" "),
